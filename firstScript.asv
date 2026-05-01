@@ -15,9 +15,9 @@ Tsim = 15;
 t = [0:h:Tsim]';
 
 % Input vector
-amplitude = 0.5;
-omega = 0.1;
-u = amplitude * sin(omega * t) * 0;
+amplitude = 0.3;
+omega = 1;
+u = amplitude * sin(omega * t);
 
 % Variable that goes to Simulink
 % (First column: time, Second column: input values)
@@ -30,7 +30,7 @@ sim rotpentemplate
 % (make sure that samples are taken every 'h' seconds! in 'To Workspace' block)
 
 % If output type 'Timeseries'
-y = simout.Data;
+% y = simout.Data;
 
 % If output type 'Array'
 % y = simout;
@@ -38,11 +38,6 @@ y = simout.Data;
 %% Plot data
 th1 = y(:, 1);
 th2 = y(:, 2);
-
-theta1_mean = mean(th1(100:end-100))
-theta2_mean = mean(th2(100:end-100))
-theta1_range = max(th1(100:end-100)) - min(th1(100:end-100))
-theta2_range = max(th2(100:end-100)) - min(th2(100:end-100))
 
 plot(t, th1, t, th2)
 legend('theta_1', 'theta_2')
