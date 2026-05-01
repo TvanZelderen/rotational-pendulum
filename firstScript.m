@@ -1,50 +1,41 @@
-%% Sample code to run experiment from script,
-% specifying a fixed input signal and recording the measured
-% outputs to a variable in the Workspace for further processing.
+clear; clc;
 
-clear;clc;
+%% Parameters
+h    = 0.01;  % sample period [s]
+Tsim = 30;    % experiment duration [s]
 
-% Sample rate in sec.
-h = 0.01;
-
-% Experiment duration in sec.
-% (don't forget to change this in your diagram, see video)
-Tsim = 30;
-
-% Time vector (don't forget to transpose with ')
+%% Input signal
 t = [0:h:Tsim]';
 
-% Input vector
 amplitude = 0.5;
-omega = 0.1;
-u = amplitude * sin(omega * t) * 0;
+omega     = 0.1;
+u = amplitude * sin(omega * t) * 0;  % zero input (open loop)
 
-% Variable that goes to Simulink
-% (First column: time, Second column: input values)
-simin = [t, u]
+% simin is read by the Simulink model: col 1 = time, col 2 = input
+simin = [t, u];
 
-%% Start experiment
+%% Run experiment
 sim rotpentemplate
 
-%% Collect output data
-% (make sure that samples are taken every 'h' seconds! in 'To Workspace' block)
+%% Extract outputs
+% simout is a Timeseries written by the 'To Workspace' block (sample time h)
+y = simout.Data;  % N x 2 matrix: [th1, th2] in degrees
 
-% If output type 'Timeseries'
-y = simout.Data;
+%% Wrap angles to (-180, 180] so equilibrium at 0 doesn't jump to ±355
+th1 = mod(y(:,1) + 180, 360) - 180;
+th2 = mod(y(:,2) + 180, 360) - 180;
 
-% If output type 'Array'
-% y = simout;
+%% Steady-state statistics (trim first and last second)
+th1_ss = th1(101:end-100);
+th2_ss = th2(101:end-100);
 
-%% Plot data
-th1 = y(:, 1);
-th1 = mod(th1, 360);
-th2 = y(:, 2);
-th2 = mod(th2, 360);
+theta1_mean  = mean(th1_ss)
+theta2_mean  = mean(th2_ss)
+theta1_range = max(th1_ss) - min(th1_ss)
+theta2_range = max(th2_ss) - min(th2_ss)
 
-theta1_mean = mean(th1(100:end-100))
-theta2_mean = mean(th2(100:end-100))
-theta1_range = max(th1(100:end-100)) - min(th1(100:end-100))
-theta2_range = max(th2(100:end-100)) - min(th2(100:end-100))
-
+%% Plot
 plot(t, th1, t, th2)
-legend('theta_1', 'theta_2')
+legend('\theta_1', '\theta_2')
+xlabel('Time [s]')
+ylabel('Angle [deg]')
