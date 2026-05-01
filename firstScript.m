@@ -1,3 +1,8 @@
+% Prerequisites (run once per session before this script):
+%   1. calib.m  — opens fugiboard connection, resets encoder, activates relay
+%   2. hwinit.m — sets sensor gain/offset calibration values
+% Re-running calib.m resets the encoder, so only run it when starting fresh.
+
 clear; clc;
 
 %% Parameters
