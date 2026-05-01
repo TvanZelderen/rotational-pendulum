@@ -9,7 +9,7 @@ h = 0.01;
 
 % Experiment duration in sec.
 % (don't forget to change this in your diagram, see video)
-Tsim = 15;
+Tsim = 30;
 
 % Time vector (don't forget to transpose with ')
 t = [0:h:Tsim]';
@@ -37,7 +37,9 @@ y = simout.Data;
 
 %% Plot data
 th1 = y(:, 1);
+th1 = mod(th1, 360);
 th2 = y(:, 2);
+th2 = mod(th2, 360);
 
 theta1_mean = mean(th1(100:end-100))
 theta2_mean = mean(th2(100:end-100))
