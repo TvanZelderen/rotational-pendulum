@@ -1,0 +1,13 @@
+# MATLAB
+*.asv
+*.m~
+*.mlapp.bak
+
+# Simulink
+slprj/
+*.slxc
+*.slx.bak
+codegen/
+
+# Personal notes
+STRUCTURE.md
