@@ -1,9 +1,8 @@
+clear; clc;
 % Prerequisites (run once per session before this script):
 %   1. calib.m  — opens fugiboard connection, resets encoder, activates relay
 %   2. hwinit.m — sets sensor gain/offset calibration values
 % Re-running calib.m resets the encoder, so only run it when starting fresh.
-
-clear; clc;
 
 %% Parameters
 h    = 0.01;  % sample period [s]
@@ -11,7 +10,7 @@ Tsim = 30;    % experiment duration [s]
 
 %% Input signal
 t = [0:h:Tsim]';
-u = 0;  % zero input (open loop), to hold arm 1
+u = zeros(size(t));  % zero input (open loop), to hold arm 1
 
 % simin is read by the Simulink model: col 1 = time, col 2 = input
 simin = [t, u];
@@ -34,7 +33,7 @@ xlabel('Time [s]')
 ylabel('Angle [deg]')
 
 %% Trim starting point based on plot
-trimStart = 5;
+trimStart = 3.4;
 th2Trimmed = th2(trimStart*100 + 1:end);
 
 %% idgrey
@@ -45,3 +44,6 @@ alpha0 = 1;
 
 sys  = idgrey(@link2_ode, alpha0, 'c');
 sys_est = greyest(data, sys);
+% alpha = 1.363425843641366
+% alpha = 1.360409688095857
+-sys_est.A(2,2)
