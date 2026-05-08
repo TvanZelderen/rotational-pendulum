@@ -24,7 +24,7 @@ y = simout.Data;  % N x 2 matrix: [th1, th2] in degrees
 
 %% Wrap angles to (-180, 180] so equilibrium at 0 doesn't jump to ±355
 th1 = mod(y(:,1) + 180, 360) - 180;
-th2 = mod(y(:,2) + 180, 360) - 180;
+th2 = mod(y(:,3) + 180, 360) - 180;
 
 %% Plot
 plot(t, th1, t, th2)
@@ -33,7 +33,7 @@ xlabel('Time [s]')
 ylabel('Angle [deg]')
 
 %% Trim starting point based on plot
-trimStart = 3.4;
+trimStart = 3;
 th2Trimmed = th2(trimStart*100 + 1:end);
 
 %% idgrey
