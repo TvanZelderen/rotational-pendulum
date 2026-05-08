@@ -22,7 +22,7 @@ Legend: ✅ Done · 🔄 In progress · 💬 In discussion · ⬜ Not started
 | EOM — arm 1 (driven) | ✅ | Identifiable composites: km/m₁, c₁/m₁ |
 | EOM — arm 2 (passive) | ✅ | Identifiable composites: l₂ from ωn, c₂/m₂l₂² from ζ |
 | Full coupled EOM (Lagrangian) | ✅ | M, n, g derived — see STRUCTURE.md |
-| Fill M and rhs in `rotpen_ode.m` | 🔄 | EOM in hand; transcription next |
+| Fill M and rhs in `rotpen_ode.m` | 🔄 | M scaffold open; ready to fill entries next session |
 | Linearise at stable eq. (both down) | ⬜ | Needed for linear control design |
 | Linearise at unstable eq. (arm 2 up) | ⬜ | Needed for swing-up / balance controller |
 | Discretise | ⬜ | h = 0.01 s; ZOH or Tustin |
@@ -33,13 +33,13 @@ Legend: ✅ Done · 🔄 In progress · 💬 In discussion · ⬜ Not started
 | Task | Status | Notes |
 |---|---|---|
 | Sensor calibration (bias + gain) | ✅ | offsets and gains in hwinit.m (2026-05-01) |
-| Geometry: l₁ | ⬜ | Measure with ruler |
-| Geometry: l₂ | 🔄 | ≈ 0.10 m — confirm with ruler |
+| Geometry: l₁ | ✅ | 0.10 m measured |
+| Geometry: l₂ | ✅ | 0.10 m measured |
 | Input signal design | 💬 | Multisine / PRBS / spikes discussed; not yet chosen |
 | Collect open-loop data — arm 1 | ⬜ | |
-| Collect free-swing data — arm 2 | ⬜ | Arm 1 stationary, manually displace arm 2 |
+| Collect free-swing data — arm 2 | ✅ | Done 2026-05-08 |
 | Identify km/m₁, c₁/m₁ | ⬜ | From arm 1 transfer function |
-| Identify l₂, c₂/m₂ | ⬜ | From arm 2 free-swing (ωn and decay envelope) |
+| Identify l₂, c₂/m₂l₂² | ✅ | alpha2 = 1.3634 rad/s (greyest, 2026-05-08) |
 | Identify coupled parameters | ⬜ | May need m₂ separately — see notes |
 | Validate on held-out dataset | ⬜ | Course requirement |
 | Closed-loop sysid (unstable eq.) | ⬜ | Required for upright balance; do last |

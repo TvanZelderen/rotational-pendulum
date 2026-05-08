@@ -10,56 +10,55 @@
 %   A2. Arm 1 is stiff: reaction forces from arm 2 onto arm 1 are negligible,
 %       so the motor torque drives arm 1 independently (coupling term in arm 1
 %       equation of motion is small and can be dropped after validation).
-%   A3. Motor model: tau = km * V  (back-EMF and inductance neglected).
+%   A3. Motor model: tau = km * u  (back-EMF and inductance neglected).
 %   A4. Damping is purely viscous (linear). Real system likely has Coulomb
 %       friction too — revisit during system identification.
 %   A5. Sensor bias: each angle output has a constant offset (hardware removes
-%       this with a Simulink constant block). Offsets listed below; update when
-%       provided from the lab setup.
+%       this with a Simulink constant block). Offsets listed below.
 
 %% Arm 1  (c1 — motor to joint)
-p.l1   = 0.215;        % length of arm 1, pivot to joint [m]
-p.m1   = 0.095;        % mass of arm 1 [kg]
-p.lc1  = p.l1 / 2;    % distance from pivot to CoM of arm 1 [m]  (uniform rod)
-p.J1   = (1/3) * p.m1 * p.l1^2;   % moment of inertia of arm 1 about pivot [kg·m²]
-p.c1   = 1e-3;         % viscous damping at joint 1 [N·m·s/rad]  — see A4
-                       % TODO: identify c1 from free-decay experiment (system ID)
+p.l1   = 0.10;                         % length of arm 1, pivot to joint [m]  (measured)
+p.m1   = 0.10;                         % mass of arm 1 [kg]  — pre-ID estimate; TODO: identify
+p.lc1  = p.l1 / 2;                     % CoM distance from pivot [m]  (uniform rod assumption)
+p.J1   = (1/3) * p.m1 * p.l1^2;       % moment of inertia about pivot [kg·m²]  (uniform rod)
+p.c1   = 1e-3;                         % viscous damping at joint 1 [N·m·s/rad]  — see A4
+                                        % TODO: identify c1/J1 composite from arm 1 experiment
 
 %% Arm 2 / pendulum  (c2 — joint to ball)  — see assumption A1
-p.l2   = 0.10;         % length of arm 2, joint to ball [m]  (≈10 cm, measured by ruler — TODO: verify)
-p.m2   = 0.024;        % mass of ball (tip mass) [kg]  — arm c2 itself treated as massless
-p.c2   = 5e-5;         % viscous damping at joint 2 [N·m·s/rad]  — see A4
-                       % TODO: identify c2 from free-decay experiment (system ID)
+p.l2   = 0.10;                         % length of arm 2, joint to ball [m]  (measured)
+p.m2   = 0.024;                        % tip mass [kg]  — pre-ID estimate; TODO: identify
+p.J2   = p.m2 * p.l2^2;               % point mass inertia about joint [kg·m²]
+
+% Identified composite (free-swing experiment, 2026-05-08):
+p.alpha2 = 1.3634;                     % c2 / (m2 * l2^2)  [rad/s] — identified via greyest
+p.c2     = p.alpha2 * p.m2 * p.l2^2;  % derived from alpha2 and current m2 estimate
+                                        % NOTE: c2 will change if m2 is revised — alpha2 is the
+                                        % true identified quantity, not c2 individually
 
 %% Motor / drive  — see assumption A3
-% NOTE: the course scales input u to [-1, +1], NOT raw volts.
-% km therefore represents peak torque in [N·m per normalised unit].
-p.km   = 0.0;          % peak motor torque [N·m]  (tau = km * u,  u in [-1, 1])
-                       % TODO: look up km in the lab manual
+% NOTE: input u is scaled to [-1, +1], NOT raw volts.
+% km represents peak torque [N·m per normalised unit].
+p.km   = 0.1;                          % pre-ID estimate; TODO: identify km/J1 from arm 1 experiment
 
 %% Environment
-p.g    = 9.81;         % gravitational acceleration [m/s²]
+p.g    = 9.81;                         % gravitational acceleration [m/s²]
 
 %% Sensor noise  (used by run_sim.m to mimic real sensor behaviour)
-p.noise_std_th1 = 0.01;   % std dev of theta1 measurement noise [deg]
-p.noise_std_th2 = 0.01;   % std dev of theta2 measurement noise [deg]
-                           % TODO: estimate from hardware data (variance at rest)
+p.noise_std_th1 = 0.01;               % std dev of theta1 measurement noise [deg]
+p.noise_std_th2 = 0.01;               % std dev of theta2 measurement noise [deg]
+                                       % TODO: estimate from hardware data (variance at rest)
 
 %% Sensor bias offsets
-% Hardware raw values (from hwinit.m, derived 2025-05-01):
+% Hardware calibration derived 2026-05-01:
 %   theta1: raw mean = -3.7842,  gain = 360/4.9036  (≈ 73.4 deg/raw-unit)
 %   theta2: raw mean = -1.2037,  gain = 360/4.9390  (≈ 72.9 deg/raw-unit)
-%
-% The simulation computes true physics angles and outputs calibrated degrees
-% directly, so no bias correction is needed here.  Set to non-zero only if
-% you want run_sim to mimic raw (un-calibrated) hardware output for testing
-% the calibration pipeline itself.
-p.bias_th1 = 0.0;    % [deg]
-p.bias_th2 = 0.0;    % [deg]
+% Applied in hwinit.m and rotpentemplate.slx.
+% Simulation outputs calibrated degrees directly — no correction needed here.
+p.bias_th1 = 0.0;                     % [deg]
+p.bias_th2 = 0.0;                     % [deg]
 
 %% Angle convention  (matches rotpentemplate.slx output)
 % theta1 = 0 : arm 1 hanging straight down  (stable equilibrium)
-% theta2 = 0 : arm 2 aligned with the downward extension of arm 1
-%              (i.e. relative angle at joint is zero)
-% Inertial (absolute) angle of arm 2 = theta1 + theta2  (simple geometry)
-% Both in RADIANS inside the ODE; converted to DEGREES for simout.
+% theta2 = 0 : arm 2 aligned with downward extension of arm 1
+% Inertial angle of arm 2 = theta1 + theta2
+% Radians inside ODE; degrees in simout.
