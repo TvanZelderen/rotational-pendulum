@@ -1,7 +1,7 @@
-function [A, B, C, D, K] = link2_ode(param, ~)                                                                                                                                                                            
+function [A, B, C, D, K] = link2_ode(params, ~)                                                                                                                                                                            
    
-    alpha = param;   % c2 / (m2 * l2^2)                                                                                                                                                                                     
-    beta  = 9.81/0.1;   % g / l2 = 0.1                            
+    alpha = params(1);   % c2 / (m2 * l2^2)                                                                                                                                                                                     
+    beta  = params(2);   % g / l2 = 0.1                            
   
     % These matrices are the result of a derivation with theta=0 and with the
     % small angle approximation.

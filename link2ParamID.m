@@ -41,9 +41,11 @@ data = iddata(th2Trimmed, [], h);          % output-only, no input
 
 % estimates for alpha0
 alpha0 = 1;
+beta0 = 9.81/0.1;
 
-sys  = idgrey(@link2_ode, alpha0, 'c');
+sys  = idgrey(@link2_ode, [alpha0, beta0], 'c');
 sys_est = greyest(data, sys);
 % alpha = 1.363425843641366
 % alpha = 1.360409688095857
+-sys_est.A(2,1)
 -sys_est.A(2,2)
