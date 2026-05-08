@@ -60,7 +60,7 @@ data = iddata([th1_trimmed, dth1_trimmed, th2_trimmed, dth2_trimmed], uTrimmed, 
 
 % 2. Setup the Non-linear Model
 order = [4, 1, 4]; 
-initial_pars = {0.001, 0, 0, 0, 0, 1.0}; % Cell array is correct
+initial_pars = [0.001; 0; 0; 0; 0; 1.0];
 aux_data = [m1_val, l1_val, g_val];
 
 nl_model = idnlgrey(@pendulum_non_linear, order, initial_pars, [0;0;0;0]);
