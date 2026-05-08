@@ -1,0 +1,61 @@
+%SYSTEM IDENTIFICATION
+
+syms x1 x2 x3 x4 u real           % Your 4 states and 1 input
+syms m1 l1 I1 g real
+syms p1 p2 p3 p4 real  % Parameters (known and unknown)
+
+% Define your f(x,u) equations (White Box for Link 1)
+f1 = x2; 
+f2 = -(m1*g*l1/I1)*sin(x1) + (1/I1)*u + p1*x3; % Link 1 physics
+f3 = x4;
+f4 = p2*x1 + p3*x3 + p4*x4;                    % Link 2 structure
+
+% Compute the Jacobian (following Slide 10)
+A_sym = jacobian([f1; f2; f3; f4], [x1; x2; x3; x4]);
+B_sym = jacobian([f1; f2; f3; f4], u);
+
+% Define your lab measurements
+m1_val = 1.0;     % kg
+l1_val = 0.05;    % meters (center of mass)
+g_val  = 9.81;    % m/s^2
+
+% This keeps the unknowns (I1, p1, p2, p3, p4) as variables for now
+A_with_values = subs(A_sym, {m1, l1, g}, {m1_val, l1_val, g_val});
+B_with_values = subs(B_sym, {m1, l1, g}, {m1_val, l1_val, g_val});
+
+A_lin = subs(A_val, {x1, x2, x3, x4, u}, {pi, 0, 0, 0, 0});
+B_lin = subs(B_val, {x1, x2, x3, x4, u}, {pi, 0, 0, 0, 0});
+
+
+
+
+function [A, B, C, D] = my_pendulum_model(I1, p1, p2, p3, p4, b, T, aux)
+    % aux contains [m1, l1, g] which you measured in the lab
+    m1 = aux(1); l1 = aux(2); g = aux(3);
+    % Use the formulas derived in your White Box step
+    a = (m1 * g * l1) / I1; % Linearized term from Slide 10
+    
+    A = [0,  1,  0,  0;
+         a,  0,  p1, 0; % p1 is the 'coupling' unknown
+         0,  0,  0,  1;
+         p2, 0,  p3, p4];
+         
+    B = [0; b; 0; 0]; % Direct motor effect on Link 1
+    C = eye(4); D = 0;
+end
+
+% 1. Create model structure (no symbols used here!)
+model = idgrey('my_pendulum_model', [0.003, 0, 0, 0, 0, 0], 'c', [m1_val, l1_val, g_val]);
+
+% y_lab = [theta1, dtheta1, theta2, dtheta2]; 
+% u_lab = [torque];
+lab_data_object = iddata(y_lab, u_lab, Ts);
+
+% 2. Identify the unknowns using your lab data
+estimated_model = greyest(lab_data, model); 
+
+% 3. Extract the final NUMERIC matrices
+% These are now arrays of pure numbers (doubles). No symbols!
+A_final = estimated_model.A; 
+B_final = estimated_model.B;
+
