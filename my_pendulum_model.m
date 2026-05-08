@@ -15,5 +15,5 @@ function [A, B, C, D] = my_pendulum_model(p, T, aux)
          p2, 0,  p3, p4];
          
     B = [0; b; 0; 0]; % Direct motor effect on Link 1
-    C = eye(4); D = 0;
+    C = eye(4); D = zeros(4, 1);
 end

@@ -50,9 +50,9 @@ dth2_rad = dth2 * (pi/180);
 uTrimmed = u(trimStart*100 + 1:end);
 
 th1_trimmed = th1_rad(trimStart*100 + 1 : end);
-dth1_trimmend = dth1_rad(trimStart*100 + 1 : end);
+dth1_trimmed = dth1_rad(trimStart*100 + 1 : end);
 th2_trimmed = th2_rad(trimStart*100 + 1 : end);
-dth2_trimmend = dth2_rad(trimStart*100 + 1 : end);
+dth2_trimmed = dth2_rad(trimStart*100 + 1 : end);
 
 % Create the iddata object
 
@@ -63,7 +63,7 @@ model = idgrey(@my_pendulum_model, [0.003, 0, 0, 0, 0, 0], 'c', [m1_val, l1_val,
 % u_lab = [torque];
 
 % Create the iddata object
-data = iddata([th1_trimmed, dth1_trimmend, th2_trimmed, dth2_trimmend], uTrimmed, h);
+data = iddata([th1_trimmed, dth1_trimmed, th2_trimmed, dth2_trimmed], uTrimmed, h);
 
 % 2. Identify the unknowns using your lab data
 estimated_model = greyest(data, model); 
