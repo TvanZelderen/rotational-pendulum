@@ -68,7 +68,7 @@ data = iddata([th1_trimmed, dth1_trimmed, th2_trimmed, dth2_trimmed], uTrimmed, 
 % 2. Identify the unknowns using your lab data
 estimated_model = greyest(data, model); 
 
-% 3. Extract the final NUMERIC matrices
+% 3. Extract the final NUMERIC matrices5
 % These are now arrays of pure numbers (doubles). No symbols!
 A_final = estimated_model.A; 
 B_final = estimated_model.B;
