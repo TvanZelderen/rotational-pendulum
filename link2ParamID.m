@@ -15,52 +15,34 @@ simin = [t, u];
 %% Run experiment
 sim rotpentemplate
 
-%% Extract and wrap angles to (-180, 180]
+%% Extract phi = th1 + th2 (Simulink output 5), zero at equilibrium
 y   = simout.Data;           % N x 5: [th1, dth1, th2, dth2, phi] in degrees
-th1 = mod(y(:,1) + 180, 360) - 180;
-th2 = mod(y(:,3) + 180, 360) - 180;
 phi = y(:,5);
-phi_eq = mean(phi(end-100:end));
-phi = mod(phi - phi_eq + 180, 360) - 180;
+phi = mod(phi - mean(phi(end-100:end)) + 180, 360) - 180;
 
 %% Overview plot — use to set trimStart / trimEnd
 figure;
-plot(t, th1, t, th2)
-legend('\theta_1', '\theta_2')
-xlabel('Time [s]'); ylabel('Angle [deg]')
-
 plot(t, phi)
-xlabel('Time [s]'); ylabel('Angle [deg]')
+xlabel('Time [s]'); ylabel('\phi [deg]')
 
 %% Trim start and end
-trimStart = 1.5;   % [s] — skip initial impulse
-trimEnd   = 30;    % [s] — cut settled tail
+trimStart   = 1.5;   % [s] — skip initial impulse
+trimEnd     = 30;    % [s] — cut settled tail
 
-iStart = trimStart * 100 + 1;
-iEnd   = numel(t) - (Tsim - trimEnd) * 100;
-
-th1_trimmed = th1(iStart:iEnd);
-th2_trimmed = th2(iStart:iEnd);
+iStart      = trimStart * 100 + 1;
+iEnd        = numel(t) - (Tsim - trimEnd) * 100;
+phi_trimmed = phi(iStart:iEnd);
 tTrimmed    = t(iStart:iEnd);
 
-%% Re-centre th2 around 0 and re-wrap
-th2_trimmed = mod(th2_trimmed + mean(th1_trimmed) + 180, 360) - 180;
-
-%% Trimmed data plot
-figure;
-plot(tTrimmed, th2_trimmed)
-legend('\theta_2')
-xlabel('Time [s]'); ylabel('Angle [deg]')
-
 %% Convert to radians (nonlinear ODE uses sin)
-th2_rad = deg2rad(th2_trimmed);
+phi_rad = deg2rad(phi_trimmed);
 
 %% idnlgrey — nonlinear grey-box identification
-data = iddata(th2_rad, [], h);
+data = iddata(phi_rad, [], h);
 
 alpha0 = 1;
 beta0  = 9.81 / 0.1;
-x0     = [th2_rad(1); 0];
+x0     = [phi_rad(1); 0];
 
 sys = idnlgrey('link2_ode', [1, 0, 2], {alpha0; beta0}, x0, 0);
 sys.InitialStates(1).Fixed = false;
