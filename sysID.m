@@ -30,11 +30,13 @@ sim rotpentemplate
 
 %% Extract outputs
 % simout is a Timeseries written by the 'To Workspace' block (sample time h)
-y = simout.Data;  % N x 2 matrix: [th1, th2] in degrees
+y = simout.Data;  % N x 4 matrix: [th1, dth1, th2, dth2] in degrees
 
 %% Wrap angles to (-180, 180] so equilibrium at 0 doesn't jump to ±355
 th1 = mod(y(:,1) + 180, 360) - 180;
-th2 = mod(y(:,2) + 180, 360) - 180;
+dth1 = y(:,2);
+th2 = mod(y(:,3) + 180, 360) - 180;
+dth1 = y(:,4);
 
 %% Trim starting point based on plot
 trimStart = 0;
