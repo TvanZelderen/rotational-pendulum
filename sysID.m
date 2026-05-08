@@ -39,7 +39,7 @@ Tsim = 30;    % experiment duration [s]
 
 %% Input signal
 t = [0:h:Tsim]';
-u = 0;  % zero input (open loop), to hold arm 1
+u = zeros(size(t));  % zero input (open loop), to hold arm 1
 
 % simin is read by the Simulink model: col 1 = time, col 2 = input
 simin = [t, u];
@@ -81,7 +81,7 @@ model = idgrey('my_pendulum_model', [0.003, 0, 0, 0, 0, 0], 'c', [m1_val, l1_val
 % u_lab = [torque];
 %lab_data_object = iddata(y_lab, u_lab, Ts);
 
-data = iddata(th2Trimmed, simin(:,2), h); 
+data = iddata(th2Trimmed, u, h); 
 % 2. Identify the unknowns using your lab data
 estimated_model = greyest(data, model); 
 
