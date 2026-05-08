@@ -15,35 +15,36 @@ simin = [t, u];
 %% Run experiment
 sim rotpentemplate
 
-%% Extract and wrap angles
+%% Extract and wrap angles to (-180, 180]
 y   = simout.Data;           % N x 4: [th1, dth1, th2, dth2] in degrees
 th1 = mod(y(:,1) + 180, 360) - 180;
 th2 = mod(y(:,3) + 180, 360) - 180;
 
-%% Cut start: remove initial impulse
-trimStart   = 1.5;           % [s]
-iStart      = round(trimStart / h) + 1;
-th1_cut     = th1(iStart:end);
-th2_cut     = th2(iStart:end);
-t_cut       = t(iStart:end);
+%% Overview plot — use to set trimStart / trimEnd
+figure;
+plot(t, th1, t, th2)
+legend('\theta_1', '\theta_2')
+xlabel('Time [s]'); ylabel('Angle [deg]')
 
-%% Re-centre: subtract mean th1 so th2 equilibrium sits at 0
-th2_centred = th2_cut - mean(th1_cut);
+%% Trim start and end
+trimStart = 1.5;   % [s] — skip initial impulse
+trimEnd   = 30;    % [s] — cut settled tail
 
-%% Mod back to (-180, 180] to remove wrapping artifacts
-th2_centred = mod(th2_centred + 180, 360) - 180;
+iStart = trimStart * 100 + 1;
+iEnd   = numel(t) - (Tsim - trimEnd) * 100;
 
-%% Cut tail: now that equilibrium is at 0, threshold works cleanly
-activeThresh = 2;            % [deg]
-iEnd         = find(abs(th2_centred) > activeThresh, 1, 'last');
-th2_trimmed  = th2_centred(1:iEnd);
-tTrimmed     = t_cut(1:iEnd);
+th1_trimmed = th1(iStart:iEnd);
+th2_trimmed = th2(iStart:iEnd);
+tTrimmed    = t(iStart:iEnd);
 
-%% Plot trimmed data
+%% Re-centre th2 around 0 and re-wrap
+th2_trimmed = mod(th2_trimmed + mean(th1_trimmed) + 180, 360) - 180;
+
+%% Trimmed data plot
 figure;
 plot(tTrimmed, th2_trimmed)
-xlabel('Time [s]'); ylabel('\theta_2 [deg]')
-title('Link 2 — trimmed data for identification')
+legend('\theta_2')
+xlabel('Time [s]'); ylabel('Angle [deg]')
 
 %% Convert to radians (nonlinear ODE uses sin)
 th2_rad = deg2rad(th2_trimmed);
