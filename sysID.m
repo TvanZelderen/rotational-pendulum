@@ -15,7 +15,7 @@ g_val  = 9.81;    % m/s^2
 h    = 0.01;  % sample period [s]
 Tsim = 30;    % experiment duration [s]
 
-%% Input signal
+%% Input signald
 t = [0:h:Tsim]';
 
 amplitude = 0.5;
@@ -60,13 +60,13 @@ data = iddata([th1_trimmed, dth1_trimmed, th2_trimmed, dth2_trimmed], uTrimmed, 
 
 % 2. Setup the Non-linear Model
 order = [4, 1, 4]; 
-initial_pars = {0.001, 0, 0, 0, 0, 1.0}; % Cell array is correct
+initial_pars = [0.001; 0; 0; 0; 0; 1.0];
 aux_data = [m1_val, l1_val, g_val];
 
 nl_model = idnlgrey(@pendulum_non_linear, order, initial_pars, [0;0;0;0]);
 
 % CRITICAL: Use FileArgument so it shows up in varargin{1}
-nl_model.FileArgument = aux_data; 
+nl_model.FileArgument = {aux_data}; 
 
 %% 3. Run the Estimation
 opt = nlgreyestOptions;
@@ -74,7 +74,6 @@ opt.Display = 'on';
 opt.SearchMethod = 'gn'; 
 
 % Safety for unstable systems (the inverted pendulum)
-opt.Focus = 'simulation'; 
 
 estimated_nl_model = nlgreyest(data, nl_model, opt);
 
