@@ -43,13 +43,13 @@ th2Trimmed = th2(trimStart*100 + 1:end);
 
 
 % 1. Create model structure (no symbols used here!)
-model = idgrey('my_pendulum_model', [0.003, 0, 0, 0, 0, 0], 'c', [m1_val, l1_val, g_val]);
+model = idgrey(@my_pendulum_model, [0.003, 0, 0, 0, 0, 0], 'c', [m1_val, l1_val, g_val]);
 
 % y_lab = [theta1, dtheta1, theta2, dtheta2]; 
 % u_lab = [torque];
 %lab_data_object = iddata(y_lab, u_lab, Ts);
 
-data = iddata(th2Trimmed, simin(:,2), h); 
+data = iddata(th2Trimmed, u, h); 
 % 2. Identify the unknowns using your lab data
 estimated_model = greyest(data, model); 
 
@@ -58,17 +58,11 @@ estimated_model = greyest(data, model);
 A_final = estimated_model.A; 
 B_final = estimated_model.B;
 
-function [A, B, C, D] = my_pendulum_model(I1, p1, p2, p3, p4, b, T, aux)
-    % aux contains [m1, l1, g] which you measured in the lab
-    m1 = aux(1); l1 = aux(2); g = aux(3);
-    % Use the formulas derived in your White Box step
-    a = (m1 * g * l1) / I1; % Linearized term from Slide 10
-    
-    A = [0,  1,  0,  0;
-         a,  0,  p1, 0; % p1 is the 'coupling' unknown
-         0,  0,  0,  1;
-         p2, 0,  p3, p4];
-         
-    B = [0; b; 0; 0]; % Direct motor effect on Link 1
-    C = eye(4); D = 0;
-end
+%Error using idgrey (line 367)
+%The ODE function "my_pendulum_model" could not be evaluated successfully using
+%the given set of parameters, sample time and optional arguments. The error
+%message generated during the evaluation was:
+%Not enough input arguments.
+
+%Error in sysID (line 46)
+%model = idgrey(@my_pendulum_model, [0.003, 0, 0, 0, 0, 0], 'c', [m1_val, l1_val, g_val]);

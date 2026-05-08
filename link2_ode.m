@@ -11,4 +11,5 @@ function [A, B, C, D, K] = link2_ode(param, ~)
     D = zeros(1, 0);                                               
     K = zeros(2, 1);     % no noise model
 
-    end
+end
+
