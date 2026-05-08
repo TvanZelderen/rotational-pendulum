@@ -36,7 +36,7 @@ y = simout.Data;  % N x 4 matrix: [th1, dth1, th2, dth2] in degrees
 th1 = mod(y(:,1) + 180, 360) - 180;
 dth1 = y(:,2);
 th2 = mod(y(:,3) + 180, 360) - 180;
-dth1 = y(:,4);
+dth2 = y(:,4);
 
 %% Trim starting point based on plot
 trimStart = 0;
