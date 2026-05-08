@@ -20,19 +20,24 @@ y   = simout.Data;           % N x 4: [th1, dth1, th2, dth2] in degrees
 th1 = mod(y(:,1) + 180, 360) - 180;
 th2 = mod(y(:,3) + 180, 360) - 180;
 
-%% Trim: remove impulse at start and settled region at end
-trimStart    = 1.5;          % [s]  — skip initial impulse
-activeThresh = 2;            % [deg] — cut once pendulum has settled below this
+%% Cut start: remove initial impulse
+trimStart   = 1.5;           % [s]
+iStart      = round(trimStart / h) + 1;
+th1_cut     = th1(iStart:end);
+th2_cut     = th2(iStart:end);
+t_cut       = t(iStart:end);
 
-iStart       = round(trimStart / h) + 1;
-th2_trimmed  = th2(iStart:end);
-iEnd         = find(abs(th2_trimmed) > activeThresh, 1, 'last');
-th2_trimmed  = th2_trimmed(1:iEnd);
-th1_trimmed  = th1(iStart : iStart + iEnd - 1);
-tTrimmed     = t(iStart : iStart + iEnd - 1);
+%% Re-centre: subtract mean th1 so th2 equilibrium sits at 0
+th2_centred = th2_cut - mean(th1_cut);
 
-%% Re-centre th2: equilibrium shifts with link 1 position
-th2_trimmed  = th2_trimmed - mean(th1_trimmed);
+%% Mod back to (-180, 180] to remove wrapping artifacts
+th2_centred = mod(th2_centred + 180, 360) - 180;
+
+%% Cut tail: now that equilibrium is at 0, threshold works cleanly
+activeThresh = 2;            % [deg]
+iEnd         = find(abs(th2_centred) > activeThresh, 1, 'last');
+th2_trimmed  = th2_centred(1:iEnd);
+tTrimmed     = t_cut(1:iEnd);
 
 %% Plot trimmed data
 figure;
