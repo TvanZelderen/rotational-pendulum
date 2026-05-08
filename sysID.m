@@ -54,26 +54,57 @@ dth1_trimmed = dth1_rad(trimStart*100 + 1 : end);
 th2_trimmed = th2_rad(trimStart*100 + 1 : end);
 dth2_trimmed = dth2_rad(trimStart*100 + 1 : end);
 
+
+
+data = iddata([th1_trimmed, dth1_trimmed, th2_trimmed, dth2_trimmed], uTrimmed, h);
+
+% 2. Setup the Non-linear Model
+order = [4, 1, 4]; 
+initial_pars = {0.001, 0, 0, 0, 0, 1.0}; % Cell array is correct
+aux_data = [m1_val, l1_val, g_val];
+
+nl_model = idnlgrey(@pendulum_non_linear, order, initial_pars, [0;0;0;0]);
+
+% CRITICAL: Use FileArgument so it shows up in varargin{1}
+nl_model.FileArgument = aux_data; 
+
+%% 3. Run the Estimation
+opt = nlgreyestOptions;
+opt.Display = 'on';
+opt.SearchMethod = 'gn'; 
+
+% Safety for unstable systems (the inverted pendulum)
+opt.Focus = 'simulation'; 
+
+estimated_nl_model = nlgreyest(data, nl_model, opt);
+
+
+
+
+
+
+
+
 % Create the iddata object
 
 % 1. Create model structure (no symbols used here!)
-model = idgrey(@my_pendulum_model, [0.003, 0, 0, 0, 0, 1], 'c', [m1_val, l1_val, g_val]);
+%model = idgrey(@my_pendulum_model, [0.003, 0, 0, 0, 0, 1], 'c', [m1_val, l1_val, g_val]);
 
 % y_lab = [theta1, dtheta1, theta2, dtheta2]; 
 % u_lab = [torque];
 
 % Create the iddata object
-data = iddata([th1_trimmed, dth1_trimmed, th2_trimmed, dth2_trimmed], uTrimmed, h);
+%data = iddata([th1_trimmed, dth1_trimmed, th2_trimmed, dth2_trimmed], uTrimmed, h);
 
-opt = greyestOptions;
-opt.InitialState = 'zero';        % Or 'estimate' if the pendulum wasn't perfectly still
-opt.Focus = 'simulation';         % CRITICAL: Tells MATLAB to look at the overall trajectory
-opt.EnforceStability = false;     % Necessary because your A matrix IS unstable
+%opt = greyestOptions;
+%opt.InitialState = 'zero';        % Or 'estimate' if the pendulum wasn't perfectly still
+%opt.Focus = 'simulation';         % CRITICAL: Tells MATLAB to look at the overall trajectory
+%opt.EnforceStability = false;     % Necessary because your A matrix IS unstable
 
 % 2. Run the identification with these options
-estimated_model = greyest(data, model, opt);
+%estimated_model = greyest(data, model, opt);
 
 % 3. Extract the final NUMERIC matrices5
 % These are now arrays of pure numbers (doubles). No symbols!
-A_final = estimated_model.A; 
-B_final = estimated_model.B;
+%A_final = estimated_model.A; 
+%B_final = estimated_model.B;
