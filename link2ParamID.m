@@ -20,6 +20,8 @@ y   = simout.Data;           % N x 5: [th1, dth1, th2, dth2, phi] in degrees
 th1 = mod(y(:,1) + 180, 360) - 180;
 th2 = mod(y(:,3) + 180, 360) - 180;
 phi = y(:,5);
+phi_eq = mean(phi(end-100:end));
+phi = mod(phi - phi_eq + 180, 360) - 180;
 
 %% Overview plot — use to set trimStart / trimEnd
 figure;
