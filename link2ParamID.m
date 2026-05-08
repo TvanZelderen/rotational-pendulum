@@ -16,14 +16,18 @@ simin = [t, u];
 sim rotpentemplate
 
 %% Extract and wrap angles to (-180, 180]
-y   = simout.Data;           % N x 4: [th1, dth1, th2, dth2] in degrees
+y   = simout.Data;           % N x 5: [th1, dth1, th2, dth2, phi] in degrees
 th1 = mod(y(:,1) + 180, 360) - 180;
 th2 = mod(y(:,3) + 180, 360) - 180;
+phi = y(:,5);
 
 %% Overview plot — use to set trimStart / trimEnd
 figure;
 plot(t, th1, t, th2)
 legend('\theta_1', '\theta_2')
+xlabel('Time [s]'); ylabel('Angle [deg]')
+
+plot(t, phi)
 xlabel('Time [s]'); ylabel('Angle [deg]')
 
 %% Trim start and end
