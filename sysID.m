@@ -15,7 +15,7 @@ g_val  = 9.81;    % m/s^2
 h    = 0.01;  % sample period [s]
 Tsim = 30;    % experiment duration [s]
 
-%% Input signal
+%% Input signald
 t = [0:h:Tsim]';
 
 amplitude = 0.5;
