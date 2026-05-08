@@ -23,7 +23,7 @@ function dxdt = rotpen_ode(~, x, u, p)
     % negligible, so tau drives arm 1 independently.  The full coupling term
     % still appears in M and rhs below (more accurate); dropping it is a
     % simplification to validate later against hardware data.
-    tau = p.km * u;   % [N·m]   u in [-1, 1] (normalised, not raw volts)
+    tau = p.km * u - p.kb * dth1;   % [N·m]   back-EMF braking subtracted
     
     % -----------------------------------------------------------------------
     % TODO — Derive the equations of motion using the Euler-Lagrange method.

@@ -49,8 +49,8 @@ opts = odeset('RelTol', 1e-6, 'AbsTol', 1e-8);
 %% -----------------------------------------------------------------------
 %  Resample onto the fixed grid and convert to degrees
 % -----------------------------------------------------------------------
-th1_deg = rad2deg(interp1(t_out, x_out(:,1), t_span));
-th2_deg = rad2deg(interp1(t_out, x_out(:,3), t_span));
+th1_deg  = rad2deg(interp1(t_out, x_out(:,1), t_span));
+th2_deg  = rad2deg(interp1(t_out, x_out(:,3), t_span));
 
 %% -----------------------------------------------------------------------
 %  Add sensor bias and noise  (grey-box: match real hardware output format)
@@ -66,11 +66,18 @@ N = length(t_span);
 
 th1_deg = th1_deg + p.bias_th1 + p.noise_std_th1 * randn(N, 1);
 th2_deg = th2_deg + p.bias_th2 + p.noise_std_th2 * randn(N, 1);
+psi_deg = th1_deg + th2_deg;
+
+% Differentiate noisy angle signals to match Simulink derivative block (c=inf)
+h_sim    = mean(diff(t_span));
+dth1_dps = [0; diff(th1_deg)] / h_sim;
+dth2_dps = [0; diff(th2_deg)] / h_sim;
 
 %% -----------------------------------------------------------------------
 %  Pack into simout Timeseries  (matches rotpentemplate.slx output format)
+%  Columns: [th1_deg, dth1_deg/s, th2_deg, dth2_deg/s, psi_deg]
 % -----------------------------------------------------------------------
-simout = timeseries([th1_deg, th2_deg], t_span);
+simout = timeseries([th1_deg, dth1_dps, th2_deg, dth2_dps, psi_deg], t_span);
 simout.Name = 'simout';
 
 disp('run_sim: done.  simout is in the workspace.');

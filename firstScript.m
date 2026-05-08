@@ -55,11 +55,14 @@ end
 %% -----------------------------------------------------------------------
 %  Extract outputs
 % -----------------------------------------------------------------------
-y = simout.Data;   % N×2 matrix: [th1_deg, th2_deg]
+y = simout.Data;   % N×5 matrix: [th1_deg, dth1_deg/s, th2_deg, dth2_deg/s, psi_deg]
 
 %% Wrap angles to (-180, 180]
-th1 = mod(y(:,1) + 180, 360) - 180;
-th2 = mod(y(:,2) + 180, 360) - 180;
+th1  = mod(y(:,1) + 180, 360) - 180;
+dth1 = y(:,2);
+th2  = mod(y(:,3) + 180, 360) - 180;
+dth2 = y(:,4);
+psi  = mod(y(:,5) + 180, 360) - 180;
 
 % %% Steady-state statistics  (trim first and last second)
 % th1_ss = th1(101:end-100);
@@ -72,7 +75,7 @@ th2 = mod(y(:,2) + 180, 360) - 180;
 
 %% Plot
 figure(1); clf;
-plot(t, th1, t, th2);
-legend('\theta_1', '\theta_2');
+plot(t, th1, t, th2, t, psi);
+legend('\theta_1', '\theta_2', '\psi');
 xlabel('Time [s]'); ylabel('Angle [deg]'); grid on;
 title('Open loop — rotational pendulum');

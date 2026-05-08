@@ -25,20 +25,25 @@ p.c1   = 1e-3;                         % viscous damping at joint 1 [N·m·s/rad
                                         % TODO: identify c1/J1 composite from arm 1 experiment
 
 %% Arm 2 / pendulum  (c2 — joint to ball)  — see assumption A1
-p.l2   = 0.10;                         % length of arm 2, joint to ball [m]  (measured)
+p.l2   = 0.099404;                     % length of arm 2, joint to ball [m]  — identified via beta=g/l2
 p.m2   = 0.024;                        % tip mass [kg]  — pre-ID estimate; TODO: identify
 p.J2   = p.m2 * p.l2^2;               % point mass inertia about joint [kg·m²]
 
-% Identified composite (free-swing experiment, 2026-05-08):
-p.alpha2 = 1.3634;                     % c2 / (m2 * l2^2)  [rad/s] — identified via greyest
+% Identified composites (free-swing experiment, 2 runs averaged, 2026-05-08):
+%   Run 1: alpha = 0.325573, beta = 98.729513, l2 = 0.099362
+%   Run 2: alpha = 0.308600, beta = 98.646966, l2 = 0.099446
+p.alpha2 = 0.317087;                   % c2 / (m2 * l2^2)  [rad/s] — identified via nlgreyest
 p.c2     = p.alpha2 * p.m2 * p.l2^2;  % derived from alpha2 and current m2 estimate
                                         % NOTE: c2 will change if m2 is revised — alpha2 is the
                                         % true identified quantity, not c2 individually
 
-%% Motor / drive  — see assumption A3
+%% Motor / drive  — see assumption A3 (partially relaxed)
 % NOTE: input u is scaled to [-1, +1], NOT raw volts.
 % km represents peak torque [N·m per normalised unit].
-p.km   = 0.1;                          % pre-ID estimate; TODO: identify km/J1 from arm 1 experiment
+% Back-EMF braking: tau_bemf = kb * dth1, where kb = kt*ke/R.
+% Inductance still neglected (A3 applies to inductance only now).
+p.km   = 0.1;                          % pre-ID estimate; TODO: identify from arm 1 experiment
+p.kb   = 0.05;                         % back-EMF damping [N·m·s/rad] — pre-ID estimate; TODO: identify
 
 %% Environment
 p.g    = 9.81;                         % gravitational acceleration [m/s²]
