@@ -1,5 +1,10 @@
-function [A, B, C, D] = my_pendulum_model(I1, p1, p2, p3, p4, b, T, aux)
-    % aux contains [m1, l1, g] which you measured in the lab
+function [A, B, C, D] = my_pendulum_model(p, T, aux)
+    % p   = The 6 unknown parameters [I1, p1, p2, p3, p4, b]
+    % T   = The sampling time (MATLAB sends this automatically)
+    % aux = The 3 knowns [m1_val, l1_val, g_val] from your idgrey call
+
+    % 1. Unpack parameters
+    I1 = p(1); p1 = p(2); p2 = p(3); p3 = p(4); p4 = p(5); b = p(6);
     m1 = aux(1); l1 = aux(2); g = aux(3);
     % Use the formulas derived in your White Box step
     a = (m1 * g * l1) / I1; % Linearized term from Slide 10

@@ -40,18 +40,30 @@ dth1 = y(:,4);
 
 %% Trim starting point based on plot
 trimStart = 0;
-th2Trimmed = th2(trimStart*100 + 1:end);
 
+th1_rad = th1 * (pi/180);
+dth1_rad = dth1 * (pi/180);
+th2_rad = th2 * (pi/180);
+dth2_rad = dth2 * (pi/180);
 
+% Trim both to match lengths
+uTrimmed = u(trimStart*100 + 1:end);
+
+th1_trimmed = th1_rad(trimStart*100 + 1 : end);
+dth1_trimmend = dth1_rad(trimStart*100 + 1 : end);
+th2_trimmed = th2_rad(trimStart*100 + 1 : end);
+dth2_trimmend = dth2_rad(trimStart*100 + 1 : end);
+
+% Create the iddata object
 
 % 1. Create model structure (no symbols used here!)
 model = idgrey(@my_pendulum_model, [0.003, 0, 0, 0, 0, 0], 'c', [m1_val, l1_val, g_val]);
 
 % y_lab = [theta1, dtheta1, theta2, dtheta2]; 
 % u_lab = [torque];
-%lab_data_object = iddata(y_lab, u_lab, Ts);
 
-data = iddata(th2Trimmed, u, h); 
+% Create the iddata object
+data = iddata([th1_trimmed, dth1_trimmend, th2_trimmed, dth2_trimmend], uTrimmed, h);
 
 % 2. Identify the unknowns using your lab data
 estimated_model = greyest(data, model); 
@@ -60,12 +72,3 @@ estimated_model = greyest(data, model);
 % These are now arrays of pure numbers (doubles). No symbols!
 A_final = estimated_model.A; 
 B_final = estimated_model.B;
-
-%Error using idgrey (line 367)
-%The ODE function "my_pendulum_model" could not be evaluated successfully using
-%the given set of parameters, sample time and optional arguments. The error
-%message generated during the evaluation was:
-%Not enough input arguments.
-
-%Error in sysID (line 46)
-%model = idgrey(@my_pendulum_model, [0.003, 0, 0, 0, 0, 0], 'c', [m1_val, l1_val, g_val]);
