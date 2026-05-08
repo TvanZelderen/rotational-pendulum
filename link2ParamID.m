@@ -36,16 +36,28 @@ ylabel('Angle [deg]')
 trimStart = 3;
 th2Trimmed = th2(trimStart*100 + 1:end);
 
-%% idgrey
-data = iddata(th2Trimmed, [], h);          % output-only, no input
+%% Convert to radians (sin() in the nonlinear ODE requires radians)
+th2_rad = deg2rad(th2Trimmed);
 
-% estimates for alpha0
+%% idnlgrey — nonlinear grey-box identification
+data = iddata(th2_rad, [], h);             % output-only, no input
+
+% Initial parameter guesses
 alpha0 = 1;
-beta0 = 9.81/0.1;
+beta0  = 9.81 / 0.1;
 
-sys  = idgrey(@link2_ode, [alpha0, beta0], 'c');
-sys_est = greyest(data, sys);
-% alpha = 1.363425843641366
-% alpha = 1.360409688095857
--sys_est.A(2,1)
--sys_est.A(2,2)
+% Initial state guess: start from first measured angle, zero velocity
+x0 = [th2_rad(1); 0];
+
+% idnlgrey(FileName, [ny nu nx], Parameters, InitialStates, Ts)
+sys = idnlgrey('link2_ode', [1, 0, 2], {alpha0; beta0}, x0, 0);
+
+% Allow the initial state to be estimated along with the parameters
+sys.InitialStates(1).Fixed = false;
+sys.InitialStates(2).Fixed = false;
+
+opt = nlgreyestOptions('Display', 'on');
+sys_est = nlgreyest(data, sys, opt);
+
+fprintf('alpha (c2/m2/l2^2) = %.6f\n', sys_est.Parameters(1).Value);
+fprintf('beta  (g/l2)       = %.6f\n', sys_est.Parameters(2).Value);
