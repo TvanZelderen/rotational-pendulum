@@ -20,7 +20,7 @@ sim rotpentemplate
 
 %% Extract outputs
 % simout is a Timeseries written by the 'To Workspace' block (sample time h)
-y = simout.Data;  % N x 2 matrix: [th1, th2] in degrees
+y = simout.Data;  % N x 4 matrix: [th1, dth1, th2, dth2] in degrees
 
 %% Wrap angles to (-180, 180] so equilibrium at 0 doesn't jump to ±355
 th1 = mod(y(:,1) + 180, 360) - 180;
@@ -33,11 +33,23 @@ xlabel('Time [s]')
 ylabel('Angle [deg]')
 
 %% Trim starting point based on plot
-trimStart = 3;
-th2Trimmed = th2(trimStart*100 + 1:end);
+trimStart = 1.5;
+trimEnd = 30;
+tTrimmed = t(trimStart*100+1:end-(Tsim-trimEnd)*100);
+th1Trimmed = th1(trimStart*100 + 1:end-(Tsim-trimEnd)*100);
+theta1Mean = mean(th1Trimmed);
+th2Trimmed = th2(trimStart*100 + 1:end-(Tsim-trimEnd)*100);
+th2Zeroed = th2Trimmed + theta1Mean;
+th2Modded = mod(th2Zeroed + 180, 360) - 180;
+
+%% Plot
+plot(tTrimmed, th2Modded)
+legend('\theta_2')
+xlabel('Time [s]')
+ylabel('Angle [deg]')
 
 %% Convert to radians (sin() in the nonlinear ODE requires radians)
-th2_rad = deg2rad(th2Trimmed);
+th2_rad = deg2rad(th2Modded);
 
 %% idnlgrey — nonlinear grey-box identification
 data = iddata(th2_rad, [], h);             % output-only, no input
@@ -61,3 +73,4 @@ sys_est = nlgreyest(data, sys, opt);
 
 fprintf('alpha (c2/m2/l2^2) = %.6f\n', sys_est.Parameters(1).Value);
 fprintf('beta  (g/l2)       = %.6f\n', sys_est.Parameters(2).Value);
+fprintf('l_2 = %.6f\n', sys_est.Parameters(2).Value/9.81);
