@@ -66,7 +66,7 @@ aux_data = [m1_val, l1_val, g_val];
 nl_model = idnlgrey(@pendulum_non_linear, order, initial_pars, [0;0;0;0]);
 
 % CRITICAL: Use FileArgument so it shows up in varargin{1}
-nl_model.FileArgument = aux_data; 
+nl_model.FileArgument = {aux_data}; 
 
 %% 3. Run the Estimation
 opt = nlgreyestOptions;
@@ -74,7 +74,6 @@ opt.Display = 'on';
 opt.SearchMethod = 'gn'; 
 
 % Safety for unstable systems (the inverted pendulum)
-opt.Focus = 'simulation'; 
 
 estimated_nl_model = nlgreyest(data, nl_model, opt);
 
