@@ -57,7 +57,7 @@ dth2_trimmed = dth2_rad(trimStart*100 + 1 : end);
 % Create the iddata object
 
 % 1. Create model structure (no symbols used here!)
-model = idgrey(@my_pendulum_model, [0.003, 0, 0, 0, 0, 0], 'c', [m1_val, l1_val, g_val]);
+model = idgrey(@my_pendulum_model, [0.003, 0, 0, 0, 0, 1], 'c', [m1_val, l1_val, g_val]);
 
 % y_lab = [theta1, dtheta1, theta2, dtheta2]; 
 % u_lab = [torque];
@@ -65,8 +65,13 @@ model = idgrey(@my_pendulum_model, [0.003, 0, 0, 0, 0, 0], 'c', [m1_val, l1_val,
 % Create the iddata object
 data = iddata([th1_trimmed, dth1_trimmed, th2_trimmed, dth2_trimmed], uTrimmed, h);
 
-% 2. Identify the unknowns using your lab data
-estimated_model = greyest(data, model); 
+opt = greyestOptions;
+opt.InitialState = 'zero';        % Or 'estimate' if the pendulum wasn't perfectly still
+opt.Focus = 'simulation';         % CRITICAL: Tells MATLAB to look at the overall trajectory
+opt.EnforceStability = false;     % Necessary because your A matrix IS unstable
+
+% 2. Run the identification with these options
+estimated_model = greyest(data, model, opt);
 
 % 3. Extract the final NUMERIC matrices5
 % These are now arrays of pure numbers (doubles). No symbols!
