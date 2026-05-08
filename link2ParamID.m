@@ -26,8 +26,8 @@ plot(t, phi)
 xlabel('Time [s]'); ylabel('\phi [deg]')
 
 %% Trim start and end
-trimStart   = 1.5;   % [s] — skip initial impulse
-trimEnd     = 30;    % [s] — cut settled tail
+trimStart   = 2;   % [s] — skip initial impulse
+trimEnd     = 24;    % [s] — cut settled tail
 
 iStart      = trimStart * 100 + 1;
 iEnd        = numel(t) - (Tsim - trimEnd) * 100;
@@ -54,3 +54,13 @@ sys_est = nlgreyest(data, sys, opt);
 fprintf('alpha (c2/m2/l2^2) = %.6f\n', sys_est.Parameters(1).Value);
 fprintf('beta  (g/l2)       = %.6f\n', sys_est.Parameters(2).Value);
 fprintf('l2                 = %.6f m\n', 9.81 / sys_est.Parameters(2).Value);
+
+%% Results
+
+% alpha (c2/m2/l2^2) = 0.325573
+% beta  (g/l2)       = 98.729513
+% l2                 = 0.099362 m
+
+% alpha (c2/m2/l2^2) = 0.308600
+% beta  (g/l2)       = 98.646966
+% l2                 = 0.099446 m
