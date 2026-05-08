@@ -39,6 +39,9 @@ th2Trimmed = th2(trimStart*100 + 1:end);
 
 %% idgrey
 data = iddata(th2Trimmed, [], h);          % output-only, no input
-% what are alpha0 and beta0?
-sys  = idgrey(@link2_ode, [alpha0, beta0], 'c');
+
+% estimates for alpha0
+alpha0 = 1;
+
+sys  = idgrey(@link2_ode, alpha0, 'c');
 sys_est = greyest(data, sys);
