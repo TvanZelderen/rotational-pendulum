@@ -11,3 +11,5 @@ codegen/
 
 # Personal notes
 STRUCTURE.md
+
+*.DS_Store

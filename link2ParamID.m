@@ -14,6 +14,7 @@ simin = [t, u];
 
 %% Run experiment
 sim rotpentemplate
+save_run(simin, simout, 'link2_free_swing');
 
 %% Extract phi = th1 + th2 (Simulink output 5), zero at equilibrium
 y   = simout.Data;           % N x 5: [th1, dth1, th2, dth2, phi] in degrees
@@ -54,6 +55,9 @@ sys_est = nlgreyest(data, sys, opt);
 fprintf('alpha (c2/m2/l2^2) = %.6f\n', sys_est.Parameters(1).Value);
 fprintf('beta  (g/l2)       = %.6f\n', sys_est.Parameters(2).Value);
 fprintf('l2                 = %.6f m\n', 9.81 / sys_est.Parameters(2).Value);
+
+%% Compare measured vs model output
+compare(data, sys_est);
 
 %% Results
 

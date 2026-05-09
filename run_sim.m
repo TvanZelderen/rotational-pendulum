@@ -16,7 +16,7 @@
 % -----------------------------------------------------------------------
 th1_0  = 0;      % [rad]
 dth1_0 = 0;      % [rad/s]
-th2_0  = 0.1;    % [rad]  small push away from equilibrium
+th2_0  = 0.5;    % [rad]  small push away from equilibrium
 dth2_0 = 0;      % [rad/s]
 
 x0 = [th1_0; dth1_0; th2_0; dth2_0];

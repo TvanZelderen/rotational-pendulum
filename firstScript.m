@@ -9,6 +9,7 @@ clear; clc;
 % -----------------------------------------------------------------------
 run_with_simulation = true;   % true  → simulation (no hardware needed)
                                % false → real hardware (run calib.m + hwinit.m first)
+run_label = 'open_loop';      % short label for saved data file
 
 %% -----------------------------------------------------------------------
 %  Init
@@ -72,6 +73,9 @@ psi  = mod(y(:,5) + 180, 360) - 180;
 % theta2_mean  = mean(th2_ss)
 % theta1_range = max(th1_ss) - min(th1_ss)
 % theta2_range = max(th2_ss) - min(th2_ss)
+
+%% Save
+save_run(simin, simout, run_label);
 
 %% Plot
 figure(1); clf;

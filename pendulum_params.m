@@ -18,10 +18,10 @@
 
 %% Arm 1  (c1 — motor to joint)
 p.l1   = 0.10;                         % length of arm 1, pivot to joint [m]  (measured)
-p.m1   = 0.10;                         % mass of arm 1 [kg]  — pre-ID estimate; TODO: identify
+p.m1   = 0.25;                         % mass of arm 1 [kg]  — pre-ID estimate; TODO: identify
 p.lc1  = p.l1 / 2;                     % CoM distance from pivot [m]  (uniform rod assumption)
 p.J1   = (1/3) * p.m1 * p.l1^2;       % moment of inertia about pivot [kg·m²]  (uniform rod)
-p.c1   = 1e-3;                         % viscous damping at joint 1 [N·m·s/rad]  — see A4
+p.c1   = 1e-2;                         % viscous damping at joint 1 [N·m·s/rad]  — see A4
                                         % TODO: identify c1/J1 composite from arm 1 experiment
 
 %% Arm 2 / pendulum  (c2 — joint to ball)  — see assumption A1
@@ -43,7 +43,7 @@ p.c2     = p.alpha2 * p.m2 * p.l2^2;  % derived from alpha2 and current m2 estim
 % Back-EMF braking: tau_bemf = kb * dth1, where kb = kt*ke/R.
 % Inductance still neglected (A3 applies to inductance only now).
 p.km   = 0.1;                          % pre-ID estimate; TODO: identify from arm 1 experiment
-p.kb   = 0.05;                         % back-EMF damping [N·m·s/rad] — pre-ID estimate; TODO: identify
+p.kb   = 0.2;                         % back-EMF damping [N·m·s/rad] — pre-ID estimate; TODO: identify
 
 %% Environment
 p.g    = 9.81;                         % gravitational acceleration [m/s²]

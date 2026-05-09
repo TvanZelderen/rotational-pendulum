@@ -17,6 +17,7 @@ clear; clc;
 % -----------------------------------------------------------------------
 run_with_simulation = false;   % true → simulation | false → real hardware
 run_type = 'exploratory';     % 'exploratory' | 'pre_id'
+run_label = run_type;         % used for saved filename; override if needed
 
 %% -----------------------------------------------------------------------
 %  Init
@@ -92,6 +93,7 @@ if strcmp(run_type, 'exploratory')
         subplot(3,1,3); plot(t, th2);  ylabel('\theta_2 [deg]'); grid on;
         xlabel('Time [s]');
         sgtitle(sprintf('Exploratory — %.1f Hz, amp = %.1f', freq_hz, amplitude));
+        save_run(simin, simout, run_label);
     end
 
 elseif strcmp(run_type, 'pre_id')
@@ -124,5 +126,6 @@ elseif strcmp(run_type, 'pre_id')
     subplot(3,1,3); plot(t, th2);  ylabel('\theta_2 [deg]'); grid on;
     xlabel('Time [s]');
     sgtitle(sprintf('Pre-ID — %.1f Hz, amp = %.1f', freq_hz, amplitude));
+    save_run(simin, simout, run_label);
 
 end
