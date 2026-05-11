@@ -26,12 +26,16 @@ figure;
 plot(t, phi)
 xlabel('Time [s]'); ylabel('\phi [deg]')
 
-%% Trim start and end
-trimStart   = 2;   % [s] — skip initial impulse
-trimEnd     = 24;    % [s] — cut settled tail
+%% Trim end — cut noise-dominated tail
+trimEnd  = 18;    % [s] — stop before SNR collapses (~18 s from D4)
+iEnd     = numel(t) - (Tsim - trimEnd) * 100;
 
-iStart      = trimStart * 100 + 1;
-iEnd        = numel(t) - (Tsim - trimEnd) * 100;
+%% Trim start — align to first natural peak so x0(2) = 0 is exact
+% Search 100:500 (1–5 s) to skip the manual-release transient.
+phi_search = phi(100:500);
+[~, iRel]  = max(abs(phi_search));
+iStart     = 99 + iRel;             % offset back to full-vector index
+
 phi_trimmed = phi(iStart:iEnd);
 tTrimmed    = t(iStart:iEnd);
 
@@ -43,7 +47,7 @@ data = iddata(phi_rad, [], h);
 
 alpha0 = 1;
 beta0  = 9.81 / 0.1;
-x0     = [phi_rad(1); 0];
+x0     = [phi_rad(1); 0];   % velocity = 0 at peak: physically exact
 
 sys = idnlgrey('link2_ode', [1, 0, 2], {alpha0; beta0}, x0, 0);
 sys.InitialStates(1).Fixed = false;
