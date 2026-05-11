@@ -1,6 +1,6 @@
-function [dx, y] = double_pen(t, x, u, alpha1, beta1, alpha2, beta2, gamma, km, b2, varargin)
+function [dx, y] = double_pen(t, x, u, p, varargin)
 % Double pendulum grey-box ODE for idnlgrey — with motor input
-%
+% 
 % States:  x  = [th1; dth1; th2; dth2]
 % Input:   u  = motor voltage [V]
 % Output:  y  = [th1; dth1; th2; dth2]
@@ -13,6 +13,8 @@ function [dx, y] = double_pen(t, x, u, alpha1, beta1, alpha2, beta2, gamma, km, 
 %   gamma  = m2*L1*l2                  coupling inertia
 %   km     = motor torque constant [Nm/V]
 %   b2     = viscous damping link 2 [Nms/rad]
+% {alpha1_0; beta1_0; alpha2_0; beta2_0; gamma_0; km_0; b2_0}
+    alpha1 = p{1}; beta1 = p{2}; alpha2_0 = p{3}; beta2 = p{4}; gamma = p{5};  km = p{6}; b2 = p{7};
 
     th1 = x(1); w1 = x(2);
     th2 = x(3); w2 = x(4);

@@ -28,19 +28,12 @@ dth1_rad = deg2rad(y(:,2));
 th2_rad  = deg2rad(y(:,3));
 dth2_rad = deg2rad(y(:,4));
 
-%% Check angles stay within +/- 20 deg
-fprintf('Max |th1| = %.1f deg\n', max(abs(y(:,1))));
-fprintf('Max |th2| = %.1f deg\n', max(abs(y(:,3))));
-if max(abs(y(:,1))) > 20 || max(abs(y(:,3))) > 20
-    warning('Angles exceed 20 deg — reduce A_exc!');
-end
-
 %% Overview plot — use to set trimStart / trimEnd
-figure;
-subplot(3,1,1); plot(t, y(:,1)); ylabel('\theta_1 [deg]'); xlabel('Time [s]');
-subplot(3,1,2); plot(t, y(:,3)); ylabel('\theta_2 [deg]'); xlabel('Time [s]');
-subplot(3,1,3); plot(t, u);      ylabel('u [V]');          xlabel('Time [s]');
-sgtitle('Raw data — check angles and set trim bounds');
+%figure;
+%subplot(3,1,1); plot(t, y(:,1)); ylabel('\theta_1 [deg]'); xlabel('Time [s]');
+%subplot(3,1,2); plot(t, y(:,3)); ylabel('\theta_2 [deg]'); xlabel('Time [s]');
+%subplot(3,1,3); plot(t, u);      ylabel('u [V]');          xlabel('Time [s]');
+%sgtitle('Raw data — check angles and set trim bounds');
 
 %% Trim transient (let system reach steady oscillation)
 trimStart = 3;    % [s] skip startup transient
@@ -76,7 +69,7 @@ km_0     = 0.10;               % motor constant [Nm/V] — tune to your motor
 b2_0     = 0.01;               % link 2 damping
 
 %% Build idnlgrey model — [ny, nu, nx] = [4, 1, 4]
-sys0 = idnlgrey('doublependulum_ode', [4, 1, 4], ...
+sys0 = idnlgrey('double_pen', [4, 1, 4], ...
                 {alpha1_0; beta1_0; alpha2_0; beta2_0; gamma_0; km_0; b2_0}, ...
                 y_trimmed(1,:)', ...    % initial states from first data point
                 0);                     % 0 = continuous time
