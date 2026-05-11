@@ -34,12 +34,12 @@ Legend: ✅ Done · 🔄 In progress · 💬 In discussion · ⬜ Not started
 |---|---|---|
 | Sensor calibration (bias + gain) | ✅ | offsets and gains in hwinit.m (2026-05-01) |
 | Geometry: l₁ | ✅ | 0.10 m measured |
-| Geometry: l₂ | ✅ | 0.10 m measured |
+| Geometry: l₂ | ✅ | l_eff = 0.0868 m (identified); physical 0.10 m — A1 (point mass) only approximate |
 | Input signal design | 💬 | Multisine / PRBS / spikes discussed; not yet chosen |
 | Collect open-loop data — arm 1 | ⬜ | |
-| Collect free-swing data — arm 2 | ✅ | Done 2026-05-08 |
-| Identify km/m₁, c₁/m₁ | ⬜ | From arm 1 transfer function |
-| Identify l₂, c₂/m₂l₂² | ✅ | alpha2 = 1.3634 rad/s (greyest, 2026-05-08) |
+| Collect free-swing data — arm 2 | ✅ | Done 2026-05-08; re-run planned 2026-05-12 to average |
+| Identify km, kb, c₁ | 💬 | km from lab manual; kb (back-EMF braking) + c₁ from arm 1 free-decay (u=0); separate experiment with u≠0 to isolate km from inertia |
+| Identify l₂, c₂/m₂l₂² | 🔄 | α=0.1627, β=113.06, l_eff=0.0868 m — 90% fit (2026-05-11); averaging runs tomorrow |
 | Identify coupled parameters | ⬜ | May need m₂ separately — see notes |
 | Validate on held-out dataset | ⬜ | Course requirement |
 | Closed-loop sysid (unstable eq.) | ⬜ | Required for upright balance; do last |
@@ -80,6 +80,6 @@ Legend: ✅ Done · 🔄 In progress · 💬 In discussion · ⬜ Not started
 ---
 
 ## Where we are right now
-EOM fully derived. Next session: link 2 free-swing identification on hardware.
-Immediate code task: transcribe M, n, g into `rotpen_ode.m`.
-Parallel: measure l₁ with a ruler and confirm l₂ ≈ 0.10 m.
+Link 2 free-swing ID done — 90% fit after aligning trim to first natural peak (IC fix).
+l_eff = 0.0868 m identified (point-mass A1 approximate; distributed mass shifts effective length).
+Next session: collect more free-swing runs to average α, β. Then arm 1 ID: free-decay (u=0) to get (c₁+kb)/I₁, driven experiment to isolate km. Back-EMF term τ = km·u − kb·dθ₁ not yet in rotpen_ode.m — add after basic EOM is transcribed.
