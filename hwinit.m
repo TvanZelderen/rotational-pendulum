@@ -15,8 +15,8 @@ daoutoffs = [0.00];
 daoutgain = 1*[-6];
 
 % Sensor calibration: theta1, theta2
-adinoffs = -[-3.7842, -1.2037];      % negated raw means at equilibrium
-adingain = [360/4.9036, 360/4.9390]; % raw-unit to degrees gains
+adinoffs = -[0 0];      % negated raw means at equilibrium
+adingain = [1 1]; % raw-unit to degrees gains
 
 % Remaining channels: switches and encoder (no calibration needed)
 adinoffs = [adinoffs 0 0 0 0 0];
