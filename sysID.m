@@ -1,10 +1,4 @@
 %SYSTEM IDENTIFICATION
-
-% Define your lab measurements
-m1_val = 0.1;     % kg
-l1_val = 0.1;    % meters (center of mass)
-g_val  = 9.81;    % m/s^2
-
 % Prerequisites (run once per session before this script):
 %   1. calib.m  — opens fugiboard connection, resets encoder, activates relay
 %   2. hwinit.m — sets sensor gain/offset calibration values
@@ -59,28 +53,45 @@ dth2_trimmed = dth2_rad(trimStart*100 + 1 : end);
 data = iddata([th1_trimmed, dth1_trimmed, th2_trimmed, dth2_trimmed], uTrimmed, h);
 
 % 2. Setup the Non-linear Model
+% Order: [4 outputs, 1 input, 4 states]
 order = [4, 1, 4]; 
-initial_pars = [0.001; 0; 0; 0; 0; 1.0];
-aux_data = [m1_val, l1_val, g_val];
 
-nl_model = idnlgrey(@pendulum_non_linear, order, initial_pars, [0;0;0;0]);
+% --- MEASURED KNOWNS (aux) ---
+% aux = [m1, L1, m2, L2, g]
+% Use your actual measurements here!
+g_val  = 9.81;    % m/s^2
+L1_val = 0.1; % Example: 10cm total length
+L2_val = 0.1; 
+m2_val = 0.05; 
+m1_val = 0.1;
 
-% CRITICAL: Use FileArgument so it shows up in varargin{1}
-nl_model.FileArgument = {aux_data}; 
+% 1. Create the big parameter list (12 values)
+% [I1, I2, kt, c1, c2, lc1, lc2, m1, L1, m2, L2, g]
+p_init = [0.003; 0.001; 10; 0.01; 0.01; 0.05; 0.05; m1_val; L1_val; m2_val; L2_val; 9.81];
 
-%% 3. Run the Estimation
-opt = nlgreyestOptions;
-opt.Display = 'on';
-opt.SearchMethod = 'gn'; 
+% 2. Create the model (Notice: NO FileArgument needed!)
+% Order: [4 outputs, 1 input, 12 parameters]
+x0 = [th1_trimmed(1); dth1_trimmed(1); th2_trimmed(1); dth2_trimmed(1)];
+nl_model = idnlgrey(@double_pen, [4 1 4], p_init, x0, 0);
 
-% Safety for unstable systems (the inverted pendulum)
+nl_model.SimulationOptions.AbsTol = 1e-6;
+nl_model.SimulationOptions.RelTol = 1e-5;
+% 3. LOCK THE KNOWNS (Crucial Step)
+% We tell MATLAB: "Do not touch parameters 8, 9, 10, 11, and 12"
+for k = 8:12
+    nl_model.Parameters(k).Fixed = true;
+end
 
-estimated_nl_model = nlgreyest(data, nl_model, opt);
+% 4. Set Bounds for the ones it CAN change
+nl_model.Parameters(6).Maximum = L1_val; % lc1
+nl_model.Parameters(7).Maximum = L2_val; % lc2
+for k = 1:5
+    nl_model.Parameters(k).Minimum = 0; % I, kt, c must be positive
+end
 
-
-
-
-
+% 5. Run Estimation
+opt = nlgreyestOptions('Display', 'on', 'SearchMethod', 'lm');
+estimated_model = nlgreyest(data, nl_model, opt);
 
 
 
