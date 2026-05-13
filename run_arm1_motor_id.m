@@ -64,6 +64,7 @@ elseif strcmp(run_type, 'pre_id')
     simin = [t, u];
     sim rotpentemplate;
 
+    t_out = simout.Time;
     y    = simout.Data;
     th1  = mod(y(:,1) + 180, 360) - 180;
     dth1 = y(:,2);
@@ -73,9 +74,9 @@ elseif strcmp(run_type, 'pre_id')
         max(abs(dth1)), max(abs(th2)), max(abs(th2+th1)));
 
     figure(2); clf;
-    subplot(3,1,1); plot(t, th1);  ylabel('\theta_1 [deg]'); grid on;
-    subplot(3,1,2); plot(t, dth1); ylabel('d\theta_1 [deg/s]'); grid on;
-    subplot(3,1,3); plot(t, th2);  ylabel('\theta_2 [deg]'); grid on;
+    subplot(3,1,1); plot(t_out, th1);  ylabel('\theta_1 [deg]'); grid on;
+    subplot(3,1,2); plot(t_out, dth1); ylabel('d\theta_1 [deg/s]'); grid on;
+    subplot(3,1,3); plot(t_out, th2);  ylabel('\theta_2 [deg]'); grid on;
     xlabel('Time [s]');
     sgtitle(sprintf('Pre-ID — %.1f Hz, amp = %.1f', freq_hz, amplitude));
     save_run(simin, simout, sprintf('arm1_pre_id_f%03dmHz_a%02d', ...
