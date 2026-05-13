@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rotational Pendulum — Project Handbook</title>
+<style>
+/* ── Design tokens ─────────────────────────────── */
+:root {
+  --ivory: #FAF9F5; --paper: #FFFFFF;
+  --slate: #141413; --clay: #D97757; --clay-d: #B85C3E;
+  --oat: #E3DACC; --olive: #788C5D;
+  --success: #788C5D; --warning: #C78E3F; --danger: #B04A4A; --info: #5C7CA3;
+  --g100: #F0EEE6; --g200: #E6E3DA; --g300: #D1CFC5;
+  --g500: #87867F; --g700: #3D3D3A;
+  --serif: ui-serif, Georgia, "Times New Roman", serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+}
+:root[data-theme="dark"] {
+  --ivory: #1A1816; --paper: #242220;
+  --slate: #EDEAE2; --clay: #D97757; --clay-d: #E48A6F;
+  --oat: #34302B; --olive: #788C5D;
+  --success: #8FA86E; --warning: #D9A055; --danger: #C45A5A; --info: #7090B8;
+  --g100: #0F0E0D; --g200: #1A1816; --g300: #34302B;
+  --g500: #8A8780; --g700: #C9C5BC;
+}
+
+/* ── Reset & base ──────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--sans); font-size: 16px; line-height: 1.55;
+  color: var(--g700); background: var(--ivory);
+  padding: 0 20px 100px;
+  transition: background 200ms, color 200ms;
+}
+.wrap { max-width: 900px; margin: 0 auto; }
+h1 { font-family: var(--serif); font-size: clamp(34px,5.4vw,58px); font-weight: 500; letter-spacing: -0.018em; line-height: 1.06; color: var(--slate); }
+h1 em { font-style: italic; color: var(--clay); }
+h2 { font-family: var(--serif); font-weight: 500; font-size: 26px; letter-spacing: -0.012em; color: var(--slate); margin: 0; }
+h3 { font-family: var(--serif); font-weight: 500; font-size: 18px; letter-spacing: -0.008em; color: var(--slate); margin-bottom: 6px; }
+p { margin-bottom: 10px; }
+p:last-child { margin-bottom: 0; }
+a { color: var(--clay); text-decoration-color: var(--oat); text-underline-offset: 3px; }
+a:hover { text-decoration-color: var(--clay); }
+code {
+  font-family: var(--mono); font-size: 12.5px;
+  background: var(--g100); border: 1px solid var(--g200);
+  border-radius: 4px; padding: 1px 5px;
+}
+pre {
+  font-family: var(--mono); font-size: 12.5px;
+  background: var(--g100); border: 1.5px solid var(--g300);
+  border-radius: 10px; padding: 14px 18px;
+  overflow-x: auto; color: var(--g700);
+  margin: 10px 0; line-height: 1.5;
+}
+
+/* ── Layout ────────────────────────────────────── */
+.section { margin-top: 52px; }
+hr.div { border: none; border-top: 1.5px solid var(--g200); margin: 44px 0; }
+
+/* ── Eyebrow ───────────────────────────────────── */
+.eyebrow {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--g500);
+  display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+}
+.eyebrow::before { content: ""; width: 24px; height: 1.5px; background: var(--clay); flex-shrink: 0; }
+
+/* ── Section head ──────────────────────────────── */
+.sec-head { display: flex; align-items: baseline; gap: 16px; margin-bottom: 18px; }
+.sec-head .idx { font-family: var(--mono); font-size: 13px; color: var(--clay); font-weight: 600; }
+.sec-head .count { font-family: var(--mono); font-size: 11px; color: var(--g500); background: var(--g100); padding: 2px 8px; border-radius: 999px; }
+
+/* ── Header ────────────────────────────────────── */
+.page-header {
+  padding: 52px 0 28px;
+  border-bottom: 1.5px solid var(--g200);
+  margin-bottom: 0;
+}
+.header-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.gen-date { font-family: var(--mono); font-size: 10px; color: var(--g500); letter-spacing: 0.06em; margin-top: 12px; }
+#theme-toggle, #md-export {
+  background: none; border: 1.5px solid var(--g300); border-radius: 8px;
+  padding: 6px 10px; cursor: pointer; color: var(--g500);
+  transition: border-color 120ms, color 120ms; flex-shrink: 0; margin-top: 4px;
+}
+#theme-toggle { font-size: 16px; }
+#md-export { font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; }
+#theme-toggle:hover, #md-export:hover { border-color: var(--clay); color: var(--clay); }
+
+/* ── Callout ───────────────────────────────────── */
+.callout {
+  background: var(--g100); border-left: 3px solid var(--clay);
+  border-radius: 0 10px 10px 0; padding: 14px 18px; margin: 14px 0;
+}
+.callout.success { border-left-color: var(--olive); }
+.callout.info { border-left-color: var(--info); }
+.callout-label {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--clay); margin-bottom: 6px;
+}
+.callout.success .callout-label { color: var(--olive); }
+.callout.info .callout-label { color: var(--info); }
+
+/* ── Cards ─────────────────────────────────────── */
+.card {
+  border: 1.5px solid var(--g300); border-radius: 14px;
+  background: var(--paper); padding: 20px 22px;
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+.card:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(20,20,19,.09); border-color: var(--slate); background: color-mix(in srgb, var(--oat) 40%, var(--paper)); }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px; }
+
+/* ── Status pills ──────────────────────────────── */
+.pill {
+  display: inline-block; font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.07em; text-transform: uppercase;
+  padding: 2px 10px; border-radius: 999px; border: 1.5px solid; white-space: nowrap;
+}
+.pill.done    { color: var(--success); border-color: rgba(120,140,93,.4); background: rgba(120,140,93,.08); }
+.pill.prog    { color: var(--clay);   border-color: rgba(217,119,87,.4); background: rgba(217,119,87,.08); }
+.pill.discuss { color: var(--info);   border-color: rgba(92,124,163,.4); background: rgba(92,124,163,.08); }
+.pill.todo    { color: var(--g500);   border-color: var(--g300);         background: var(--g100); }
+
+/* ── Card header ───────────────────────────────── */
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.card-note { font-size: 13px; color: var(--g500); margin-bottom: 10px; font-style: italic; line-height: 1.4; }
+
+/* ── Checklist ─────────────────────────────────── */
+.checklist { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 5px; margin-top: 6px; }
+.checklist li label {
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: 13.5px; color: var(--g700); cursor: pointer; line-height: 1.4;
+}
+.checklist input[type="checkbox"] {
+  margin-top: 2px; accent-color: var(--clay);
+  width: 13px; height: 13px; flex-shrink: 0; cursor: pointer;
+}
+.task { flex: 1; }
+.checklist li.isdone label { color: var(--g500); }
+.checklist li.isdone .task { text-decoration: line-through; }
+.bsm {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em;
+  text-transform: uppercase; padding: 1px 6px; border-radius: 999px;
+  border: 1px solid; white-space: nowrap; flex-shrink: 0; margin-top: 1px;
+}
+.bsm.prg { color: var(--clay);    border-color: rgba(217,119,87,.4); background: rgba(217,119,87,.07); }
+.bsm.dsc { color: var(--info);    border-color: rgba(92,124,163,.4); background: rgba(92,124,163,.07); }
+.bsm.wrn { color: var(--warning); border-color: rgba(199,142,63,.4); background: rgba(199,142,63,.07); }
+
+/* ── Assumption grid ───────────────────────────── */
+.assume-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin-top: 4px; }
+.assume-card { border: 1.5px solid var(--g300); border-radius: 10px; background: var(--paper); padding: 14px 16px; }
+.assume-tag { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--clay); margin-bottom: 5px; }
+.assume-body { font-size: 13.5px; color: var(--g700); }
+.assume-trigger { font-size: 12px; color: var(--warning); margin-top: 8px; font-family: var(--mono); }
+
+/* ── Dependency SVG ────────────────────────────── */
+.dep-wrap { overflow-x: auto; margin: 14px 0 4px; padding: 4px 0; }
+.dep-wrap svg { min-width: 740px; }
+
+/* ── Risk table ────────────────────────────────── */
+.tbl-wrap { overflow-x: auto; margin: 6px 0; }
+.risk-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.risk-table th {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--g500); border-bottom: 1.5px solid var(--g300); padding: 8px 14px; text-align: left;
+}
+.risk-table td { padding: 10px 14px; border-bottom: 1px solid var(--g200); color: var(--g700); vertical-align: top; }
+.risk-table tr:last-child td { border-bottom: none; }
+.badge { font-family: var(--mono); font-size: 10px; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.badge.low  { background: rgba(120,140,93,.12); color: var(--olive); border: 1px solid rgba(120,140,93,.3); }
+.badge.mid  { background: rgba(217,119,87,.10); color: var(--clay);  border: 1px solid rgba(217,119,87,.3); }
+.badge.high { background: rgba(184,92,62,.10);  color: var(--clay-d); border: 1px solid rgba(184,92,62,.3); }
+
+/* ── Collapsibles ──────────────────────────────── */
+details { border: 1.5px solid var(--g300); border-radius: 10px; background: var(--paper); overflow: hidden; margin-bottom: 10px; }
+details[open] { border-color: var(--g500); }
+summary {
+  cursor: pointer; list-style: none; padding: 13px 18px;
+  font-family: var(--serif); font-size: 16px; font-weight: 500; color: var(--slate);
+  display: flex; align-items: center; gap: 10px; user-select: none;
+}
+summary::marker, summary::-webkit-details-marker { display: none; }
+summary::before { content: "▸"; font-size: 11px; color: var(--clay); transition: transform 200ms; display: inline-block; }
+details[open] summary::before { transform: rotate(90deg); }
+.dbody { padding: 0 18px 18px; }
+
+/* ── Math blocks ───────────────────────────────── */
+.math-block {
+  margin: 14px 0; padding: 14px 18px;
+  background: var(--g100); border: 1.5px solid var(--g200);
+  border-radius: 10px; overflow-x: auto;
+}
+.math-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--g500); margin-bottom: 8px; }
+
+/* ── Todo numbered list ────────────────────────── */
+.todo-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.todo-item {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 11px 16px; background: var(--paper);
+  border: 1.5px solid var(--g300); border-radius: 10px;
+  font-size: 14px; color: var(--g700);
+}
+.todo-num { font-family: var(--mono); font-size: 12px; color: var(--clay); font-weight: 600; min-width: 20px; padding-top: 1px; }
+.todo-item.tdone { opacity: 0.7; }
+.todo-item.tdone .todo-text { text-decoration: line-through; color: var(--g500); }
+.todo-done { color: var(--success); font-family: var(--mono); font-size: 11px; margin-left: 6px; }
+
+/* ── Key-value / file table ────────────────────── */
+.kv-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.kv-table td { padding: 7px 12px; border-bottom: 1px solid var(--g200); }
+.kv-table td:first-child { font-family: var(--mono); font-size: 12.5px; color: var(--clay); white-space: nowrap; }
+.kv-table tr:last-child td { border-bottom: none; }
+
+/* ── Two-column ────────────────────────────────── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 640px) {
+  .card-grid, .two-col, .assume-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ═══════════════════════════════════════════════ HEADER -->
+<header class="page-header">
+  <div class="eyebrow">SC42035 — Integration Project Systems and Control</div>
+  <div class="header-top">
+    <h1>Rotational pendulum<br><em>Project handbook</em></h1>
+    <button id="md-export">Copy as Markdown</button>
+    <button id="theme-toggle" aria-label="Toggle dark/light mode">◑</button>
+  </div>
+  <p class="gen-date">Generated 2026-05-13 · One doc to rule them all</p>
+</header>
+
+<!-- ═══════════════════════════════════════════════ WHERE WE ARE -->
+<div class="section">
+  <div class="callout">
+    <div class="callout-label">Current status — 2026-05-13</div>
+    <p>Link-2 free-swing identification done: 90% fit after aligning trim to first natural peak (IC fix). Effective length <strong>l<sub>eff</sub> = 0.0868 m</strong> identified (point-mass assumption A1 is approximate; distributed mass shifts effective length vs physical 0.10 m). EOM fully transcribed in <code>rotpen_ode.m</code> — M and rhs filled; back-EMF variable <code>tau</code> is defined but not yet active in rhs (uses <code>km*u</code>, not <code>tau</code>).</p>
+    <p style="margin-top:8px;"><strong>Next steps:</strong> (1) Average more free-swing runs to tighten α, β estimates. (2) Arm-1 free-decay experiment (u=0) to get (c₁+k<sub>b</sub>)/I₁. (3) Hook up back-EMF in rhs. (4) Driven arm-1 experiment to isolate k<sub>m</sub>. (5) Linearise at both equilibria.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ 01 COURSE CONTEXT -->
+<div class="section">
+  <div class="sec-head"><span class="idx">01</span><h2>Course context</h2></div>
+  <div class="two-col">
+    <div>
+      <h3>The setup</h3>
+      <p>Two-link rigid manipulator in a <strong>vertical plane</strong>. Joint 1 (lower) driven by a DC motor. Joint 2 (upper) free to rotate. Both links can rotate the full 360°.</p>
+      <h3 style="margin-top:14px;">Control objective</h3>
+      <ol style="padding-left:18px;font-size:14px;color:var(--g700);line-height:1.7;">
+        <li>θ₁ tracks a specified reference trajectory (zero steady-state error)</li>
+        <li>θ₂ stabilised at upright position — the unstable equilibrium (θ₂ = 180°)</li>
+      </ol>
+      <p style="margin-top:8px;font-size:13.5px;color:var(--g500);">Easier start: both links down, damp the swing. Harder: swing-up + balance.</p>
+    </div>
+    <div>
+      <h3>Assessment</h3>
+      <p>Technical report (max 30 pages) + oral exam — equal weight.</p>
+      <h3 style="margin-top:14px;">Angle convention</h3>
+      <p style="font-size:14px;">θ₁ = 0, θ₂ = 0 → both links straight down (stable eq.)<br>θ₂ = ±180° → upper link straight up (unstable eq.)<br>Raw sensor zero ≈ 85° — bias subtraction gives down = 0.<br>θ₂ is <em>relative</em> (angle between arms); inertial angle of arm 2 = θ₁ + θ₂.</p>
+      <h3 style="margin-top:14px;">Input / output</h3>
+      <p style="font-size:14px;"><strong>Input:</strong> u ∈ [−1, +1] (normalised; +1 = max CW, −1 = max CCW)<br><strong>Outputs:</strong> θ₁, θ₂ in <em>degrees</em> (in <code>simout</code>); radians inside ODE.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ 02 EQUATIONS OF MOTION -->
+<div class="section">
+  <div class="sec-head"><span class="idx">02</span><h2>Equations of motion</h2></div>
+  <p>Lagrangian derivation. Two degrees of freedom: θ₁ (arm 1 angle) and θ₂ (arm 2 angle relative to arm 1 extension). Point-mass assumption A1: arm 1 is a uniform rod (J₁ = m₁l₁²/3), arm 2's mass m₂ is concentrated at the tip.</p>
+
+  <h3 style="margin-top:18px;">Kinematics</h3>
+  <p style="font-size:14px;">CoM arm 1: \( (l_{c1}\sin\theta_1,\; -l_{c1}\cos\theta_1) \). Tip of arm 1 (joint 2): \( (l_1\sin\theta_1,\; -l_1\cos\theta_1) \). Ball tip:</p>
+  <div class="math-block">
+    <div class="math-label">Ball position</div>
+    \[ x_{c2} = l_1\sin\theta_1 + l_2\sin(\theta_1+\theta_2), \qquad y_{c2} = -l_1\cos\theta_1 - l_2\cos(\theta_1+\theta_2) \]
+  </div>
+
+  <h3 style="margin-top:18px;">Motor model</h3>
+  <div class="math-block">
+    <div class="math-label">Joint 1 torque (back-EMF included)</div>
+    \[ \tau = k_m u - k_b \dot\theta_1 \]
+  </div>
+  <div class="callout info" style="margin:10px 0;">
+    <div class="callout-label">Code note</div>
+    <code>tau</code> is defined in <code>rotpen_ode.m</code> with the k<sub>b</sub> term but <code>rhs(1)</code> currently uses <code>km*u</code> directly — back-EMF is not yet active. Hook up: replace <code>p.km*u</code> with <code>tau</code> in rhs once identified.
+  </div>
+
+  <h3 style="margin-top:18px;">Mass matrix M(θ₂)</h3>
+  <div class="math-block">
+    <div class="math-label">Inertia matrix — 2×2, function of θ₂ only</div>
+    \[ M(\theta_2) = \begin{pmatrix} J_1 + m_2\bigl(l_1^2 + l_2^2 + 2l_1 l_2\cos\theta_2\bigr) & m_2\bigl(l_2^2 + l_1 l_2\cos\theta_2\bigr) \\ m_2\bigl(l_2^2 + l_1 l_2\cos\theta_2\bigr) & m_2 l_2^2 \end{pmatrix} \]
+    <p style="font-size:13px;color:var(--g500);margin-top:8px;">where \(J_1 = \tfrac{1}{3}m_1 l_1^2\). Off-diagonal coupling = \(m_2 l_1 l_2 \cos\theta_2\) — disappears at θ₂ = ±90°.</p>
+  </div>
+
+  <h3 style="margin-top:18px;">Right-hand side</h3>
+  <p style="font-size:14px;">Let \( h = m_2 l_1 l_2 \sin\theta_2 \) (Coriolis prefactor).</p>
+  <div class="math-block">
+    <div class="math-label">Coriolis + gravity + damping + input</div>
+    \[ \mathrm{rhs}_1 = \tau - c_1\dot\theta_1 + h\bigl(2\dot\theta_1\dot\theta_2 + \dot\theta_2^2\bigr) - \bigl(m_1 l_{c1} + m_2 l_1\bigr)g\sin\theta_1 - m_2 g l_2\sin(\theta_1+\theta_2) \]
+    \[ \mathrm{rhs}_2 = -c_2\dot\theta_2 - h\dot\theta_1^2 - m_2 g l_2\sin(\theta_1+\theta_2) \]
+  </div>
+
+  <h3 style="margin-top:18px;">Solve for accelerations</h3>
+  <div class="math-block">
+    <div class="math-label">State-space acceleration step</div>
+    \[ \begin{pmatrix}\ddot\theta_1 \\ \ddot\theta_2\end{pmatrix} = M^{-1}(\theta_2)\;\mathrm{rhs} \]
+    <p style="font-size:13px;color:var(--g500);margin-top:8px;">MATLAB: <code>ddq = M \ rhs;</code> — never invert M explicitly.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ 03 MODELLING ASSUMPTIONS -->
+<div class="section">
+  <div class="sec-head"><span class="idx">03</span><h2>Modelling assumptions</h2><span class="count">A1 – A5</span></div>
+  <div class="assume-grid">
+    <div class="assume-card">
+      <div class="assume-tag">A1 — Point mass</div>
+      <div class="assume-body">Arm 2 massless; m₂ concentrated at tip only. J₁ = m₁l₁²/3 for uniform arm 1 rod.</div>
+      <div class="assume-trigger">Revisit if: l_eff ≪ l₂ physically (distributed mass shifts effective length — already evident: 0.0868 vs 0.10 m).</div>
+    </div>
+    <div class="assume-card">
+      <div class="assume-tag">A2 — Stiff arm 1</div>
+      <div class="assume-body">Reaction forces from arm 2 onto arm 1 negligible. Full coupling kept in M for accuracy; off-diagonal can be dropped as a simplification after hardware validation.</div>
+      <div class="assume-trigger">Revisit if: arm 1 shows unexpected oscillations from arm 2 motion.</div>
+    </div>
+    <div class="assume-card">
+      <div class="assume-tag">A3 — Simplified motor</div>
+      <div class="assume-body">τ = k<sub>m</sub>u − k<sub>b</sub>θ̇₁. Back-EMF included; inductance and higher-order dynamics ignored.</div>
+      <div class="assume-trigger">Revisit if: closed-loop bandwidth is unexpectedly limited at high speeds.</div>
+    </div>
+    <div class="assume-card">
+      <div class="assume-tag">A4 — Viscous damping</div>
+      <div class="assume-body">Friction modelled as c·θ̇. Real joints likely have Coulomb + stiction too. Deadzone nonlinearity is a practical first proxy.</div>
+      <div class="assume-trigger">Revisit if: system ID fit is poor near zero velocity (residuals show stiction plateau).</div>
+    </div>
+    <div class="assume-card">
+      <div class="assume-tag">A5 — Sensor bias</div>
+      <div class="assume-body">Raw hardware has ~85° offset per sensor. <code>p.bias_th1 / p.bias_th2</code> in <code>pendulum_params.m</code>. Values recorded in <code>hwinit.m</code> per session. <code>run_sim.m</code> adds them so sim output matches raw hardware format.</div>
+      <div class="assume-trigger">Revisit if: calibration is done freshly each session — values may drift.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ 04 DEPENDENCY DIAGRAM -->
+<div class="section">
+  <div class="sec-head"><span class="idx">04</span><h2>Project data-flow</h2></div>
+  <p style="font-size:14px;color:var(--g500);">Critical path highlighted. Arrows show dependency: downstream blocks require upstream to be done.</p>
+  <div class="dep-wrap">
+    <svg viewBox="0 0 780 112" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:112px;display:block;">
+      <defs>
+        <marker id="arr-done"   markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#788C5D"/></marker>
+        <marker id="arr-clay"   markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#D97757"/></marker>
+        <marker id="arr-gray"   markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#D1CFC5"/></marker>
+      </defs>
+
+      <!-- Node 1: Sim framework (done) -->
+      <rect x="4" y="26" width="110" height="48" rx="8" fill="rgba(120,140,93,.10)" stroke="#788C5D" stroke-width="1.5"/>
+      <text x="59" y="46" text-anchor="middle" font-family="ui-serif,Georgia,serif" font-size="11.5" fill="#141413">Sim</text>
+      <text x="59" y="60" text-anchor="middle" font-family="ui-serif,Georgia,serif" font-size="11.5" fill="#141413">framework</text>
+      <text x="59" y="84" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#788C5D" letter-spacing="0.04em">DONE</text>
+
+      <!-- Arrow 1→2 (done→clay) -->
+      <line x1="114" y1="50" x2="126" y2="50" stroke="#788C5D" stroke-width="1.5" marker-end="url(#arr-done)"/>
+
+      <!-- Node 2: Modelling (in progress — clay) -->
+      <rect x="130" y="26" width="110" height="48" rx="8" fill="rgba(217,119,87,.10)" stroke="#D97757" stroke-width="2"/>
+      <text x="185" y="46" text-anchor="middle" font-family="ui-serif,Georgia,serif" font-size="11.5" fill="#141413">Modelling</text>
+      <text x="185" y="60" text-anchor="middle" font-family="ui-serif,Georgia,serif" font-size="11.5" fill="#141413">(EOM + lin.)</text>
+      <text x="185" y="84" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#D97757" letter-spacing="0.04em">IN PROGRESS</text>
+
+      <!-- Arrow 2→3 (clay→clay) -->
+      <line x1="240" y1="50" x2="252" y2="50" stroke="#D97757" stroke-width="1.5" marker-end="url(#arr-clay)"/>
+
+      <!-- Node 3: System ID (in progress — clay) -->
+      <rect x="256" y="26" width="110" height="48" rx="8" fill="rgba(217,119,87,.10)" stroke="#D97757" stroke-width="2"/>
+      <text x="311" y="46" text-anchor="middle" font-family="ui-serif,Georgia,serif" font-size="11.5" fill="#141413">System ID</text>
+      <text x="311" y="60" text-anchor="middle" font-family="ui-serif,Georgia,serif" font-size="11.5" fill="#141413">(params)</text>
+      <text x="311" y="84" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#D97757" letter-spacing="0.04em">IN PROGRESS</text>
+
+      <!-- Arrow 3→4 (clay→gray) -->
+      <line x1="366" y1="50" x2="378" y2="50" stroke="#D1CFC5" stroke-width="1.5" marker-end="url(#arr-gray)"/>
+
+      <!-- Node 4: Observer (todo) -->
+      <rect x="382" y="26" width="110" height="48" rx="8" fill="#F0EEE6" stroke="#D1CFC5" stroke-width="1.5"/>
+      <text x="437" y="50" text-anchor="middle" font-family="ui-serif,Georgia,serif" font-size="11.5" fill="#87867F">Observer</text>
+      <text x="437" y="64" text-anchor="middle" font-family="ui-serif,Georgia,serif" font-size="11.5" fill="#87867F">(Kalman/Luenb.)</text>
+      <text x="437" y="84" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#87867F" letter-spacing="0.04em">NOT STARTED</text>
+
+      <!-- Arrow 4→5 -->
+      <line x1="492" y1="50" x2="504" y2="50" stroke="#D1CFC5" stroke-width="1.5" marker-end="url(#arr-gray)"/>
+
+      <!-- Node 5: Control (todo) -->
+      <rect x="508" y="26" width="110" height="48" rx="8" fill="#F0EEE6" stroke="#D1CFC5" stroke-width="1.5"/>
+      <text x="563" y="50" text-anchor="middle" font-family="ui-serif,Georgia,serif" font-size="11.5" fill="#87867F">Control</text>
+      <text x="563" y="64" text-anchor="middle" font-family="ui-serif,Georgia,serif" font-size="11.5" fill="#87867F">(×2 methods)</text>
+      <text x="563" y="84" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#87867F" letter-spacing="0.04em">NOT STARTED</text>
+
+      <!-- Arrow 5→6 -->
+      <line x1="618" y1="50" x2="630" y2="50" stroke="#D1CFC5" stroke-width="1.5" marker-end="url(#arr-gray)"/>
+
+      <!-- Node 6: Report (todo) -->
+      <rect x="634" y="26" width="110" height="48" rx="8" fill="#F0EEE6" stroke="#D1CFC5" stroke-width="1.5"/>
+      <text x="689" y="50" text-anchor="middle" font-family="ui-serif,Georgia,serif" font-size="11.5" fill="#87867F">Report</text>
+      <text x="689" y="64" text-anchor="middle" font-family="ui-serif,Georgia,serif" font-size="11.5" fill="#87867F">(30 pages)</text>
+      <text x="689" y="84" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#87867F" letter-spacing="0.04em">NOT STARTED</text>
+    </svg>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ 05 WORKSTREAM BOARD -->
+<div class="section">
+  <div class="sec-head"><span class="idx">05</span><h2>Workstream board</h2><span class="count">6 streams</span></div>
+  <p style="font-size:13.5px;color:var(--g500);margin-bottom:16px;">Checkboxes are live — toggle as tasks complete. Status is permanent once baked into next regen with Claude.</p>
+  <div class="card-grid">
+
+    <!-- Sim framework -->
+    <div class="card">
+      <div class="card-head"><h3>Simulation framework</h3><span class="pill done">Complete</span></div>
+      <ul class="checklist">
+        <li class="isdone"><label><input type="checkbox" checked><span class="task">Branch <code>simulation</code> off <code>main</code></span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task"><code>pendulum_params.m</code> scaffold — l₂ ≈ 0.10 m (ruler); calibration in hwinit.m</span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task"><code>run_sim.m</code> ODE runner — same <code>simout</code> format as hardware</span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task"><code>rotpen_ode.m</code> scaffold — M and rhs left for student derivation</span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task"><code>firstScript.m</code> mode switch — <code>run_with_simulation</code> flag</span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task">Derive EOM — full system (M, n, g, τ derived)</span></label></li>
+      </ul>
+    </div>
+
+    <!-- Modelling -->
+    <div class="card">
+      <div class="card-head"><h3>Modelling</h3><span class="pill prog">In Progress</span></div>
+      <div class="card-note">EOM transcribed. Linearisation and discretisation are the immediate blockers for control design.</div>
+      <ul class="checklist">
+        <li class="isdone"><label><input type="checkbox" checked><span class="task">EOM — arm 1 (driven); identifiable composites: k<sub>m</sub>/I₁, c₁/I₁</span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task">EOM — arm 2 (passive); identifiable composites: l₂ from ωₙ, c₂/m₂l₂² from ζ</span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task">Full coupled EOM (Lagrangian) — M, n, g derived</span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task">Fill M and rhs in <code>rotpen_ode.m</code></span></label></li>
+        <li><label><input type="checkbox"><span class="task">Hook up back-EMF: replace <code>p.km*u</code> with <code>tau</code> in rhs(1)</span><span class="bsm wrn">next</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Linearise at stable eq. (θ₁=0, θ₂=0 — both down)</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Linearise at unstable eq. (θ₂=180° — arm 2 up)</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Discretise — h=0.01 s; ZOH or Tustin</span></label></li>
+      </ul>
+    </div>
+
+    <!-- System ID -->
+    <div class="card">
+      <div class="card-head"><h3>System identification</h3><span class="pill prog">In Progress</span></div>
+      <div class="card-note">l₂ identified (90% fit). Arm 1 (k<sub>m</sub>, k<sub>b</sub>, c₁) and coupled params still open. k<sub>m</sub> not in lab manual — must identify from data.</div>
+      <ul class="checklist">
+        <li class="isdone"><label><input type="checkbox" checked><span class="task">Sensor calibration — offsets and gains in <code>hwinit.m</code> (2026-05-01)</span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task">Geometry: l₁ = 0.10 m (measured)</span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task">Geometry: l<sub>eff</sub> = 0.0868 m identified (90% fit, 2026-05-11)</span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task">Collect free-swing data — arm 2 (2026-05-08; re-run planned 2026-05-12)</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Average more free-swing runs to tighten α, β</span><span class="bsm prg">in progress</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Input signal design — multisine / PRBS / spikes</span><span class="bsm dsc">discussing</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Collect open-loop data — arm 1</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Arm-1 free-decay (u=0) → identify (c₁+k<sub>b</sub>)/I₁</span><span class="bsm dsc">discussing</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Driven experiment to isolate k<sub>m</sub> from inertia</span><span class="bsm dsc">discussing</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Identify coupled parameters (may need m₂ separately)</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Validate on held-out dataset (course requirement)</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Closed-loop sysid at unstable eq. (required for upright balance)</span></label></li>
+      </ul>
+    </div>
+
+    <!-- Observer -->
+    <div class="card">
+      <div class="card-head"><h3>Observer</h3><span class="pill todo">Not started</span></div>
+      <div class="card-note">States: θ₁, θ̇₁, θ₂, θ̇₂. Outputs: θ₁, θ₂ only (no rate sensors). Requires linearised model from Modelling.</div>
+      <ul class="checklist">
+        <li><label><input type="checkbox"><span class="task">Decide observer type: Luenberger vs Kalman</span><span class="bsm dsc">open</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Design observer in simulation</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Validate observer performance</span></label></li>
+      </ul>
+    </div>
+
+    <!-- Control design -->
+    <div class="card">
+      <div class="card-head"><h3>Control design</h3><span class="pill todo">Not started</span></div>
+      <div class="card-note">Two linear methods required. One nonlinear optional. Natural candidates: pole placement + LQR. Swing-up via energy-based or NDI.</div>
+      <ul class="checklist">
+        <li><label><input type="checkbox"><span class="task">Choose 2 linear methods — pole placement and LQR</span><span class="bsm dsc">discussing</span></label></li>
+        <li><label><input type="checkbox"><span class="task">(Optional) nonlinear — swing-up energy-based or NDI</span><span class="bsm dsc">discussing</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Controller 1 — stable eq. (both down) — easier starting point</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Controller 2 — unstable eq. (θ₂=180°)</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Test controllers in simulation</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Test controllers on hardware</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Compare performance — robustness, disturbance rejection, SSE</span></label></li>
+      </ul>
+    </div>
+
+    <!-- Report -->
+    <div class="card">
+      <div class="card-head"><h3>Report</h3><span class="pill todo">Not started</span></div>
+      <div class="card-note">Max 30 pages. See reference section for suggested outline from course manual.</div>
+      <ul class="checklist">
+        <li><label><input type="checkbox"><span class="task">Setup description + conventions + schematic</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Modelling section — EOM derivation</span></label></li>
+        <li><label><input type="checkbox"><span class="task">System ID section — strategy, signals, algorithm, results</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Model evaluation — time domain and frequency domain</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Control design section (×2 methods)</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Discussion</span></label></li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ 06 STUDENT TODO -->
+<div class="section">
+  <div class="sec-head"><span class="idx">06</span><h2>Student TODO list</h2><span class="count">6 items</span></div>
+  <ul class="todo-list">
+    <li class="todo-item tdone">
+      <span class="todo-num">1</span>
+      <span class="todo-text">Derive M and rhs in <code>rotpen_ode.m</code> (Lagrangian — hints in file)</span>
+      <span class="todo-done">✓ done</span>
+    </li>
+    <li class="todo-item tdone">
+      <span class="todo-num">2</span>
+      <span class="todo-text">Fill in <code>p.bias_th*</code> from lab setup — values in <code>hwinit.m</code> per session (2026-05-01)</span>
+      <span class="todo-done">✓ done</span>
+    </li>
+    <li class="todo-item">
+      <span class="todo-num">3</span>
+      <span class="todo-text">Validate: zero input, small θ₂₀; check arm 2 oscillates near ω₀ = √(g/l₂) ≈ 9.9 rad/s (l₂ ≈ 0.10 m). Also verify l<sub>eff</sub> identification.</span>
+    </li>
+    <li class="todo-item">
+      <span class="todo-num">4</span>
+      <span class="todo-text">System ID to fit c₁, c₂, k<sub>m</sub>, k<sub>b</sub>. Use free-decay for damping; driven experiment to isolate k<sub>m</sub> from inertia.</span>
+    </li>
+    <li class="todo-item">
+      <span class="todo-num">5</span>
+      <span class="todo-text">Design controller(s); test in simulation before hardware. Start with stable eq. (both down) — easier.</span>
+    </li>
+    <li class="todo-item">
+      <span class="todo-num">6</span>
+      <span class="todo-text">Compare sim vs hardware on identical <code>simin</code>. Validate model on held-out dataset (course requirement).</span>
+    </li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════════════════════ 07 RISK REGISTER -->
+<div class="section">
+  <div class="sec-head"><span class="idx">07</span><h2>Risk register</h2><span class="count">6 risks</span></div>
+  <div class="tbl-wrap">
+    <table class="risk-table">
+      <thead>
+        <tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>A1 point-mass under-models distributed mass</strong><br><span style="font-size:12.5px;color:var(--g500);">l_eff = 0.0868 m vs physical 0.10 m already shows offset.</span></td>
+          <td><span class="badge high">High</span></td>
+          <td><span class="badge mid">Medium</span></td>
+          <td>Use identified l_eff throughout; revisit A1 if fit residuals remain large. May need rotational inertia of distributed arm 2.</td>
+        </tr>
+        <tr>
+          <td><strong>Viscous-only friction (A4) poor near zero velocity</strong><br><span style="font-size:12.5px;color:var(--g500);">Coulomb + stiction common in real joints.</span></td>
+          <td><span class="badge mid">Medium</span></td>
+          <td><span class="badge mid">Medium</span></td>
+          <td>Check residuals near zero-velocity crossings. Add deadzone proxy for stiction, or rely on integral action in controller.</td>
+        </tr>
+        <tr>
+          <td><strong>k<sub>m</sub> not in lab manual — must identify</strong><br><span style="font-size:12.5px;color:var(--g500);">Back-EMF k<sub>b</sub> also unknown; conflated with c₁/I₁ in free-decay.</span></td>
+          <td><span class="badge high">High</span></td>
+          <td><span class="badge high">High</span></td>
+          <td>Two-step ID: free-decay u=0 gives (c₁+k<sub>b</sub>)/I₁; driven experiment with known u isolates k<sub>m</sub>. Separate experiments required.</td>
+        </tr>
+        <tr>
+          <td><strong>Closed-loop sysid required at unstable eq.</strong><br><span style="font-size:12.5px;color:var(--g500);">Can't hold θ₂=180° open-loop.</span></td>
+          <td><span class="badge high">High</span></td>
+          <td><span class="badge high">High</span></td>
+          <td>Design stabilising controller first (from stable-eq. model). Then run closed-loop sysid at upright. Do last in sequence.</td>
+        </tr>
+        <tr>
+          <td><strong>Back-EMF not yet active in <code>rotpen_ode.m</code></strong><br><span style="font-size:12.5px;color:var(--g500);"><code>tau</code> defined but rhs uses <code>km*u</code> directly.</span></td>
+          <td><span class="badge high">High</span></td>
+          <td><span class="badge mid">Medium</span></td>
+          <td>Quick fix: replace <code>p.km*u</code> with <code>tau</code> in rhs(1). Do after k<sub>b</sub> is identified so the value is non-trivially zero.</td>
+        </tr>
+        <tr>
+          <td><strong>Motor acts as low-pass filter at high frequencies</strong><br><span style="font-size:12.5px;color:var(--g500);">Observed: reduced amplitude at ω=5 rad/s vs ω=0.1 rad/s.</span></td>
+          <td><span class="badge mid">Medium</span></td>
+          <td><span class="badge low">Low</span></td>
+          <td>Design excitation signal to cover DC up to ω₂ ≈ 9.9 rad/s. Accept bandwidth limitation for now; revisit A3 if needed.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ 08 REFERENCE -->
+<div class="section">
+  <div class="sec-head"><span class="idx">08</span><h2>Reference</h2></div>
+
+  <details>
+    <summary>Hardware &amp; simulation stacks</summary>
+    <div class="dbody">
+      <h3>Hardware stack</h3>
+      <pre>FPGA board  ↔  fugiboard MEX  ↔  sfusbin / sfusbout  ↔  rotpentemplate.slx  ↔  firstScript.m</pre>
+      <h3 style="margin-top:14px;">Simulation stack</h3>
+      <pre>pendulum_params  →  rotpen_ode  →  run_sim  →  firstScript.m</pre>
+      <h3 style="margin-top:14px;">Session startup (run in order per session)</h3>
+      <ol style="padding-left:18px;font-size:14px;color:var(--g700);line-height:1.8;">
+        <li><code>calib.m</code> — opens fugiboard connection, resets encoder, activates relay, verifies FPGA firmware</li>
+        <li><code>hwinit.m</code> — sets D/A output and A/D input gain/offset calibration</li>
+      </ol>
+      <p style="font-size:13px;color:var(--g500);margin-top:10px;">Use MATLAB 2021b — launch manually, do not double-click <code>.slx</code> files.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Key files</summary>
+    <div class="dbody">
+      <table class="kv-table">
+        <tr><td>firstScript.m</td><td>Main experiment script; <code>run_with_simulation</code> flag at top</td></tr>
+        <tr><td>run_sim.m</td><td>ODE-based simulation; produces same <code>simout</code> as hardware</td></tr>
+        <tr><td>rotpen_ode.m</td><td>Equations of motion — M and rhs filled; back-EMF not yet active</td></tr>
+        <tr><td>pendulum_params.m</td><td>Physical parameters + noise/bias → struct <code>p</code></td></tr>
+        <tr><td>rotpentemplate.slx</td><td>Simulink model (hardware path) — wire controller here</td></tr>
+        <tr><td>hwinit.m</td><td>Per-session sensor bias/gain values</td></tr>
+        <tr><td>calib.m</td><td>Hardware startup — run first each session</td></tr>
+        <tr><td>link2ParamID.m</td><td>Arm-2 parameter identification script</td></tr>
+        <tr><td>sfusbin.m / sfusbout.m</td><td>Simulink S-functions for hardware I/O</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details>
+    <summary>System ID workflow &amp; observations</summary>
+    <div class="dbody">
+      <h3>Workflow (lecture 2)</h3>
+      <pre>Simulink → To Workspace → iddata + idgrey → greyest → validate (held-out data)</pre>
+      <p style="font-size:14px;margin-top:8px;"><code>greyest</code>: grey-box parameter estimator; takes first-principles model structure, optimises parameters from data. Needs good initial guesses — use physical measurements where possible.</p>
+
+      <h3 style="margin-top:16px;">Identifiable composites</h3>
+      <p style="font-size:14px;">For a single swinging beam: <em>a = mgl/I</em> (from natural frequency), <em>b = 1/I</em> (from step/impulse response amplitude). Both equilibria give the same |A₂₁| — identify from stable, validate at unstable.</p>
+
+      <h3 style="margin-top:16px;">Input signal</h3>
+      <p style="font-size:14px;">Spikes or block inputs have broad power spectral density — excite wide frequency range. Multisine also valid. Cover DC to ω₂ = √(g/l₂) ≈ 9.9 rad/s minimum.</p>
+
+      <h3 style="margin-top:16px;">Motor frequency response (observed on hardware)</h3>
+      <ul style="padding-left:18px;font-size:14px;color:var(--g700);line-height:1.7;">
+        <li>ω = 0.1 rad/s (T ≈ 63 s): arm swings one direction for almost full 15 s run — near DC step</li>
+        <li>ω = 5 rad/s (T ≈ 1.3 s): arm oscillates with reduced amplitude and slower-looking motion</li>
+        <li>Interpretation: motor + arm = low-pass filter. Inertia limits response; possibly back-EMF (A3) at higher speeds.</li>
+      </ul>
+
+      <h3 style="margin-top:16px;">Friction options</h3>
+      <ol style="padding-left:18px;font-size:14px;color:var(--g700);line-height:1.7;">
+        <li><strong>Viscous damping</strong> — c·θ̇ (our current A4)</li>
+        <li><strong>Deadzone nonlinearity</strong> — proxy for stiction: input has no effect until threshold. Practical first approximation.</li>
+        <li><strong>Unmodelled disturbance</strong> — rely on integral action in controller</li>
+      </ol>
+
+      <div class="callout info" style="margin-top:14px;">
+        <div class="callout-label">Validation rule</div>
+        Always validate on a held-out dataset. This is a course requirement — not optional.
+      </div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Report guide (course manual)</summary>
+    <div class="dbody">
+      <ol style="padding-left:18px;font-size:14px;color:var(--g700);line-height:1.9;">
+        <li><strong>Setup description</strong> — schematic, symbol definitions, angle conventions</li>
+        <li><strong>Modelling</strong> — derivation of equations of motion</li>
+        <li><strong>System identification</strong>
+          <ul style="padding-left:16px;margin-top:4px;">
+            <li>Identification strategy</li>
+            <li>Excitation signal selection</li>
+            <li>Algorithm selection</li>
+            <li>Results (possibly per subsystem)</li>
+          </ul>
+        </li>
+        <li><strong>Model evaluation</strong> — time domain and frequency domain</li>
+        <li><strong>Control design</strong>
+          <ul style="padding-left:16px;margin-top:4px;">
+            <li>Objectives</li>
+            <li>Choice of control architecture(s)</li>
+            <li>Design (×2 controllers or ×2 operating points)</li>
+            <li>Evaluation and results</li>
+          </ul>
+        </li>
+        <li><strong>Discussion</strong></li>
+      </ol>
+      <p style="font-size:13px;color:var(--g500);margin-top:12px;">Max 30 pages — be concise. Oral exam carries equal weight to the report.</p>
+    </div>
+  </details>
+
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['\\(','\\)']],
+    displayMath: [['\\[','\\]']]
+  },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+<script>
+(function(){
+  // ── Theme toggle ──────────────────────────────────
+  const root = document.documentElement;
+  const saved = localStorage.getItem('rp-theme');
+  if (saved) root.dataset.theme = saved;
+  document.getElementById('theme-toggle').addEventListener('click', () => {
+    const next = root.dataset.theme === 'dark' ? '' : 'dark';
+    root.dataset.theme = next;
+    localStorage.setItem('rp-theme', next);
+  });
+
+  // ── Checkbox persistence ──────────────────────────
+  function djb2(str) {
+    let h = 5381;
+    for (let i = 0; i < str.length; i++) h = ((h << 5) + h) ^ str.charCodeAt(i);
+    return (h >>> 0).toString(36);
+  }
+  function taskKey(cb) {
+    const txt = cb.closest('li').querySelector('.task').textContent.trim();
+    return 'rp-task-' + djb2(txt);
+  }
+  document.querySelectorAll('.checklist input[type=checkbox]').forEach(cb => {
+    const k = taskKey(cb);
+    const stored = localStorage.getItem(k);
+    if (stored !== null) {
+      cb.checked = stored === '1';
+      cb.closest('li').classList.toggle('isdone', cb.checked);
+    }
+    cb.addEventListener('change', () => {
+      localStorage.setItem(k, cb.checked ? '1' : '0');
+      cb.closest('li').classList.toggle('isdone', cb.checked);
+    });
+  });
+
+  // ── Markdown export ───────────────────────────────
+  const SETUP_MD = `## Project setup
+
+**Branches:** \`main\` (shared, hardware only) · \`simulation\` (sim framework, merge to main once validated)
+
+**Mode switch** (top of \`firstScript.m\`):
+\`\`\`matlab
+run_with_simulation = true;   % false → real hardware
+\`\`\`
+
+**Angle convention:** θ₁ = θ₂ = 0 = both links hanging down. θ₂ is relative (angle between arms). Raw sensor zero ≈ 85° — bias subtraction gives down = 0. Radians inside ODE, degrees in simout.
+
+**Key files:**
+
+| File | Purpose |
+|---|---|
+| firstScript.m | Main script; run_with_simulation flag at top |
+| run_sim.m | ODE runner; same simout format as hardware |
+| rotpen_ode.m | EOM — M and rhs filled; back-EMF not yet active in rhs |
+| pendulum_params.m | Physical params + noise/bias → struct p |
+| rotpentemplate.slx | Simulink model (hardware path) |
+| hwinit.m | Per-session sensor bias/gain values |
+| calib.m | Hardware startup — run first each session |
+
+**Modelling assumptions:**
+- A1 — Point mass: arm 2 massless, m₂ at tip; J₁ = m₁l₁²/3
+- A2 — Stiff arm 1: full coupling in M; off-diagonal droppable after validation
+- A3 — Simplified motor: τ = km·u − kb·θ̇₁ (back-EMF included; inductance ignored)
+- A4 — Viscous damping: c·θ̇ (Coulomb not yet modelled)
+- A5 — Sensor bias: ~85° raw offset; p.bias_th1/th2 in pendulum_params.m; values in hwinit.m
+
+**Input scaling:** u ∈ [−1, +1]. Motor torque: τ = km·u − kb·dth1.`;
+
+  function buildMarkdown() {
+    const date = new Date().toISOString().slice(0, 10);
+    const lines = [`# Rotational Pendulum — Status snapshot`, `_${date}_`, '', SETUP_MD, '', '## Workstream status', ''];
+
+    document.querySelectorAll('.card-grid > .card').forEach(card => {
+      const title = card.querySelector('h3').textContent.trim();
+      const pill  = card.querySelector('.pill');
+      const status = pill ? pill.textContent.trim() : '';
+      lines.push(`### ${title}${status ? ' (' + status + ')' : ''}`);
+
+      const note = card.querySelector('.card-note');
+      if (note) lines.push(`_${note.textContent.trim()}_`);
+
+      card.querySelectorAll('.checklist li').forEach(li => {
+        const cb  = li.querySelector('input[type=checkbox]');
+        const txt = li.querySelector('.task').textContent.trim();
+        const bsm = li.querySelector('.bsm');
+        const badge = bsm ? ' (' + bsm.textContent.trim() + ')' : '';
+        lines.push(`- [${cb && cb.checked ? 'x' : ' '}] ${txt}${badge}`);
+      });
+      lines.push('');
+    });
+
+    return lines.join('\n');
+  }
+
+  document.getElementById('md-export').addEventListener('click', function() {
+    const btn = this;
+    navigator.clipboard.writeText(buildMarkdown()).then(() => {
+      btn.textContent = 'Copied ✓';
+      setTimeout(() => { btn.textContent = 'Copy as Markdown'; }, 1400);
+    }).catch(() => {
+      btn.textContent = 'Copy failed';
+      setTimeout(() => { btn.textContent = 'Copy as Markdown'; }, 2000);
+    });
+  });
+})();
+</script>
+</body>
+</html>
