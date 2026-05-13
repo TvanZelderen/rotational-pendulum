@@ -9,7 +9,7 @@ function dxdt = rotpen_ode(~, x, u, p)
     %   x(4) = dtheta2  [rad/s]
     %
     % Input:
-    %   u  [V]   motor voltage (scalar)
+    %   u  [-]   normalised motor input, u in [-1, +1]  (NOT raw volts)
     %   p        parameter struct from pendulum_params.m
     
     %% Unpack state
@@ -74,7 +74,7 @@ function dxdt = rotpen_ode(~, x, u, p)
     %% Right-hand side  (Coriolis + gravity + damping + input)
     % TODO: fill in the two entries.
     h = p.m2*p.l1*p.l2*sin(th2);
-    rhs = [p.km*u-p.c1*dth1 - (-h*(2*dth1*dth2+dth2^2)) - ((p.m1*p.lc1+p.m2*p.l1)*p.g*sin(th1) + p.m2*p.g*p.l2*sin(th1+th2)); -p.c2*dth2 - (h*dth1^2) - (p.m2*p.g*p.l2*sin(th1+th2))];
+    rhs = [tau-p.c1*dth1 - (-h*(2*dth1*dth2+dth2^2)) - ((p.m1*p.lc1+p.m2*p.l1)*p.g*sin(th1) + p.m2*p.g*p.l2*sin(th1+th2)); -p.c2*dth2 - (h*dth1^2) - (p.m2*p.g*p.l2*sin(th1+th2))];
     
     %% Solve for angular accelerations
     ddq = M \ rhs;

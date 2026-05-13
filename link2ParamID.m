@@ -32,7 +32,7 @@ iEnd     = numel(t) - (Tsim - trimEnd) * 100;
 
 %% Trim start — align to first natural peak so x0(2) = 0 is exact
 % Search 100:500 (1–5 s) to skip the manual-release transient.
-phi_search = phi(100:500);
+phi_search = phi(120:500);
 [~, iRel]  = max(abs(phi_search));
 iStart     = 99 + iRel;             % offset back to full-vector index
 
