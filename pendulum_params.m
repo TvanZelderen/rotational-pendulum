@@ -53,7 +53,7 @@ p.c2     = p.alpha2 * p.m2 * p.l2^2;  % derived from alpha2 and current m2 estim
 % km represents peak torque [N·m per normalised unit].
 % Back-EMF braking: tau_bemf = kb * dth1, where kb = kt*ke/R.
 % Inductance still neglected (A3 applies to inductance only now).
-p.km   = 0.1;                          % pre-ID estimate; TODO: identify from arm 1 experiment
+p.km   = 0.5;                          % pre-ID estimate; TODO: identify from arm 1 experiment
 p.kb   = 0.2;                         % back-EMF damping [N·m·s/rad] — pre-ID estimate; TODO: identify
 
 %% Environment
