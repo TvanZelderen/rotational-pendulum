@@ -241,7 +241,7 @@ details[open] summary::before { transform: rotate(90deg); }
   <div class="callout">
     <div class="callout-label">Current status — 2026-05-13</div>
     <p>Link-2 free-swing identification done: 90% fit after aligning trim to first natural peak (IC fix). Effective length <strong>l<sub>eff</sub> = 0.0868 m</strong> identified (point-mass assumption A1 is approximate; distributed mass shifts effective length vs physical 0.10 m). EOM fully transcribed in <code>rotpen_ode.m</code> — M and rhs filled; back-EMF <code>tau</code> now active in rhs (Stage 1 consolidation fix).</p>
-    <p style="margin-top:8px;"><strong>Next steps:</strong> (1) Average more free-swing runs to tighten α, β estimates. (2) Arm-1 free-decay experiment (u=0) to get (c₁+k<sub>b</sub>)/I₁. (3) Driven arm-1 experiment to isolate k<sub>m</sub>. (4) Linearise at both equilibria.</p>
+    <p style="margin-top:8px;"><strong>Next steps:</strong> (1) Average more free-swing runs to tighten α, β estimates. (2) Collect arm-1 pre-ID dataset with <code>run_arm1_motor_id.m</code> (pre_id mode, 0.2 Hz, amp 0.3, ≥10 cycles) then run <code>sysid_arm1_driven.m</code> to fit k<sub>m</sub>, k<sub>b</sub>, c₁ jointly. (3) Linearise at both equilibria.</p>
   </div>
 </div>
 
@@ -413,6 +413,135 @@ details[open] summary::before { transform: rotate(90deg); }
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════ 04b SCRIPT MAP -->
+<div class="section">
+  <div class="sec-head"><span class="idx">04b</span><h2>Script dependency map</h2></div>
+  <p style="font-size:13.5px;color:var(--g500);margin-bottom:16px;">Arrows show runtime call direction (A → B = A invokes B). Dashed = optional / conditional. <code>data/*.mat</code> is written by <code>save_run.m</code> and read by both <code>sysid_*.m</code> scripts.</p>
+  <div class="dep-wrap">
+    <svg viewBox="0 0 780 344" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
+      <defs>
+        <marker id="dep-hw"  markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#C06340"/></marker>
+        <marker id="dep-sim" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#4E76A3"/></marker>
+        <marker id="dep-eng" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#7D5A3C"/></marker>
+        <marker id="dep-phy" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#6A7D4A"/></marker>
+      </defs>
+
+      <!-- ROW A — Hardware entry points (orange) -->
+      <rect x="4"   y="14" width="124" height="36" rx="6" fill="rgba(192,99,64,.10)"  stroke="#C06340" stroke-width="1.5"/>
+      <text x="66"  y="36" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">run_open_loop.m</text>
+
+      <rect x="136" y="14" width="152" height="36" rx="6" fill="rgba(192,99,64,.10)"  stroke="#C06340" stroke-width="1.5"/>
+      <text x="212" y="36" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">run_arm1_motor_id.m</text>
+
+      <rect x="296" y="14" width="166" height="36" rx="6" fill="rgba(192,99,64,.10)"  stroke="#C06340" stroke-width="1.5"/>
+      <text x="379" y="36" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">collect_arm2_freeswing.m</text>
+
+      <rect x="470" y="14" width="96"  height="36" rx="6" fill="rgba(192,99,64,.10)"  stroke="#C06340" stroke-width="1.5"/>
+      <text x="518" y="36" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">rotpentest.m</text>
+
+      <text x="582" y="32" font-family="ui-serif,Georgia,serif" font-size="10" fill="#C06340" font-style="italic">HW entry</text>
+      <text x="582" y="44" font-family="ui-serif,Georgia,serif" font-size="10" fill="#C06340" font-style="italic">points</text>
+
+      <!-- ROW B — Sim / offline entry points (blue) -->
+      <rect x="4"   y="78" width="118" height="36" rx="6" fill="rgba(78,118,163,.10)"  stroke="#4E76A3" stroke-width="1.5"/>
+      <text x="63"  y="100" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">sim_open_loop.m</text>
+
+      <rect x="130" y="78" width="146" height="36" rx="6" fill="rgba(78,118,163,.10)"  stroke="#4E76A3" stroke-width="1.5"/>
+      <text x="203" y="100" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">sim_arm1_motor_id.m</text>
+
+      <rect x="284" y="78" width="144" height="36" rx="6" fill="rgba(78,118,163,.10)"  stroke="#4E76A3" stroke-width="1.5"/>
+      <text x="356" y="100" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">sysid_arm1_driven.m</text>
+
+      <rect x="436" y="78" width="160" height="36" rx="6" fill="rgba(78,118,163,.10)"  stroke="#4E76A3" stroke-width="1.5"/>
+      <text x="516" y="100" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">sysid_arm2_freeswing.m</text>
+
+      <text x="612" y="92"  font-family="ui-serif,Georgia,serif" font-size="10" fill="#4E76A3" font-style="italic">Sim / offline</text>
+      <text x="612" y="104" font-family="ui-serif,Georgia,serif" font-size="10" fill="#4E76A3" font-style="italic">entry points</text>
+
+      <!-- data/*.mat box (right rail) -->
+      <rect x="716" y="74" width="58" height="48" rx="6" fill="rgba(90,89,80,.14)" stroke="#5A5950" stroke-width="1.5"/>
+      <text x="745" y="93"  text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9"  fill="#141413">data/</text>
+      <text x="745" y="106" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9"  fill="#141413">*.mat</text>
+
+      <!-- ROW C — Engines (warm brown) -->
+      <rect x="4"   y="156" width="132" height="36" rx="6" fill="rgba(125,90,60,.10)"  stroke="#7D5A3C" stroke-width="1.5"/>
+      <text x="70"  y="172" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">rotpentemplate.slx</text>
+      <text x="70"  y="184" text-anchor="middle" font-family="ui-serif,Georgia,serif"  font-size="8.5" fill="#7D5A3C" font-style="italic">Simulink / hardware</text>
+
+      <rect x="144" y="156" width="94"  height="36" rx="6" fill="rgba(125,90,60,.10)"  stroke="#7D5A3C" stroke-width="1.5"/>
+      <text x="191" y="178" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">run_sim.m</text>
+
+      <rect x="246" y="156" width="158" height="36" rx="6" fill="rgba(125,90,60,.10)"  stroke="#7D5A3C" stroke-width="1.5"/>
+      <text x="325" y="178" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">rotpen_ode_idnlgrey.m</text>
+
+      <rect x="412" y="156" width="92"  height="36" rx="6" fill="rgba(125,90,60,.10)"  stroke="#7D5A3C" stroke-width="1.5"/>
+      <text x="458" y="178" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">link2_ode.m</text>
+
+      <text x="520" y="178" font-family="ui-serif,Georgia,serif" font-size="10" fill="#7D5A3C" font-style="italic">Engines</text>
+
+      <!-- ROW D — Physics + params (green) -->
+      <rect x="90"  y="226" width="136" height="36" rx="6" fill="rgba(106,125,74,.10)"  stroke="#6A7D4A" stroke-width="1.5"/>
+      <text x="158" y="248" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">rotpen_ode.m</text>
+
+      <rect x="240" y="226" width="148" height="36" rx="6" fill="rgba(106,125,74,.10)"  stroke="#6A7D4A" stroke-width="1.5"/>
+      <text x="314" y="248" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">pendulum_params.m</text>
+
+      <text x="404" y="248" font-family="ui-serif,Georgia,serif" font-size="10" fill="#6A7D4A" font-style="italic">Physics + params</text>
+
+      <!-- ROW E — Helpers (slate) -->
+      <rect x="4"   y="294" width="108" height="36" rx="6" fill="rgba(124,143,160,.10)" stroke="#7C8FA0" stroke-width="1.5"/>
+      <text x="58"  y="316" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">wrap_simout.m</text>
+
+      <rect x="120" y="294" width="88"  height="36" rx="6" fill="rgba(124,143,160,.10)" stroke="#7C8FA0" stroke-width="1.5"/>
+      <text x="164" y="316" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">save_run.m</text>
+
+      <rect x="216" y="294" width="134" height="36" rx="6" fill="rgba(124,143,160,.10)" stroke="#7C8FA0" stroke-width="1.5"/>
+      <text x="283" y="316" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">animate_pendulum.m</text>
+
+      <!-- HW boilerplate (grayed) -->
+      <rect x="400" y="294" width="64"  height="36" rx="6" fill="#F0EEE6" stroke="#C5C4BB" stroke-width="1.5"/>
+      <text x="432" y="316" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#87867F">calib.m</text>
+      <rect x="472" y="294" width="68"  height="36" rx="6" fill="#F0EEE6" stroke="#C5C4BB" stroke-width="1.5"/>
+      <text x="506" y="316" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#87867F">hwinit.m</text>
+      <rect x="548" y="294" width="70"  height="36" rx="6" fill="#F0EEE6" stroke="#C5C4BB" stroke-width="1.5"/>
+      <text x="583" y="316" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#87867F">sfusbin.m</text>
+      <rect x="626" y="294" width="74"  height="36" rx="6" fill="#F0EEE6" stroke="#C5C4BB" stroke-width="1.5"/>
+      <text x="663" y="316" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#87867F">sfusbout.m</text>
+
+      <!-- ── ARROWS ─────────────────────────────────────────── -->
+
+      <!-- HW entry → rotpentemplate: brace at y=64 -->
+      <line x1="66"  y1="50" x2="66"  y2="64" stroke="#C06340" stroke-width="1.2"/>
+      <line x1="212" y1="50" x2="212" y2="64" stroke="#C06340" stroke-width="1.2" stroke-dasharray="3,2"/>
+      <line x1="379" y1="50" x2="379" y2="64" stroke="#C06340" stroke-width="1.2" stroke-dasharray="3,2"/>
+      <line x1="66"  y1="64" x2="379" y2="64" stroke="#C06340" stroke-width="1.2"/>
+      <line x1="70"  y1="64" x2="70"  y2="156" stroke="#C06340" stroke-width="1.2" marker-end="url(#dep-hw)"/>
+
+      <!-- sim_open + sim_arm1 → run_sim: brace at y=144 -->
+      <line x1="63"  y1="114" x2="63"  y2="144" stroke="#4E76A3" stroke-width="1.2"/>
+      <line x1="203" y1="114" x2="203" y2="144" stroke="#4E76A3" stroke-width="1.2"/>
+      <line x1="63"  y1="144" x2="203" y2="144" stroke="#4E76A3" stroke-width="1.2"/>
+      <line x1="191" y1="144" x2="191" y2="156" stroke="#4E76A3" stroke-width="1.2" marker-end="url(#dep-sim)"/>
+
+      <!-- sysid_arm1_driven → rotpen_ode_idnlgrey -->
+      <line x1="356" y1="114" x2="325" y2="156" stroke="#4E76A3" stroke-width="1.2" marker-end="url(#dep-sim)"/>
+
+      <!-- sysid_arm2_freeswing → link2_ode -->
+      <line x1="516" y1="114" x2="458" y2="156" stroke="#4E76A3" stroke-width="1.2" marker-end="url(#dep-sim)"/>
+
+      <!-- run_sim + rotpen_ode_idnlgrey → rotpen_ode: brace at y=214 -->
+      <line x1="191" y1="192" x2="191" y2="214" stroke="#7D5A3C" stroke-width="1.2"/>
+      <line x1="325" y1="192" x2="325" y2="214" stroke="#7D5A3C" stroke-width="1.2"/>
+      <line x1="158" y1="214" x2="325" y2="214" stroke="#7D5A3C" stroke-width="1.2"/>
+      <line x1="158" y1="214" x2="158" y2="226" stroke="#7D5A3C" stroke-width="1.2" marker-end="url(#dep-eng)"/>
+
+      <!-- rotpen_ode → pendulum_params -->
+      <line x1="226" y1="244" x2="240" y2="244" stroke="#6A7D4A" stroke-width="1.2" marker-end="url(#dep-phy)"/>
+
+    </svg>
+  </div>
+</div>
+
 <!-- ═══════════════════════════════════════════════ 05 WORKSTREAM BOARD -->
 <div class="section">
   <div class="sec-head"><span class="idx">05</span><h2>Workstream board</h2><span class="count">6 streams</span></div>
@@ -427,7 +556,7 @@ details[open] summary::before { transform: rotate(90deg); }
         <li class="isdone"><label><input type="checkbox" checked><span class="task"><code>pendulum_params.m</code> scaffold — l₂ ≈ 0.10 m (ruler); calibration in hwinit.m</span></label></li>
         <li class="isdone"><label><input type="checkbox" checked><span class="task"><code>run_sim.m</code> ODE runner — same <code>simout</code> format as hardware</span></label></li>
         <li class="isdone"><label><input type="checkbox" checked><span class="task"><code>rotpen_ode.m</code> scaffold — M and rhs left for student derivation</span></label></li>
-        <li class="isdone"><label><input type="checkbox" checked><span class="task"><code>run_open_loop.m</code> mode switch — <code>run_with_simulation</code> flag</span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task">Split sim/hw: <code>sim_*</code> scripts for simulation, <code>run_*</code> for hardware — toggle removed</span></label></li>
         <li class="isdone"><label><input type="checkbox" checked><span class="task">Derive EOM — full system (M, n, g, τ derived)</span></label></li>
       </ul>
     </div>
@@ -618,14 +747,20 @@ details[open] summary::before { transform: rotate(90deg); }
     <summary>Key files</summary>
     <div class="dbody">
       <table class="kv-table">
-        <tr><td>run_open_loop.m</td><td>Main experiment script; <code>run_with_simulation</code> flag at top</td></tr>
-        <tr><td>run_sim.m</td><td>ODE-based simulation; produces same <code>simout</code> as hardware</td></tr>
+        <tr><td>run_open_loop.m</td><td>Hardware open-loop run (calls <code>sim rotpentemplate</code>)</td></tr>
+        <tr><td>sim_open_loop.m</td><td>Simulation open-loop run (calls <code>run_sim</code>)</td></tr>
+        <tr><td>run_arm1_motor_id.m</td><td>Hardware motor characterisation — exploratory / pre_id</td></tr>
+        <tr><td>sim_arm1_motor_id.m</td><td>Simulation motor characterisation — auto-sweep / pre_id</td></tr>
+        <tr><td>collect_arm2_freeswing.m</td><td>Hardware arm-2 free-swing data collection</td></tr>
+        <tr><td>sysid_arm2_freeswing.m</td><td>Offline arm-2 fit from <code>data/</code>; D1–D5 diagnostics</td></tr>
+        <tr><td>sysid_arm1_driven.m</td><td>Offline arm-1 fit — joint k<sub>m</sub>, k<sub>b</sub>, c₁ from driven data</td></tr>
+        <tr><td>run_sim.m</td><td>ODE engine; called by <code>sim_*</code> scripts</td></tr>
         <tr><td>rotpen_ode.m</td><td>Equations of motion — M and rhs filled; back-EMF active in rhs</td></tr>
         <tr><td>pendulum_params.m</td><td>Physical parameters + noise/bias → struct <code>p</code></td></tr>
+        <tr><td>wrap_simout.m</td><td>Helper — extract and wrap simout columns to (−180, 180]</td></tr>
         <tr><td>rotpentemplate.slx</td><td>Simulink model (hardware path) — wire controller here</td></tr>
         <tr><td>hwinit.m</td><td>Per-session sensor bias/gain values</td></tr>
         <tr><td>calib.m</td><td>Hardware startup — run first each session</td></tr>
-        <tr><td>sysid_arm2_freeswing.m</td><td>Arm-2 parameter identification script</td></tr>
         <tr><td>sfusbin.m / sfusbout.m</td><td>Simulink S-functions for hardware I/O</td></tr>
       </table>
     </div>
@@ -748,19 +883,20 @@ MathJax = {
 
 **Branches:** \`main\` (shared, hardware only) · \`simulation\` (sim framework, merge to main once validated)
 
-**Mode switch** (top of \`run_open_loop.m\`):
-\`\`\`matlab
-run_with_simulation = true;   % false → real hardware
-\`\`\`
-
 **Angle convention:** θ₁ = θ₂ = 0 = both links hanging down. θ₂ is relative (angle between arms). Raw sensor zero ≈ 85° — bias subtraction gives down = 0. Radians inside ODE, degrees in simout.
 
 **Key files:**
 
 | File | Purpose |
 |---|---|
-| run_open_loop.m | Main script; run_with_simulation flag at top |
-| run_sim.m | ODE runner; same simout format as hardware |
+| run_open_loop.m | Hardware open-loop run |
+| sim_open_loop.m | Simulation open-loop run |
+| run_arm1_motor_id.m | Hardware motor characterisation |
+| sim_arm1_motor_id.m | Simulation motor characterisation |
+| collect_arm2_freeswing.m | Hardware arm-2 free-swing data collection |
+| sysid_arm2_freeswing.m | Offline arm-2 fit (loads from data/) |
+| sysid_arm1_driven.m | Offline arm-1 fit — joint km, kb, c1 |
+| run_sim.m | ODE engine; called by sim_* scripts |
 | rotpen_ode.m | EOM — M and rhs filled; back-EMF active in rhs |
 | pendulum_params.m | Physical params + noise/bias → struct p |
 | rotpentemplate.slx | Simulink model (hardware path) |
