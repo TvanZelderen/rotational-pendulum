@@ -240,8 +240,8 @@ details[open] summary::before { transform: rotate(90deg); }
 <div class="section">
   <div class="callout">
     <div class="callout-label">Current status — 2026-05-13</div>
-    <p>Link-2 free-swing identification done: 90% fit after aligning trim to first natural peak (IC fix). Effective length <strong>l<sub>eff</sub> = 0.0868 m</strong> identified (point-mass assumption A1 is approximate; distributed mass shifts effective length vs physical 0.10 m). EOM fully transcribed in <code>rotpen_ode.m</code> — M and rhs filled; back-EMF variable <code>tau</code> is defined but not yet active in rhs (uses <code>km*u</code>, not <code>tau</code>).</p>
-    <p style="margin-top:8px;"><strong>Next steps:</strong> (1) Average more free-swing runs to tighten α, β estimates. (2) Arm-1 free-decay experiment (u=0) to get (c₁+k<sub>b</sub>)/I₁. (3) Hook up back-EMF in rhs. (4) Driven arm-1 experiment to isolate k<sub>m</sub>. (5) Linearise at both equilibria.</p>
+    <p>Link-2 free-swing identification done: 90% fit after aligning trim to first natural peak (IC fix). Effective length <strong>l<sub>eff</sub> = 0.0868 m</strong> identified (point-mass assumption A1 is approximate; distributed mass shifts effective length vs physical 0.10 m). EOM fully transcribed in <code>rotpen_ode.m</code> — M and rhs filled; back-EMF <code>tau</code> now active in rhs (Stage 1 consolidation fix).</p>
+    <p style="margin-top:8px;"><strong>Next steps:</strong> (1) Average more free-swing runs to tighten α, β estimates. (2) Arm-1 free-decay experiment (u=0) to get (c₁+k<sub>b</sub>)/I₁. (3) Driven arm-1 experiment to isolate k<sub>m</sub>. (4) Linearise at both equilibria.</p>
   </div>
 </div>
 
@@ -289,7 +289,7 @@ details[open] summary::before { transform: rotate(90deg); }
   </div>
   <div class="callout info" style="margin:10px 0;">
     <div class="callout-label">Code note</div>
-    <code>tau</code> is defined in <code>rotpen_ode.m</code> with the k<sub>b</sub> term but <code>rhs(1)</code> currently uses <code>km*u</code> directly — back-EMF is not yet active. Hook up: replace <code>p.km*u</code> with <code>tau</code> in rhs once identified.
+    Back-EMF <code>tau = km*u - kb*dth1</code> is now active in <code>rhs(1)</code> of <code>rotpen_ode.m</code> (Stage 1 fix). <code>p.kb</code> is a pre-ID placeholder — identify from arm-1 free-decay before relying on simulation accuracy.
   </div>
 
   <h3 style="margin-top:18px;">Mass matrix M(θ₂)</h3>
@@ -427,7 +427,7 @@ details[open] summary::before { transform: rotate(90deg); }
         <li class="isdone"><label><input type="checkbox" checked><span class="task"><code>pendulum_params.m</code> scaffold — l₂ ≈ 0.10 m (ruler); calibration in hwinit.m</span></label></li>
         <li class="isdone"><label><input type="checkbox" checked><span class="task"><code>run_sim.m</code> ODE runner — same <code>simout</code> format as hardware</span></label></li>
         <li class="isdone"><label><input type="checkbox" checked><span class="task"><code>rotpen_ode.m</code> scaffold — M and rhs left for student derivation</span></label></li>
-        <li class="isdone"><label><input type="checkbox" checked><span class="task"><code>firstScript.m</code> mode switch — <code>run_with_simulation</code> flag</span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task"><code>run_open_loop.m</code> mode switch — <code>run_with_simulation</code> flag</span></label></li>
         <li class="isdone"><label><input type="checkbox" checked><span class="task">Derive EOM — full system (M, n, g, τ derived)</span></label></li>
       </ul>
     </div>
@@ -441,7 +441,7 @@ details[open] summary::before { transform: rotate(90deg); }
         <li class="isdone"><label><input type="checkbox" checked><span class="task">EOM — arm 2 (passive); identifiable composites: l₂ from ωₙ, c₂/m₂l₂² from ζ</span></label></li>
         <li class="isdone"><label><input type="checkbox" checked><span class="task">Full coupled EOM (Lagrangian) — M, n, g derived</span></label></li>
         <li class="isdone"><label><input type="checkbox" checked><span class="task">Fill M and rhs in <code>rotpen_ode.m</code></span></label></li>
-        <li><label><input type="checkbox"><span class="task">Hook up back-EMF: replace <code>p.km*u</code> with <code>tau</code> in rhs(1)</span><span class="bsm wrn">next</span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task">Hook up back-EMF: replace <code>p.km*u</code> with <code>tau</code> in rhs(1) — done Stage 1</span></label></li>
         <li><label><input type="checkbox"><span class="task">Linearise at stable eq. (θ₁=0, θ₂=0 — both down)</span></label></li>
         <li><label><input type="checkbox"><span class="task">Linearise at unstable eq. (θ₂=180° — arm 2 up)</span></label></li>
         <li><label><input type="checkbox"><span class="task">Discretise — h=0.01 s; ZOH or Tustin</span></label></li>
@@ -578,10 +578,10 @@ details[open] summary::before { transform: rotate(90deg); }
           <td>Design stabilising controller first (from stable-eq. model). Then run closed-loop sysid at upright. Do last in sequence.</td>
         </tr>
         <tr>
-          <td><strong>Back-EMF not yet active in <code>rotpen_ode.m</code></strong><br><span style="font-size:12.5px;color:var(--g500);"><code>tau</code> defined but rhs uses <code>km*u</code> directly.</span></td>
-          <td><span class="badge high">High</span></td>
-          <td><span class="badge mid">Medium</span></td>
-          <td>Quick fix: replace <code>p.km*u</code> with <code>tau</code> in rhs(1). Do after k<sub>b</sub> is identified so the value is non-trivially zero.</td>
+          <td><strong>Back-EMF active in <code>rotpen_ode.m</code></strong><br><span style="font-size:12.5px;color:var(--g500);">✅ Stage 1 fix. <code>p.kb</code> is a placeholder until identified from arm-1 free-decay.</span></td>
+          <td><span class="badge low">Low</span></td>
+          <td><span class="badge low">Low</span></td>
+          <td>Identify <code>kb</code> from arm-1 free-decay (u=0) before relying on simulation accuracy at non-trivial speeds.</td>
         </tr>
         <tr>
           <td><strong>Motor acts as low-pass filter at high frequencies</strong><br><span style="font-size:12.5px;color:var(--g500);">Observed: reduced amplitude at ω=5 rad/s vs ω=0.1 rad/s.</span></td>
@@ -602,9 +602,9 @@ details[open] summary::before { transform: rotate(90deg); }
     <summary>Hardware &amp; simulation stacks</summary>
     <div class="dbody">
       <h3>Hardware stack</h3>
-      <pre>FPGA board  ↔  fugiboard MEX  ↔  sfusbin / sfusbout  ↔  rotpentemplate.slx  ↔  firstScript.m</pre>
+      <pre>FPGA board  ↔  fugiboard MEX  ↔  sfusbin / sfusbout  ↔  rotpentemplate.slx  ↔  run_open_loop.m</pre>
       <h3 style="margin-top:14px;">Simulation stack</h3>
-      <pre>pendulum_params  →  rotpen_ode  →  run_sim  →  firstScript.m</pre>
+      <pre>pendulum_params  →  rotpen_ode  →  run_sim  →  run_open_loop.m</pre>
       <h3 style="margin-top:14px;">Session startup (run in order per session)</h3>
       <ol style="padding-left:18px;font-size:14px;color:var(--g700);line-height:1.8;">
         <li><code>calib.m</code> — opens fugiboard connection, resets encoder, activates relay, verifies FPGA firmware</li>
@@ -618,14 +618,14 @@ details[open] summary::before { transform: rotate(90deg); }
     <summary>Key files</summary>
     <div class="dbody">
       <table class="kv-table">
-        <tr><td>firstScript.m</td><td>Main experiment script; <code>run_with_simulation</code> flag at top</td></tr>
+        <tr><td>run_open_loop.m</td><td>Main experiment script; <code>run_with_simulation</code> flag at top</td></tr>
         <tr><td>run_sim.m</td><td>ODE-based simulation; produces same <code>simout</code> as hardware</td></tr>
-        <tr><td>rotpen_ode.m</td><td>Equations of motion — M and rhs filled; back-EMF not yet active</td></tr>
+        <tr><td>rotpen_ode.m</td><td>Equations of motion — M and rhs filled; back-EMF active in rhs</td></tr>
         <tr><td>pendulum_params.m</td><td>Physical parameters + noise/bias → struct <code>p</code></td></tr>
         <tr><td>rotpentemplate.slx</td><td>Simulink model (hardware path) — wire controller here</td></tr>
         <tr><td>hwinit.m</td><td>Per-session sensor bias/gain values</td></tr>
         <tr><td>calib.m</td><td>Hardware startup — run first each session</td></tr>
-        <tr><td>link2ParamID.m</td><td>Arm-2 parameter identification script</td></tr>
+        <tr><td>sysid_arm2_freeswing.m</td><td>Arm-2 parameter identification script</td></tr>
         <tr><td>sfusbin.m / sfusbout.m</td><td>Simulink S-functions for hardware I/O</td></tr>
       </table>
     </div>
@@ -748,7 +748,7 @@ MathJax = {
 
 **Branches:** \`main\` (shared, hardware only) · \`simulation\` (sim framework, merge to main once validated)
 
-**Mode switch** (top of \`firstScript.m\`):
+**Mode switch** (top of \`run_open_loop.m\`):
 \`\`\`matlab
 run_with_simulation = true;   % false → real hardware
 \`\`\`
@@ -759,9 +759,9 @@ run_with_simulation = true;   % false → real hardware
 
 | File | Purpose |
 |---|---|
-| firstScript.m | Main script; run_with_simulation flag at top |
+| run_open_loop.m | Main script; run_with_simulation flag at top |
 | run_sim.m | ODE runner; same simout format as hardware |
-| rotpen_ode.m | EOM — M and rhs filled; back-EMF not yet active in rhs |
+| rotpen_ode.m | EOM — M and rhs filled; back-EMF active in rhs |
 | pendulum_params.m | Physical params + noise/bias → struct p |
 | rotpentemplate.slx | Simulink model (hardware path) |
 | hwinit.m | Per-session sensor bias/gain values |

@@ -1,8 +1,8 @@
 % Simulation runner — drop-in replacement for running rotpentemplate.slx
-% without hardware.  Produces the same workspace variables as firstScript.m:
+% without hardware.  Produces the same workspace variables as run_open_loop.m:
 %   simout  — Timeseries with columns [theta1_deg, theta2_deg]
 %
-% Do not call this directly — it is invoked by firstScript.m when
+% Do not call this directly — it is invoked by run_open_loop.m when
 % run_with_simulation = true.
 %
 % Prerequisites:
@@ -31,7 +31,7 @@ if ~exist('simin', 'var')
     h    = 0.01;
     Tsim = 10;
     t    = (0 : h : Tsim)';
-    simin = [t, zeros(size(t))];
+    simin = [t, zeros(size(t))];   % col 1: time [s],  col 2: normalised motor command [-]
 end
 
 t_span = simin(:, 1);

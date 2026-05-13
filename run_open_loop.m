@@ -42,7 +42,7 @@ amplitude = 0.5;
 omega     = 0.1;
 u = amplitude * sin(omega * t) * 0;   % zero input (open loop)
 
-simin = [t, u];   % col 1: time [s],  col 2: voltage command [V]
+simin = [t, u];   % col 1: time [s],  col 2: normalised motor command [-]
 
 %% -----------------------------------------------------------------------
 %  Run  — the only line that differs between modes
@@ -68,7 +68,7 @@ psi  = mod(y(:,5) + 180, 360) - 180;
 % %% Steady-state statistics  (trim first and last second)
 % th1_ss = th1(101:end-100);
 % th2_ss = th2(101:end-100);
-% 
+%
 % theta1_mean  = mean(th1_ss)
 % theta2_mean  = mean(th2_ss)
 % theta1_range = max(th1_ss) - min(th1_ss)

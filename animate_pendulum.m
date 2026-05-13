@@ -15,10 +15,10 @@ N   = length(t);
 h   = mean(diff(t));
 
 %% Frame decimation for ~25 fps real-time playback
-fps       = 25;
-frameSkip = max(1, round(1 / (fps * h)));
-frameIdx  = 1:frameSkip:N;
-nFrames   = length(frameIdx);
+fps        = 25;
+frame_skip = max(1, round(1 / (fps * h)));
+frame_idx  = 1:frame_skip:N;
+n_frames   = length(frame_idx);
 
 %% Precompute arm endpoint positions [m]
 th1r = deg2rad(th1);
@@ -41,54 +41,54 @@ gl.ColumnSpacing  = 12;
 gl.BackgroundColor = [0.13 0.13 0.13];
 
 %% Animation axes (left)
-axA = uiaxes(gl);
-axA.Layout.Row = 1;  axA.Layout.Column = 1;
-hold(axA, 'on');
+ax_anim = uiaxes(gl);
+ax_anim.Layout.Row = 1;  ax_anim.Layout.Column = 1;
+hold(ax_anim, 'on');
 lim = (p.l1 + p.l2) * 1.25;
-xlim(axA, [-lim lim]);
-ylim(axA, [-lim lim]);
-axis(axA, 'equal');
-grid(axA, 'on');
-axA.Color      = [0.10 0.10 0.10];
-axA.XColor     = [0.65 0.65 0.65];
-axA.YColor     = [0.65 0.65 0.65];
-axA.GridColor  = [0.28 0.28 0.28];
-axA.GridAlpha  = 1;
-axA.XLabel.String = 'x [m]';
-axA.YLabel.String = 'y [m]';
-axA.Title.String  = 't = 0.00 s';
-axA.Title.Color   = [0.85 0.85 0.85];
-axA.FontSize      = 10;
+xlim(ax_anim, [-lim lim]);
+ylim(ax_anim, [-lim lim]);
+axis(ax_anim, 'equal');
+grid(ax_anim, 'on');
+ax_anim.Color      = [0.10 0.10 0.10];
+ax_anim.XColor     = [0.65 0.65 0.65];
+ax_anim.YColor     = [0.65 0.65 0.65];
+ax_anim.GridColor  = [0.28 0.28 0.28];
+ax_anim.GridAlpha  = 1;
+ax_anim.XLabel.String = 'x [m]';
+ax_anim.YLabel.String = 'y [m]';
+ax_anim.Title.String  = 't = 0.00 s';
+ax_anim.Title.Color   = [0.85 0.85 0.85];
+ax_anim.FontSize      = 10;
 
 % Stick figure: two arm lines + three balls
-hA1  = line(axA, [0, jx(1)],    [0, jy(1)],    'Color', [0.35 0.70 1.00], 'LineWidth', 3);
-hA2  = line(axA, [jx(1), tx(1)],[jy(1), ty(1)], 'Color', [1.00 0.55 0.15], 'LineWidth', 3);
-hOrg = plot(axA, 0,     0,     'o', 'MarkerSize', 11, ...
+h_arm1  = line(ax_anim, [0, jx(1)],    [0, jy(1)],    'Color', [0.35 0.70 1.00], 'LineWidth', 3);
+h_arm2  = line(ax_anim, [jx(1), tx(1)],[jy(1), ty(1)], 'Color', [1.00 0.55 0.15], 'LineWidth', 3);
+h_org = plot(ax_anim, 0,     0,     'o', 'MarkerSize', 11, ...
     'MarkerFaceColor', [0.85 0.85 0.85], 'MarkerEdgeColor', 'none');  %#ok<NASGU>
-hJnt = plot(axA, jx(1), jy(1), 'o', 'MarkerSize', 9, ...
+h_jnt = plot(ax_anim, jx(1), jy(1), 'o', 'MarkerSize', 9, ...
     'MarkerFaceColor', [0.35 0.70 1.00], 'MarkerEdgeColor', 'none');
-hTip = plot(axA, tx(1), ty(1), 'o', 'MarkerSize', 11, ...
+h_tip = plot(ax_anim, tx(1), ty(1), 'o', 'MarkerSize', 11, ...
     'MarkerFaceColor', [1.00 0.55 0.15], 'MarkerEdgeColor', 'none');
 
 %% Time-series axes (right, stacked)
-glR = uigridlayout(gl, [3 1]);
-glR.Layout.Row = 1;  glR.Layout.Column = 2;
-glR.RowHeight   = {'1x','1x','1x'};
-glR.RowSpacing  = 6;
-glR.Padding     = [0 0 0 0];
-glR.BackgroundColor = [0.13 0.13 0.13];
+gl_right = uigridlayout(gl, [3 1]);
+gl_right.Layout.Row = 1;  gl_right.Layout.Column = 2;
+gl_right.RowHeight   = {'1x','1x','1x'};
+gl_right.RowSpacing  = 6;
+gl_right.Padding     = [0 0 0 0];
+gl_right.BackgroundColor = [0.13 0.13 0.13];
 
-axTh1 = uiaxes(glR);  axTh1.Layout.Row = 1;
-axTh2 = uiaxes(glR);  axTh2.Layout.Row = 2;
-axPsi = uiaxes(glR);  axPsi.Layout.Row = 3;
+ax_th1 = uiaxes(gl_right);  ax_th1.Layout.Row = 1;
+ax_th2 = uiaxes(gl_right);  ax_th2.Layout.Row = 2;
+ax_psi = uiaxes(gl_right);  ax_psi.Layout.Row = 3;
 
 colours = {[0.35 0.70 1.00], [0.20 0.90 0.45], [1.00 0.55 0.15]};
 labels  = {'\theta_1 [deg]', '\theta_2 [deg]', '\psi [deg]'};
 signals = {th1, th2, psi};
-tsAxes  = [axTh1, axTh2, axPsi];
+ts_axes  = [ax_th1, ax_th2, ax_psi];
 
 for i = 1:3
-    ax = tsAxes(i);
+    ax = ts_axes(i);
     hold(ax, 'on');
     ax.Color     = [0.10 0.10 0.10];
     ax.XColor    = [0.65 0.65 0.65];
@@ -111,34 +111,34 @@ end
 
 % Time cursors — vertical white dashed lines
 ypad = 1e1;
-cTh1 = plot(axTh1, [t(1) t(1)], [-ypad  ypad], '--', 'Color', [1 1 1 0.6], 'LineWidth', 1);
-cTh2 = plot(axTh2, [t(1) t(1)], [-ypad  ypad], '--', 'Color', [1 1 1 0.6], 'LineWidth', 1);
-cPsi = plot(axPsi,  [t(1) t(1)], [-ypad  ypad], '--', 'Color', [1 1 1 0.6], 'LineWidth', 1);
+cTh1 = plot(ax_th1, [t(1) t(1)], [-ypad  ypad], '--', 'Color', [1 1 1 0.6], 'LineWidth', 1);
+cTh2 = plot(ax_th2, [t(1) t(1)], [-ypad  ypad], '--', 'Color', [1 1 1 0.6], 'LineWidth', 1);
+cPsi = plot(ax_psi,  [t(1) t(1)], [-ypad  ypad], '--', 'Color', [1 1 1 0.6], 'LineWidth', 1);
 
 %% Controls (bottom, spanning both columns)
-glC = uigridlayout(gl, [1 3]);
-glC.Layout.Row    = 2;
-glC.Layout.Column = [1 2];
-glC.ColumnWidth   = {90, '1x', 70};
-glC.Padding       = [4 6 4 6];
-glC.BackgroundColor = [0.13 0.13 0.13];
+gl_ctrl = uigridlayout(gl, [1 3]);
+gl_ctrl.Layout.Row    = 2;
+gl_ctrl.Layout.Column = [1 2];
+gl_ctrl.ColumnWidth   = {90, '1x', 70};
+gl_ctrl.Padding       = [4 6 4 6];
+gl_ctrl.BackgroundColor = [0.13 0.13 0.13];
 
-btnPlay = uibutton(glC, 'push', 'Text', '▶  Play');
-btnPlay.Layout.Row    = 1;
-btnPlay.Layout.Column = 1;
-btnPlay.BackgroundColor = [0.22 0.22 0.22];
-btnPlay.FontColor       = [0.90 0.90 0.90];
-btnPlay.FontSize        = 12;
+btn_play = uibutton(gl_ctrl, 'push', 'Text', '▶  Play');
+btn_play.Layout.Row    = 1;
+btn_play.Layout.Column = 1;
+btn_play.BackgroundColor = [0.22 0.22 0.22];
+btn_play.FontColor       = [0.90 0.90 0.90];
+btn_play.FontSize        = 12;
 
-sld = uislider(glC, 'Limits', [1 nFrames], 'Value', 1, ...
+sld = uislider(gl_ctrl, 'Limits', [1 n_frames], 'Value', 1, ...
     'MajorTicks', [], 'MinorTicks', []);
 sld.Layout.Row    = 1;
 sld.Layout.Column = 2;
 
-lblT = uilabel(glC, 'Text', sprintf('%.2f s', t(1)), ...
+lbl_time = uilabel(gl_ctrl, 'Text', sprintf('%.2f s', t(1)), ...
     'HorizontalAlignment', 'center', 'FontColor', [0.80 0.80 0.80], 'FontSize', 11);
-lblT.Layout.Row    = 1;
-lblT.Layout.Column = 3;
+lbl_time.Layout.Row    = 1;
+lbl_time.Layout.Column = 3;
 
 %% Shared mutable state
 state.frame   = 1;
@@ -146,7 +146,7 @@ state.playing = false;
 state.tmr     = [];
 
 %% Wire callbacks (defined as nested functions below)
-btnPlay.ButtonPushedFcn = @onPlayPause;
+btn_play.ButtonPushedFcn = @onPlayPause;
 sld.ValueChangedFcn     = @onSlider;
 fig.CloseRequestFcn     = @onClose;
 
@@ -157,16 +157,16 @@ updateFrame(1);
 % =========================================================================
 
     function updateFrame(f)
-        f = max(1, min(nFrames, round(f)));
+        f = max(1, min(n_frames, round(f)));
         state.frame = f;
-        k = frameIdx(f);
+        k = frame_idx(f);
 
         % Stick figure
-        hA1.XData  = [0,    jx(k)];    hA1.YData  = [0,    jy(k)];
-        hA2.XData  = [jx(k), tx(k)];   hA2.YData  = [jy(k), ty(k)];
-        hJnt.XData = jx(k);             hJnt.YData = jy(k);
-        hTip.XData = tx(k);             hTip.YData = ty(k);
-        axA.Title.String = sprintf('t = %.2f s', t(k));
+        h_arm1.XData  = [0,    jx(k)];    h_arm1.YData  = [0,    jy(k)];
+        h_arm2.XData  = [jx(k), tx(k)];   h_arm2.YData  = [jy(k), ty(k)];
+        h_jnt.XData = jx(k);             h_jnt.YData = jy(k);
+        h_tip.XData = tx(k);             h_tip.YData = ty(k);
+        ax_anim.Title.String = sprintf('t = %.2f s', t(k));
 
         % Cursors
         cTh1.XData = [t(k) t(k)];
@@ -174,7 +174,7 @@ updateFrame(1);
         cPsi.XData  = [t(k) t(k)];
 
         sld.Value  = f;
-        lblT.Text  = sprintf('%.2f s', t(k));
+        lbl_time.Text  = sprintf('%.2f s', t(k));
 
         drawnow limitrate;
     end
@@ -185,9 +185,9 @@ updateFrame(1);
             return;
         end
         next = state.frame + 1;
-        if next > nFrames
+        if next > n_frames
             stop(state.tmr);
-            btnPlay.Text  = '▶  Play';
+            btn_play.Text  = '▶  Play';
             state.playing = false;
         else
             updateFrame(next);
@@ -197,10 +197,10 @@ updateFrame(1);
     function onPlayPause(~, ~)
         if state.playing
             stop(state.tmr);
-            btnPlay.Text  = '▶  Play';
+            btn_play.Text  = '▶  Play';
             state.playing = false;
         else
-            if state.frame >= nFrames
+            if state.frame >= n_frames
                 updateFrame(1);
             end
             if isempty(state.tmr) || ~isvalid(state.tmr)
@@ -209,7 +209,7 @@ updateFrame(1);
                     'TimerFcn', @timerStep);
             end
             start(state.tmr);
-            btnPlay.Text  = '⏸  Pause';
+            btn_play.Text  = '⏸  Pause';
             state.playing = true;
         end
     end
@@ -217,7 +217,7 @@ updateFrame(1);
     function onSlider(~, ~)
         if state.playing
             stop(state.tmr);
-            btnPlay.Text  = '▶  Play';
+            btn_play.Text  = '▶  Play';
             state.playing = false;
         end
         updateFrame(round(sld.Value));

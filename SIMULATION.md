@@ -12,7 +12,7 @@ How the simulation fits alongside the real hardware workflow.
 | `furuta_ode.m` | Equations of motion (yours to complete) |
 | `run_sim.m` | ODE integrator, produces same `simout` as `rotpentemplate.slx` |
 
-`run_sim.m` is a **drop-in** for the hardware path.  Once `furuta_ode.m` is filled in, you can run `firstScript.m` (from the "Extract outputs" section) on simulation output without touching the hardware.
+`run_sim.m` is a **drop-in** for the hardware path.  Once `furuta_ode.m` is filled in, you can run `run_open_loop.m` (from the "Extract outputs" section) on simulation output without touching the hardware.
 
 ---
 

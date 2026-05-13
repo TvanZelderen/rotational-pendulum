@@ -21,23 +21,23 @@ y   = simout.Data;           % N x 5: [th1, dth1, th2, dth2, phi] in degrees
 phi = y(:,5);
 phi = mod(phi - mean(phi(end-100:end)) + 180, 360) - 180;
 
-%% Overview plot — use to set trimStart / trimEnd
+%% Overview plot — use to set trim_start / trim_end
 figure;
 plot(t, phi)
 xlabel('Time [s]'); ylabel('\phi [deg]')
 
 %% Trim end — cut noise-dominated tail
-trimEnd  = 18;    % [s] — stop before SNR collapses (~18 s from D4)
-iEnd     = numel(t) - (Tsim - trimEnd) * 100;
+trim_end  = 18;    % [s] — stop before SNR collapses (~18 s from D4)
+i_end     = numel(t) - (Tsim - trim_end) * 100;
 
 %% Trim start — align to first natural peak so x0(2) = 0 is exact
 % Search 100:500 (1–5 s) to skip the manual-release transient.
 phi_search = phi(120:500);
-[~, iRel]  = max(abs(phi_search));
-iStart     = 99 + iRel;             % offset back to full-vector index
+[~, i_rel]  = max(abs(phi_search));
+i_start     = 99 + i_rel;             % offset back to full-vector index
 
-phi_trimmed = phi(iStart:iEnd);
-tTrimmed    = t(iStart:iEnd);
+phi_trimmed = phi(i_start:i_end);
+t_trimmed   = t(i_start:i_end);
 
 %% Convert to radians (nonlinear ODE uses sin)
 phi_rad = deg2rad(phi_trimmed);
@@ -92,7 +92,7 @@ fprintf('|dth1|_max / |dth2|_max = %.1f%%\n', 100 * dth1_max / dth2_max);
 %% D3 — Period vs amplitude (nonlinear softening check)
 zero_crossings = find(diff(sign(phi_rad)));
 if numel(zero_crossings) >= 3
-    half_periods = diff(tTrimmed(zero_crossings));   % successive zero-crossing gaps
+    half_periods = diff(t_trimmed(zero_crossings));   % successive zero-crossing gaps
     mid_idx      = zero_crossings(1:end-1);
     amp_at_cross = abs(phi_rad(mid_idx));
     figure('Name','D3 – Period vs amplitude');
@@ -105,15 +105,15 @@ else
 end
 
 %% D4 — Trim sensitivity (tabulate alpha, beta, fit% vs trim window)
-trimStarts = [1, 2, 3, 4];
-trimEnds   = [18, 22, 26, 30];
-fprintf('\n%-10s %-10s %-10s %-10s %-8s\n','trimStart','trimEnd','alpha','beta','fit%');
-for ts = trimStarts
-    for te = trimEnds
-        iS = ts*100+1;  iE = numel(t)-(Tsim-te)*100;
-        if iE <= iS; continue; end
-        phi_t = deg2rad(phi(iS:iE));
-        t_t   = t(iS:iE);
+trim_starts = [1, 2, 3, 4];
+trim_ends   = [18, 22, 26, 30];
+fprintf('\n%-10s %-10s %-10s %-10s %-8s\n','trim_start','trim_end','alpha','beta','fit%');
+for ts = trim_starts
+    for te = trim_ends
+        i_s = ts*100+1;  i_e = numel(t)-(Tsim-te)*100;
+        if i_e <= i_s; continue; end
+        phi_t = deg2rad(phi(i_s:i_e));
+        t_t   = t(i_s:i_e);
         d_t   = iddata(phi_t,[],h);
         x0_t  = [phi_t(1); (phi_t(2)-phi_t(1))/h];
         s_t   = idnlgrey('link2_ode',[1,0,2],{sys_est.Parameters(1).Value; sys_est.Parameters(2).Value},x0_t,0);
@@ -136,7 +136,7 @@ phi_sim = sim(sys_est, data);
 residual = phi_rad - phi_sim.OutputData;
 figure('Name','D5 – Residual spectrum');
 subplot(2,1,1);
-  plot(tTrimmed, residual); xlabel('t [s]'); ylabel('residual [rad]'); title('D5 – Time residual');
+  plot(t_trimmed, residual); xlabel('t [s]'); ylabel('residual [rad]'); title('D5 – Time residual');
 subplot(2,1,2);
   pwelch(residual, [], [], [], 1/h);
   omega_n = sqrt(sys_est.Parameters(2).Value);
@@ -149,10 +149,6 @@ subplot(2,1,2);
 
 %% Results
 
-% alpha (c2/m2/l2^2) = 0.325573
-% beta  (g/l2)       = 98.729513
-% l2                 = 0.099362 m
-
-% alpha (c2/m2/l2^2) = 0.308600
-% beta  (g/l2)       = 98.646966
-% l2                 = 0.099446 m
+% Run 1 (2026-05-08): alpha = 0.325573, beta = 98.729513, l2 = 0.099362 m
+% Run 2 (2026-05-08): alpha = 0.308600, beta = 98.646966, l2 = 0.099446 m
+% Latest (2026-05-12): alpha = 0.164111, beta = 112.964563, l2 = 0.086841 m  ← locked into pendulum_params
