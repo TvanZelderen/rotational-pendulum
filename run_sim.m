@@ -1,9 +1,6 @@
-% Simulation runner — drop-in replacement for running rotpentemplate.slx
-% without hardware.  Produces the same workspace variables as run_open_loop.m:
-%   simout  — Timeseries with columns [theta1_deg, theta2_deg]
-%
-% Do not call this directly — it is invoked by run_open_loop.m when
-% run_with_simulation = true.
+% Simulation runner — drop-in replacement for rotpentemplate.slx.
+% Invoked by sim_open_loop.m and sim_arm1_motor_id.m.
+% Produces simout Timeseries with columns [th1_deg, dth1_dps, th2_deg, dth2_dps, psi_deg].
 %
 % Prerequisites:
 %   pendulum_params.m   — must have been run (populates struct p)

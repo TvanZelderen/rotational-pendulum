@@ -1,20 +1,21 @@
+% Offline arm-2 free-swing parameter fit.
+% Collect data first with collect_arm2_freeswing.m.
+
 clear; clc;
-% Prerequisites (run once per session before this script):
-%   1. calib.m  — opens fugiboard connection, resets encoder, activates relay
-%   2. hwinit.m — sets sensor gain/offset calibration values
 
-%% Parameters
-h    = 0.01;  % sample period [s]
-Tsim = 30;    % experiment duration [s]
+data_file = 'latest';   % 'latest' or exact filename, e.g. '20260511_170335_link2_free_swing.mat'
 
-%% Input signal — zero to hold arm 1 stationary
-t     = (0:h:Tsim)';
-u     = zeros(size(t));
-simin = [t, u];
+if strcmp(data_file, 'latest')
+    files = dir(fullfile('data', '*link2_free_swing.mat'));
+    [~, idx] = max([files.datenum]);
+    data_file = files(idx).name;
+end
+load(fullfile('data', data_file), 'simin', 'simout');
+fprintf('Loaded: %s\n', data_file);
 
-%% Run experiment
-sim rotpentemplate
-save_run(simin, simout, 'link2_free_swing');
+h    = simin(2,1) - simin(1,1);
+Tsim = simin(end,1);
+t    = simin(:,1);
 
 %% Extract phi = th1 + th2 (Simulink output 5), zero at equilibrium
 y   = simout.Data;           % N x 5: [th1, dth1, th2, dth2, phi] in degrees

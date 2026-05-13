@@ -37,5 +37,5 @@ function [dx, y] = rotpen_ode_idnlgrey(t, x, u, km, kb, c1, c2, J1, J2, l1, l2, 
     p.g   = g;
 
     dx = rotpen_ode(t, x, u, p);
-    y = x([1;3])
+    y = x([1;3]);
 end

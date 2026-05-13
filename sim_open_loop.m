@@ -1,14 +1,10 @@
-% Open-loop hardware run.  For simulation, see sim_open_loop.m.
-% Prerequisites (once per session, in order):
-%   calib.m  — opens fugiboard connection, resets encoder, activates relay
-%   hwinit.m — sets sensor gain/offset calibration values
+% Simulation open-loop run.  For hardware, see run_open_loop.m.
 
 clear; clc;
 
 pendulum_params;
-assert(exist('fugihandle', 'var'), ...
-    'Run calib.m and hwinit.m before using hardware mode.');
 
+save_sim  = false;        % set true to write simout to data/
 run_label = 'open_loop';
 
 %% -----------------------------------------------------------------------
@@ -31,19 +27,21 @@ simin = [t, u];   % col 1: time [s],  col 2: normalised motor command [-]
 %% -----------------------------------------------------------------------
 %  Run
 % -----------------------------------------------------------------------
-sim rotpentemplate;
+run_sim;
 
 %% -----------------------------------------------------------------------
 %  Extract outputs
 % -----------------------------------------------------------------------
 [th1, dth1, th2, dth2, psi] = wrap_simout(simout);
 
-%% Save
-save_run(simin, simout, run_label);
+%% Save (off by default — flip save_sim to save)
+if save_sim
+    save_run(simin, simout, run_label);
+end
 
 %% Plot
 figure(1); clf;
 plot(t, th1, t, th2, t, psi);
 legend('\theta_1', '\theta_2', '\psi');
 xlabel('Time [s]'); ylabel('Angle [deg]'); grid on;
-title('Open loop — rotational pendulum');
+title('Open loop — simulation');
