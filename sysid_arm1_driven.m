@@ -2,7 +2,7 @@ clear; clc;
 pendulum_params;   % populates struct p — source of truth for guesses + fixed values
 
 %% ── Configuration ──────────────────────────────────────────────────────────
-file_name   = '20260511_165315_doublependulum_sine_excitation.mat';
+file_name   = '20260513_163112_arm1_pre_id_f200mHz_a30.mat';
 data_folder = 'data';
 
 trim_start = 3;     % [s] skip initial transient
@@ -53,9 +53,35 @@ t_trimmed  = t_raw(i_start:i_end);
 fprintf('Trim window: t = %.2f to %.2f s  (%d samples)\n', ...
         t_trimmed(1), t_trimmed(end), length(t_trimmed));
 
+%% 1. Design the Filter
+fs = 1/h;                    % Your sample rate (100 Hz)
+fc = 10;                     % Cutoff frequency (20 Hz)
+[b, a] = butter(2, fc/(fs/2)); % 2nd order Butterworth
+
+%% 2. Apply Zero-Phase Filtering (CRITICAL)
+% We use 'filtfilt' instead of 'filter' to ensure there is 0ms time delay.
+% Standard filters shift the data in time, which ruins inertia estimation!
+th1_f  = filtfilt(b, a, th1_rad);
+dth1_f = filtfilt(b, a, dth1_rad);
+th2_f  = filtfilt(b, a, th2_rad);
+dth2_f = filtfilt(b, a, dth2_rad);
+
+%% 3. Diagnostic Check (Don't skip this!)
+% Make sure the red line (filtered) goes through the middle of the gray (raw)
+figure(10); clf;
+% Change this line:
+plot(t_trimmed, dth1_rad(i_start:i_end), 'Color', [0.8 0.8 0.8]); hold on;
+plot(t_trimmed, dth1_f(i_start:i_end), 'r', 'LineWidth', 1.5);
+ylabel('Velocity [rad/s]');
+legend('Raw (Fuzzy)', 'Filtered (Clean)');
+title('Filter Verification');
+
+%% 4. Create the Clean iddata
+y_clean = [th1_f(i_start:i_end), th2_f(i_start:i_end)];
+data = iddata(y_clean, u_trimmed, h);
 %% ── iddata ──────────────────────────────────────────────────────────────────
-y_angles = [th1_rad(i_start:i_end), th2_rad(i_start:i_end)];
-data = iddata(y_angles, u_trimmed, h);
+%y_angles = [th1_rad(i_start:i_end), th2_rad(i_start:i_end)];
+%data = iddata(y_angles, u_trimmed, h);
 data.OutputName = {'th1', 'th2'};
 data.OutputUnit = {'rad', 'rad'};
 data.InputName  = {'u'};
@@ -126,7 +152,7 @@ end
 opt = nlgreyestOptions('Display', 'on');
 opt.SearchMethod                = 'lm';
 opt.SearchOptions.MaxIterations = 300;
-opt.SearchOptions.Tolerance     = 1e-8;
+opt.SearchOptions.Tolerance     = 0.00065; 
 
 sys_est = nlgreyest(data, sys0, opt);
 
