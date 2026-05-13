@@ -23,7 +23,7 @@ function dxdt = rotpen_ode(~, x, u, p)
     % negligible, so tau drives arm 1 independently.  The full coupling term
     % still appears in M and rhs below (more accurate); dropping it is a
     % simplification to validate later against hardware data.
-    tau = p.km * u - p.kb * dth1;   % [N·m]   back-EMF braking subtracted
+    tau = p.km * u;   % [N·m]   velocity-dependent braking lumped into kbc1 below
     
     % -----------------------------------------------------------------------
     % TODO — Derive the equations of motion using the Euler-Lagrange method.
@@ -54,7 +54,7 @@ function dxdt = rotpen_ode(~, x, u, p)
     %
     %  4. Lagrangian:  L = T - V
     %     Apply Euler-Lagrange for each generalised coordinate:
-    %       d/dt(dL/d(dth1)) - dL/d(th1) = tau - p.c1*dth1
+    %       d/dt(dL/d(dth1)) - dL/d(th1) = tau - p.kbc1*dth1
     %       d/dt(dL/d(dth2)) - dL/d(th2) =     - p.c2*dth2
     %
     %  5. You will arrive at the form:
@@ -74,7 +74,7 @@ function dxdt = rotpen_ode(~, x, u, p)
     %% Right-hand side  (Coriolis + gravity + damping + input)
     % TODO: fill in the two entries.
     h = p.m2*p.l1*p.l2*sin(th2);
-    rhs = [tau-p.c1*dth1 - (-h*(2*dth1*dth2+dth2^2)) - ((p.m1*p.lc1+p.m2*p.l1)*p.g*sin(th1) + p.m2*p.g*p.l2*sin(th1+th2)); -p.c2*dth2 - (h*dth1^2) - (p.m2*p.g*p.l2*sin(th1+th2))];
+    rhs = [tau-p.kbc1*dth1 - (-h*(2*dth1*dth2+dth2^2)) - ((p.m1*p.lc1+p.m2*p.l1)*p.g*sin(th1) + p.m2*p.g*p.l2*sin(th1+th2)); -p.c2*dth2 - (h*dth1^2) - (p.m2*p.g*p.l2*sin(th1+th2))];
     
     %% Solve for angular accelerations
     ddq = M \ rhs;

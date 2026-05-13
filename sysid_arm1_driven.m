@@ -95,7 +95,7 @@ x0_diag = y_trimmed(1, :)';
 u0_diag = u_trimmed(1);
 
 [dx_diag, ~] = rotpen_ode_idnlgrey(0, x0_diag, u0_diag, ...
-    p.km, p.kb, p.c1, p.c2, p.J1, p.J2, p.l1, p.l2, p.lc1, p.m1, p.m2, p.g);
+    p.km, p.kbc1, p.c2, p.J1, p.J2, p.l1, p.l2, p.lc1, p.m1, p.m2, p.g);
 
 fprintf('\nODE diagnostic (initial params, t=0):\n');
 fprintf('  dth1   = %+.4f rad/s\n',  dx_diag(1));
@@ -109,7 +109,7 @@ end
 %% ── Quick ode45 test ────────────────────────────────────────────────────────
 ode_fun  = @(t_ode, x_ode) rotpen_ode_idnlgrey(t_ode, x_ode, ...
     interp1(t_trimmed, u_trimmed, t_ode, 'linear', 'extrap'), ...
-    p.km, p.kb, p.c1, p.c2, p.J1, p.J2, p.l1, p.l2, p.lc1, p.m1, p.m2, p.g);
+    p.km, p.kbc1, p.c2, p.J1, p.J2, p.l1, p.l2, p.lc1, p.m1, p.m2, p.g);
 ode_opts = odeset('RelTol', 1e-6, 'AbsTol', 1e-8);
 n_test   = min(200, length(t_trimmed));
 
@@ -125,24 +125,23 @@ subplot(2,1,2);
   legend('d\theta_1', 'd\theta_2'); ylabel('[rad/s]'); xlabel('Time [s]');
 
 %% ── Build idnlgrey model ─────────────────────────────────────────────────────
-% Parameter order: km, kb, c1, c2, J1, J2, l1, l2, lc1, m1, m2, g
+% Parameter order: km, kbc1, c2, J1, J2, l1, l2, lc1, m1, m2, g
 % (must match rotpen_ode_idnlgrey.m argument list)
-param_cell = {p.km; p.kb; p.c1; p.c2; p.J1; p.J2; p.l1; p.l2; p.lc1; p.m1; p.m2; p.g};
+param_cell = {p.km; p.kbc1; p.c2; p.J1; p.J2; p.l1; p.l2; p.lc1; p.m1; p.m2; p.g};
 x0_est     = y_trimmed(1, :)';
 
 sys0 = idnlgrey('rotpen_ode_idnlgrey', [2 1 4], param_cell, x0_est, 0);
 
-param_names = {'km','kb','c1','c2','J1','J2','l1','l2','lc1','m1','m2','g'};
-free_params = {'km', 'kb', 'c1'};   % indices 1–3 — everything else is fixed
+param_names = {'km','kbc1','c2','J1','J2','l1','l2','lc1','m1','m2','g'};
+free_params = {'km', 'kbc1'};   % everything else fixed
 
 for i = 1:numel(param_names)
     sys0.Parameters(i).Name    = param_names{i};
     sys0.Parameters(i).Minimum = 0;
     sys0.Parameters(i).Fixed   = ~ismember(param_names{i}, free_params);
 end
-sys0.Parameters(1).Maximum = 5.0;   % km  [N·m per normalised unit]
-sys0.Parameters(2).Maximum = 5.0;   % kb  [N·m·s/rad]
-sys0.Parameters(3).Maximum = 1.0;   % c1  [N·m·s/rad]
+sys0.Parameters(1).Maximum = 5.0;   % km   [N·m per normalised unit]
+sys0.Parameters(2).Maximum = 5.0;   % kbc1 [N·m·s/rad]
 
 for i = 1:4
     sys0.InitialStates(i).Fixed = false;
