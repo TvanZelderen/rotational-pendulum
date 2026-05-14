@@ -8,11 +8,6 @@ data_folder = 'data';
 trim_start = 3;     % [s] skip initial transient
 trim_end   = 28;    % [s]
 
-% Set true only if the saved u signal is in raw Volts rather than normalised
-% [-1, +1].  Verify via rotpentemplate.slx gain block before flipping.
-input_in_volts = false;
-sat_voltage    = 5.0;   % [V] fugiboard output saturation (used only if above = true)
-
 %% ── Load data ───────────────────────────────────────────────────────────────
 run_data = load(fullfile(data_folder, file_name));
 t_raw  = run_data.simin(:, 1);
@@ -24,10 +19,6 @@ th1_rad  = deg2rad(y_raw(:, 1));
 dth1_rad = deg2rad(y_raw(:, 2));
 th2_rad  = deg2rad(y_raw(:, 3));
 dth2_rad = deg2rad(y_raw(:, 4));
-
-if input_in_volts
-    u_raw = u_raw / sat_voltage;
-end
 
 %% ── Trim: calmest start within wrap-safe window ─────────────────────────────
 i_start = round(trim_start / h) + 1;
@@ -53,9 +44,15 @@ t_trimmed  = t_raw(i_start:i_end);
 fprintf('Trim window: t = %.2f to %.2f s  (%d samples)\n', ...
         t_trimmed(1), t_trimmed(end), length(t_trimmed));
 
+% plot(t_trimmed, y_trimmed(:,1))
+
+% figure; plot(t_trimmed, u_trimmed/max(abs(u_trimmed)), 'b', t_trimmed, th1_rad(i_start:i_end)/max(abs(th1_rad(i_start:i_end))), 'r');
+% legend('u (normalised)', 'th1 (normalised)'); grid on;
+% title('Sign check — do they go the same direction?');
+
 %% 1. Design the Filter
 fs = 1/h;                    % Your sample rate (100 Hz)
-fc = 10;                     % Cutoff frequency (20 Hz)
+fc = 5;                     % Cutoff frequency (20 Hz)
 [b, a] = butter(2, fc/(fs/2)); % 2nd order Butterworth
 
 %% 2. Apply Zero-Phase Filtering (CRITICAL)
@@ -111,18 +108,31 @@ ode_fun  = @(t_ode, x_ode) rotpen_ode_idnlgrey(t_ode, x_ode, ...
     interp1(t_trimmed, u_trimmed, t_ode, 'linear', 'extrap'), ...
     p.km, p.kbc1, p.c2, p.J1, p.J2, p.l1, p.l2, p.lc1, p.m1, p.m2, p.g);
 ode_opts = odeset('RelTol', 1e-6, 'AbsTol', 1e-8);
-n_test   = min(200, length(t_trimmed));
+period_s = 1 / 0.2;                              % input period [s] — update if freq changes
+n_test   = min(round(2 * period_s / h), length(t_trimmed));   % 2 full periods
 
 [t_test, x_test] = ode45(ode_fun, t_trimmed(1:n_test), x0_diag, ode_opts);
 
+ode_fun_gravity = @(t_ode, x_ode) rotpen_ode_idnlgrey(t_ode, x_ode, 0, ...
+    p.km, p.kbc1, p.c2, p.J1, p.J2, p.l1, p.l2, p.lc1, p.m1, p.m2, p.g);
+[t_grav, x_grav] = ode45(ode_fun_gravity, t_trimmed(1:n_test), x0_diag, ode_opts);
+
+u_test = interp1(t_trimmed, u_trimmed, t_test, 'linear', 'extrap');
+
 figure('Name', 'ODE test — check for blow-up (initial params)');
-subplot(2,1,1);
-  plot(t_test, rad2deg(x_test(:,1)), t_test, rad2deg(x_test(:,3)));
-  legend('\theta_1', '\theta_2'); ylabel('Angle [deg]');
-  title('ODE test simulation — initial param guess');
-subplot(2,1,2);
-  plot(t_test, x_test(:,2), t_test, x_test(:,4));
-  legend('d\theta_1', 'd\theta_2'); ylabel('[rad/s]'); xlabel('Time [s]');
+subplot(3,1,1);
+  plot(t_test, rad2deg(x_test(:,1)), 'b',  t_test, rad2deg(x_test(:,3)),  'r'); hold on;
+  plot(t_grav, rad2deg(x_grav(:,1)), 'b--', t_grav, rad2deg(x_grav(:,3)), 'r--');
+  legend('\theta_1', '\theta_2', '\theta_1 (gravity only)', '\theta_2 (gravity only)');
+  ylabel('Angle [deg]'); title('ODE test — initial param guess'); grid on;
+subplot(3,1,2);
+  plot(t_test, x_test(:,2), 'b', t_test, x_test(:,4), 'r'); hold on;
+  plot(t_grav, x_grav(:,2), 'b--', t_grav, x_grav(:,4), 'r--');
+  legend('d\theta_1', 'd\theta_2', 'd\theta_1 (grav)', 'd\theta_2 (grav)');
+  ylabel('[rad/s]'); grid on;
+subplot(3,1,3);
+  plot(t_test, u_test, 'k');
+  ylabel('u [-]'); xlabel('Time [s]'); grid on;
 
 %% ── Build idnlgrey model ─────────────────────────────────────────────────────
 % Parameter order: km, kbc1, c2, J1, J2, l1, l2, lc1, m1, m2, g
@@ -140,8 +150,8 @@ for i = 1:numel(param_names)
     sys0.Parameters(i).Minimum = 0;
     sys0.Parameters(i).Fixed   = ~ismember(param_names{i}, free_params);
 end
-sys0.Parameters(1).Maximum = 5.0;   % km   [N·m per normalised unit]
-sys0.Parameters(2).Maximum = 5.0;   % kbc1 [N·m·s/rad]
+sys0.Parameters(1).Maximum = 30;   % km   [N·m per normalised unit]
+sys0.Parameters(2).Maximum = 10;   % kbc1 [N·m·s/rad]
 
 for i = 1:4
     sys0.InitialStates(i).Fixed = false;
@@ -154,6 +164,12 @@ opt.SearchOptions.MaxIterations = 300;
 opt.SearchOptions.Tolerance     = 0.00065; 
 
 sys_est = nlgreyest(data, sys0, opt);
+
+%% ── Sign check ────────────────────────────────────────────────────────────────
+figure;
+subplot(2,1,1); plot(t_trimmed, u_trimmed); ylabel('u'); grid on;
+subplot(2,1,2); plot(t_trimmed, th1_rad(i_start:i_end)); ylabel('\theta_1 [rad]'); grid on;
+xlabel('Time [s]');
 
 %% ── Results ─────────────────────────────────────────────────────────────────
 fprintf('\n--- Estimated (free) parameters ---\n');

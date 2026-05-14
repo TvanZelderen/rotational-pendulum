@@ -23,7 +23,7 @@ function dxdt = rotpen_ode(~, x, u, p)
     % negligible, so tau drives arm 1 independently.  The full coupling term
     % still appears in M and rhs below (more accurate); dropping it is a
     % simplification to validate later against hardware data.
-    tau = p.km * u;   % [N·m]   velocity-dependent braking lumped into kbc1 below
+    tau = - p.km * u;   % [N·m]   velocity-dependent braking lumped into kbc1 below
     
     % -----------------------------------------------------------------------
     % TODO — Derive the equations of motion using the Euler-Lagrange method.
