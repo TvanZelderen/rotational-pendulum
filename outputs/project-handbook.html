@@ -233,15 +233,15 @@ details[open] summary::before { transform: rotate(90deg); }
     <button id="md-export">Copy as Markdown</button>
     <button id="theme-toggle" aria-label="Toggle dark/light mode">◑</button>
   </div>
-  <p class="gen-date">Generated 2026-05-13 · One doc to rule them all</p>
+  <p class="gen-date">Generated 2026-05-14 · One doc to rule them all</p>
 </header>
 
 <!-- ═══════════════════════════════════════════════ WHERE WE ARE -->
 <div class="section">
   <div class="callout">
-    <div class="callout-label">Current status — 2026-05-13</div>
-    <p>Link-2 free-swing identification done: 90% fit after aligning trim to first natural peak (IC fix). Effective length <strong>l<sub>eff</sub> = 0.0868 m</strong> identified (point-mass assumption A1 is approximate; distributed mass shifts effective length vs physical 0.10 m). EOM fully transcribed in <code>rotpen_ode.m</code> — M and rhs filled; back-EMF <code>tau</code> now active in rhs (Stage 1 consolidation fix).</p>
-    <p style="margin-top:8px;"><strong>Next steps:</strong> (1) Average more free-swing runs to tighten α, β estimates. (2) Collect arm-1 pre-ID dataset with <code>run_arm1_motor_id.m</code> (pre_id mode, 0.2 Hz, amp 0.3, ≥10 cycles) then run <code>sysid_arm1_driven.m</code> to fit k<sub>m</sub>, k<sub>b</sub>, c₁ jointly. (3) Linearise at both equilibria.</p>
+    <div class="callout-label">Current status — 2026-05-14</div>
+    <p>Link-2 free-swing identification done: 90% fit. Effective length <strong>l<sub>eff</sub> = 0.0868 m</strong> identified. EOM fully transcribed in <code>rotpen_ode.m</code> — M and rhs filled; back-EMF active. <strong>Arm 1 sysid strategy reworked:</strong> single 0.2 Hz sine only constrains k<sub>m</sub>/k<sub>bc1</sub> ratio (integrator regime at ω ≪ k<sub>bc1</sub>/J₁); "stops dead" on release confirmed Coulomb/stiction, violating A4. Coulomb term added to rhs₁.</p>
+    <p style="margin-top:8px;"><strong>Next steps — arm 1 three-step ID:</strong> (1) Two-angle slow ramp (θ₁=0° and 90°) → k<sub>m</sub> and τ<sub>c</sub> (static). (2) Constant-u terminal-velocity sweep → k<sub>bc1</sub> and τ<sub>c</sub> (kinetic) via linear regression. (3) Fix k<sub>m</sub>, k<sub>bc1</sub>, τ<sub>c</sub>; validate on existing 0.2 Hz sine dataset with <code>sysid_arm1_driven.m</code>. Then linearise at both equilibria.</p>
   </div>
 </div>
 
@@ -289,7 +289,7 @@ details[open] summary::before { transform: rotate(90deg); }
   </div>
   <div class="callout info" style="margin:10px 0;">
     <div class="callout-label">Code note</div>
-    Back-EMF <code>tau = km*u - kb*dth1</code> is now active in <code>rhs(1)</code> of <code>rotpen_ode.m</code> (Stage 1 fix). <code>p.kb</code> is a pre-ID placeholder — identify from arm-1 free-decay before relying on simulation accuracy.
+    Motor torque in code: <code>tau = -p.km*u</code> (negative sign — hardware convention: positive u drives θ₁ negative). Back-EMF and joint damping are combined into <code>p.kbc1</code>: net braking = <code>kbc1·dth1</code>. Coulomb term <code>tau_c·tanh(dth1/v_c)</code> added to rhs₁ (2026-05-14) — see rhs equation below.
   </div>
 
   <h3 style="margin-top:18px;">Mass matrix M(θ₂)</h3>
@@ -303,8 +303,9 @@ details[open] summary::before { transform: rotate(90deg); }
   <p style="font-size:14px;">Let \( h = m_2 l_1 l_2 \sin\theta_2 \) (Coriolis prefactor).</p>
   <div class="math-block">
     <div class="math-label">Coriolis + gravity + damping + input</div>
-    \[ \mathrm{rhs}_1 = \tau - c_1\dot\theta_1 + h\bigl(2\dot\theta_1\dot\theta_2 + \dot\theta_2^2\bigr) - \bigl(m_1 l_{c1} + m_2 l_1\bigr)g\sin\theta_1 - m_2 g l_2\sin(\theta_1+\theta_2) \]
+    \[ \mathrm{rhs}_1 = \tau - k_{bc1}\dot\theta_1 - \tau_c\tanh\!\left(\tfrac{\dot\theta_1}{v_c}\right) + h\bigl(2\dot\theta_1\dot\theta_2 + \dot\theta_2^2\bigr) - \bigl(m_1 l_{c1} + m_2 l_1\bigr)g\sin\theta_1 - m_2 g l_2\sin(\theta_1+\theta_2) \]
     \[ \mathrm{rhs}_2 = -c_2\dot\theta_2 - h\dot\theta_1^2 - m_2 g l_2\sin(\theta_1+\theta_2) \]
+    <p style="font-size:13px;color:var(--g500);margin-top:8px;">k<sub>bc1</sub> = k<sub>b</sub> + c₁ (back-EMF + joint damping — composite, not separately identifiable from driven data). τ<sub>c</sub> = Coulomb friction magnitude [N·m]; tanh smoothing with v<sub>c</sub> ≈ 0.02 rad/s for ODE solver continuity. Arm 2 stays viscous-only (free-swing fit 90% — no Coulomb needed).</p>
   </div>
 
   <h3 style="margin-top:18px;">Solve for accelerations</h3>
@@ -336,8 +337,8 @@ details[open] summary::before { transform: rotate(90deg); }
     </div>
     <div class="assume-card">
       <div class="assume-tag">A4 — Viscous damping</div>
-      <div class="assume-body">Friction modelled as c·θ̇. Real joints likely have Coulomb + stiction too. Deadzone nonlinearity is a practical first proxy.</div>
-      <div class="assume-trigger">Revisit if: system ID fit is poor near zero velocity (residuals show stiction plateau).</div>
+      <div class="assume-body">Arm 1: viscous + Coulomb — <code>kbc1·θ̇₁ + τ_c·tanh(θ̇₁/v_c)</code>. Coulomb term added 2026-05-14 after stiction confirmed on hardware ("stops dead" on input release). Arm 2: viscous only — c₂·θ̇₂ (free-swing fit 90%, no Coulomb needed).</div>
+      <div class="assume-trigger">Revisit if: arm 2 residuals show stiction plateau, or static τ_s ≠ kinetic τ_d significantly (two-value Coulomb may be needed for swing-up accuracy).</div>
     </div>
     <div class="assume-card">
       <div class="assume-tag">A5 — Sensor bias</div>
@@ -580,18 +581,17 @@ details[open] summary::before { transform: rotate(90deg); }
     <!-- System ID -->
     <div class="card">
       <div class="card-head"><h3>System identification</h3><span class="pill prog">In Progress</span></div>
-      <div class="card-note">l₂ identified (90% fit). Arm 1 (k<sub>m</sub>, k<sub>b</sub>, c₁) and coupled params still open. k<sub>m</sub> not in lab manual — must identify from data.</div>
+      <div class="card-note">l₂ identified (90% fit). Arm 1 strategy reworked 2026-05-14: ramp → constant-u sweep → validate. k<sub>m</sub>, k<sub>bc1</sub>, τ<sub>c</sub> separately identifiable. Arm-1 free-decay not usable (stiction holds arm at rest).</div>
       <ul class="checklist">
         <li class="isdone"><label><input type="checkbox" checked><span class="task">Sensor calibration — offsets and gains in <code>hwinit.m</code> (2026-05-01)</span></label></li>
         <li class="isdone"><label><input type="checkbox" checked><span class="task">Geometry: l₁ = 0.10 m (measured)</span></label></li>
         <li class="isdone"><label><input type="checkbox" checked><span class="task">Geometry: l<sub>eff</sub> = 0.0868 m identified (90% fit, 2026-05-11)</span></label></li>
-        <li class="isdone"><label><input type="checkbox" checked><span class="task">Collect free-swing data — arm 2 (2026-05-08; re-run planned 2026-05-12)</span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task">Collect free-swing data — arm 2 (2026-05-08; re-run 2026-05-12)</span></label></li>
         <li><label><input type="checkbox"><span class="task">Average more free-swing runs to tighten α, β</span><span class="bsm prg">in progress</span></label></li>
-        <li><label><input type="checkbox"><span class="task">Input signal design — multisine / PRBS / spikes</span><span class="bsm dsc">discussing</span></label></li>
-        <li><label><input type="checkbox"><span class="task">Collect open-loop data — arm 1</span></label></li>
-        <li><label><input type="checkbox"><span class="task">Arm-1 free-decay (u=0) → identify (c₁+k<sub>b</sub>)/I₁</span><span class="bsm dsc">discussing</span></label></li>
-        <li><label><input type="checkbox"><span class="task">Driven experiment to isolate k<sub>m</sub> from inertia</span><span class="bsm dsc">discussing</span></label></li>
-        <li><label><input type="checkbox"><span class="task">Identify coupled parameters (may need m₂ separately)</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Step 1 — Two-angle ramp test (θ₁=0° and θ₁=90°) → k<sub>m</sub> and τ<sub>c</sub> (static breakaway)</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Step 2 — Constant-u terminal-velocity sweep → k<sub>bc1</sub> and τ<sub>c</sub> (kinetic) via linear regression</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Step 3 — Fix k<sub>m</sub>, k<sub>bc1</sub>, τ<sub>c</sub>; validate on existing 0.2 Hz sine dataset with <code>sysid_arm1_driven.m</code></span></label></li>
+        <li><label><input type="checkbox"><span class="task">Identify coupled parameters (m₁, l<sub>c1</sub> — from multi-angle gravity balance if needed)</span></label></li>
         <li><label><input type="checkbox"><span class="task">Validate on held-out dataset (course requirement)</span></label></li>
         <li><label><input type="checkbox"><span class="task">Closed-loop sysid at unstable eq. (required for upright balance)</span></label></li>
       </ul>
@@ -660,7 +660,7 @@ details[open] summary::before { transform: rotate(90deg); }
     </li>
     <li class="todo-item">
       <span class="todo-num">4</span>
-      <span class="todo-text">System ID to fit c₁, c₂, k<sub>m</sub>, k<sub>b</sub>. Use free-decay for damping; driven experiment to isolate k<sub>m</sub> from inertia.</span>
+      <span class="todo-text">Identify k<sub>m</sub>, k<sub>bc1</sub>, τ<sub>c</sub> for arm 1 via three-step procedure: (a) two-angle slow ramp (θ₁=0° and 90°) → k<sub>m</sub> and τ<sub>c</sub> (static); (b) constant-u terminal-velocity sweep → k<sub>bc1</sub> and τ<sub>c</sub> (kinetic) via linear regression; (c) fix all three, validate on 0.2 Hz sine dataset with <code>sysid_arm1_driven.m</code>. See System ID workflow in the Reference section.</span>
     </li>
     <li class="todo-item">
       <span class="todo-num">5</span>
@@ -689,16 +689,16 @@ details[open] summary::before { transform: rotate(90deg); }
           <td>Use identified l_eff throughout; revisit A1 if fit residuals remain large. May need rotational inertia of distributed arm 2.</td>
         </tr>
         <tr>
-          <td><strong>Viscous-only friction (A4) poor near zero velocity</strong><br><span style="font-size:12.5px;color:var(--g500);">Coulomb + stiction common in real joints.</span></td>
+          <td><strong>Viscous-only friction (A4) poor near zero velocity</strong><br><span style="font-size:12.5px;color:var(--g500);">Addressed 2026-05-14 — Coulomb term τ<sub>c</sub>·tanh(θ̇₁/v<sub>c</sub>) added to arm 1 rhs. Static ≠ kinetic τ<sub>c</sub> gap TBD.</span></td>
           <td><span class="badge mid">Medium</span></td>
           <td><span class="badge mid">Medium</span></td>
-          <td>Check residuals near zero-velocity crossings. Add deadzone proxy for stiction, or rely on integral action in controller.</td>
+          <td>Coulomb term in rhs₁; τ<sub>c</sub> identified via terminal-velocity regression (Step 2). If static/kinetic gap is large, consider two-value Coulomb for swing-up. Arm 2 remains viscous-only.</td>
         </tr>
         <tr>
-          <td><strong>k<sub>m</sub> not in lab manual — must identify</strong><br><span style="font-size:12.5px;color:var(--g500);">Back-EMF k<sub>b</sub> also unknown; conflated with c₁/I₁ in free-decay.</span></td>
+          <td><strong>k<sub>m</sub> not in lab manual — must identify</strong><br><span style="font-size:12.5px;color:var(--g500);">k<sub>bc1</sub> = k<sub>b</sub>+c₁ composite; not separately identifiable. Arm-1 free-decay unavailable (stiction).</span></td>
           <td><span class="badge high">High</span></td>
           <td><span class="badge high">High</span></td>
-          <td>Two-step ID: free-decay u=0 gives (c₁+k<sub>b</sub>)/I₁; driven experiment with known u isolates k<sub>m</sub>. Separate experiments required.</td>
+          <td>Two-angle ramp test gives k<sub>m</sub> directly: k<sub>m</sub> = k<sub>grav</sub> / (u<sub>break,90°</sub> − u<sub>break,0°</sub>). k<sub>bc1</sub> from terminal-velocity sweep (regression slope) once k<sub>m</sub> is known.</td>
         </tr>
         <tr>
           <td><strong>Closed-loop sysid required at unstable eq.</strong><br><span style="font-size:12.5px;color:var(--g500);">Can't hold θ₂=180° open-loop.</span></td>
@@ -753,7 +753,9 @@ details[open] summary::before { transform: rotate(90deg); }
         <tr><td>sim_arm1_motor_id.m</td><td>Simulation motor characterisation — auto-sweep / pre_id</td></tr>
         <tr><td>collect_arm2_freeswing.m</td><td>Hardware arm-2 free-swing data collection</td></tr>
         <tr><td>sysid_arm2_freeswing.m</td><td>Offline arm-2 fit from <code>data/</code>; D1–D5 diagnostics</td></tr>
-        <tr><td>sysid_arm1_driven.m</td><td>Offline arm-1 fit — joint k<sub>m</sub>, k<sub>b</sub>, c₁ from driven data</td></tr>
+        <tr><td>run_arm1_ramp.m</td><td>Hardware two-angle ramp test — slow u=A·t at θ₁=0° and 90° → k<sub>m</sub>, τ<sub>c</sub> (static) <em style="color:var(--g500)">&lt;TBD&gt;</em></td></tr>
+        <tr><td>run_arm1_terminal_vel.m</td><td>Hardware constant-u sweep — terminal velocity at multiple u values → k<sub>bc1</sub>, τ<sub>c</sub> (kinetic) <em style="color:var(--g500)">&lt;TBD&gt;</em></td></tr>
+        <tr><td>sysid_arm1_driven.m</td><td>Offline arm-1 validation — k<sub>m</sub>, k<sub>bc1</sub>, τ<sub>c</sub> fixed from ramp + terminal-velocity steps; checks full nonlinear fit on sine data</td></tr>
         <tr><td>run_sim.m</td><td>ODE engine; called by <code>sim_*</code> scripts</td></tr>
         <tr><td>rotpen_ode.m</td><td>Equations of motion — M and rhs filled; back-EMF active in rhs</td></tr>
         <tr><td>pendulum_params.m</td><td>Physical parameters + noise/bias → struct <code>p</code></td></tr>
@@ -786,11 +788,29 @@ details[open] summary::before { transform: rotate(90deg); }
         <li>Interpretation: motor + arm = low-pass filter. Inertia limits response; possibly back-EMF (A3) at higher speeds.</li>
       </ul>
 
-      <h3 style="margin-top:16px;">Friction options</h3>
-      <ol style="padding-left:18px;font-size:14px;color:var(--g700);line-height:1.7;">
-        <li><strong>Viscous damping</strong> — c·θ̇ (our current A4)</li>
-        <li><strong>Deadzone nonlinearity</strong> — proxy for stiction: input has no effect until threshold. Practical first approximation.</li>
-        <li><strong>Unmodelled disturbance</strong> — rely on integral action in controller</li>
+      <h3 style="margin-top:16px;">Friction model (arm 1)</h3>
+      <p style="font-size:14px;">Chosen model: viscous + Coulomb. Back-EMF k<sub>b</sub> and joint damping c₁ are composited into k<sub>bc1</sub> (not separately identifiable from driven data — both multiply θ̇₁). Arm 2 stays viscous-only.</p>
+      <pre style="font-size:13px;">rhs₁ friction terms: -kbc1·dθ₁  -  τ_c·tanh(dθ₁ / v_c)
+                         viscous      Coulomb (smoothed)
+v_c ≈ 0.02 rad/s — ODE continuity, not a physical threshold.</pre>
+
+      <h3 style="margin-top:16px;">Arm 1 ID — three-step procedure</h3>
+      <p style="font-size:14px;"><strong>Why a single sine can't separate k<sub>m</sub> from k<sub>bc1</sub>:</strong> at 0.2 Hz the arm is in the integrator regime (ω ≪ k<sub>bc1</sub>/J₁ ≈ 200–300 rad/s); friction dominates gravity. The response constrains only the ratio k<sub>m</sub>/k<sub>bc1</sub>. A second equation requires a different experiment.</p>
+      <ol style="padding-left:18px;font-size:14px;color:var(--g700);line-height:1.9;">
+        <li><strong>Two-angle ramp — gives k<sub>m</sub> and τ<sub>c</sub> (static).</strong><br>
+          Slow ramp u = A·t from rest at θ₁ = 0° and θ₁ = 90°. At breakaway ddθ₁ = dθ₁ = 0:<br>
+          <code>km · u_break_0   = τ_c</code><br>
+          <code>km · u_break_90  = τ_c + k_grav</code>,  where  <code>k_grav = (m₁·lc1 + m₂·l₁)·g</code><br>
+          ∴ <code>km = k_grav / (u_break_90 − u_break_0)</code>,  <code>τ_c = km · u_break_0</code>
+        </li>
+        <li><strong>Constant-u sweep — gives k<sub>bc1</sub> and τ<sub>c</sub> (kinetic).</strong><br>
+          Apply several constant u values above stiction; wait for steady-state velocity (ddθ₁ = 0):<br>
+          <code>km · u = kbc1 · dθ₁_ss + τ_c_kinetic</code><br>
+          Linear regression of (km·u) vs dθ₁_ss → slope = k<sub>bc1</sub>, intercept = τ<sub>c,kinetic</sub>.
+        </li>
+        <li><strong>Validate on sine data.</strong><br>
+          Fix k<sub>m</sub>, k<sub>bc1</sub>, τ<sub>c</sub> in <code>pendulum_params.m</code>. Run <code>sysid_arm1_driven.m</code> on the 0.2 Hz dataset — parameters fixed (or narrow bounds). Check residuals; static–kinetic τ<sub>c</sub> gap from step 1 vs step 2 quantifies stiction importance.
+        </li>
       </ol>
 
       <div class="callout info" style="margin-top:14px;">
@@ -895,7 +915,9 @@ MathJax = {
 | sim_arm1_motor_id.m | Simulation motor characterisation |
 | collect_arm2_freeswing.m | Hardware arm-2 free-swing data collection |
 | sysid_arm2_freeswing.m | Offline arm-2 fit (loads from data/) |
-| sysid_arm1_driven.m | Offline arm-1 fit — joint km, kb, c1 |
+| run_arm1_ramp.m | Hardware two-angle ramp test → km, τ_c (static) &lt;TBD&gt; |
+| run_arm1_terminal_vel.m | Hardware constant-u sweep → kbc1, τ_c (kinetic) &lt;TBD&gt; |
+| sysid_arm1_driven.m | Offline arm-1 validation — km, kbc1, τ_c fixed; checks sine-data fit |
 | run_sim.m | ODE engine; called by sim_* scripts |
 | rotpen_ode.m | EOM — M and rhs filled; back-EMF active in rhs |
 | pendulum_params.m | Physical params + noise/bias → struct p |
@@ -907,7 +929,7 @@ MathJax = {
 - A1 — Point mass: arm 2 massless, m₂ at tip; J₁ = m₁l₁²/3
 - A2 — Stiff arm 1: full coupling in M; off-diagonal droppable after validation
 - A3 — Simplified motor: τ = km·u − kb·θ̇₁ (back-EMF included; inductance ignored)
-- A4 — Viscous damping: c·θ̇ (Coulomb not yet modelled)
+- A4 — Viscous + Coulomb (arm 1): kbc1·θ̇₁ + τ_c·tanh(θ̇₁/v_c); arm 2: viscous only
 - A5 — Sensor bias: ~85° raw offset; p.bias_th1/th2 in pendulum_params.m; values in hwinit.m
 
 **Input scaling:** u ∈ [−1, +1]. Motor torque: τ = km·u − kb·dth1.`;
