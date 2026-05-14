@@ -134,36 +134,26 @@ subplot(3,1,3);
   plot(t_test, u_test, 'k');
   ylabel('u [-]'); xlabel('Time [s]'); grid on;
 
-%% ── Build idnlgrey model ─────────────────────────────────────────────────────
+%% ── Build idnlgrey model — validation only (all params fixed) ────────────────
 % Parameter order: km, kbc1, c2, J1, J2, l1, l2, lc1, m1, m2, g
 % (must match rotpen_ode_idnlgrey.m argument list)
+% Update pendulum_params.m with identified values, then run this script to
+% see how well the model reproduces the driven sine data.
 param_cell = {p.km; p.kbc1; p.c2; p.J1; p.J2; p.l1; p.l2; p.lc1; p.m1; p.m2; p.g};
 x0_est     = y_trimmed(1, :)';
 
-sys0 = idnlgrey('rotpen_ode_idnlgrey', [2 1 4], param_cell, x0_est, 0);
+sys_val = idnlgrey('rotpen_ode_idnlgrey', [2 1 4], param_cell, x0_est, 0);
 
 param_names = {'km','kbc1','c2','J1','J2','l1','l2','lc1','m1','m2','g'};
-free_params = {'km', 'kbc1'};   % everything else fixed
 
 for i = 1:numel(param_names)
-    sys0.Parameters(i).Name    = param_names{i};
-    sys0.Parameters(i).Minimum = 0;
-    sys0.Parameters(i).Fixed   = ~ismember(param_names{i}, free_params);
+    sys_val.Parameters(i).Name  = param_names{i};
+    sys_val.Parameters(i).Fixed = true;   % all fixed — no estimation, pure validation
 end
-sys0.Parameters(1).Maximum = 30;   % km   [N·m per normalised unit]
-sys0.Parameters(2).Maximum = 10;   % kbc1 [N·m·s/rad]
 
 for i = 1:4
-    sys0.InitialStates(i).Fixed = false;
+    sys_val.InitialStates(i).Fixed = false;
 end
-
-%% ── Estimate ────────────────────────────────────────────────────────────────
-opt = nlgreyestOptions('Display', 'on');
-opt.SearchMethod                = 'lm';
-opt.SearchOptions.MaxIterations = 300;
-opt.SearchOptions.Tolerance     = 0.00065; 
-
-sys_est = nlgreyest(data, sys0, opt);
 
 %% ── Sign check ────────────────────────────────────────────────────────────────
 figure;
@@ -172,21 +162,13 @@ subplot(2,1,2); plot(t_trimmed, th1_rad(i_start:i_end)); ylabel('\theta_1 [rad]'
 xlabel('Time [s]');
 
 %% ── Results ─────────────────────────────────────────────────────────────────
-fprintf('\n--- Estimated (free) parameters ---\n');
+fprintf('\n--- Parameters used for validation (all from pendulum_params) ---\n');
 for i = 1:numel(param_names)
-    if ~sys_est.Parameters(i).Fixed
-        fprintf('  %-5s = %.6f\n', param_names{i}, sys_est.Parameters(i).Value);
-    end
-end
-fprintf('\n--- Fixed parameters (from pendulum_params) ---\n');
-for i = 1:numel(param_names)
-    if sys_est.Parameters(i).Fixed
-        fprintf('  %-5s = %.6f\n', param_names{i}, sys_est.Parameters(i).Value);
-    end
+    fprintf('  %-5s = %.6f\n', param_names{i}, sys_val.Parameters(i).Value);
 end
 
 figure('Name', 'Compare: measured vs model');
-compare(data, sys_est);
+compare(data, sys_val);
 
 figure('Name', 'Residual analysis');
-resid(data, sys_est);
+resid(data, sys_val);
