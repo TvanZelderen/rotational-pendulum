@@ -51,11 +51,11 @@ p.c2     = p.alpha2 * p.m2 * p.l2^2;  % derived from alpha2 and current m2 estim
 % km represents peak torque [N·m per normalised unit].
 % Back-EMF braking: tau_bemf = kb * dth1, where kb = kt*ke/R.
 % Inductance still neglected (A3 applies to inductance only now).
-p.km   = 0.5;                          % pre-ID estimate; TODO: identify from arm 1 experiment
+p.km   = 18.271125;                    % peak motor torque [N·m per normalised unit] — sysid_arm1_ramp 2026-05-18
 p.kbc1 = 0.21;                        % composite: kb (back-EMF) + c1 (joint damping) [N·m·s/rad]
-                                       % kb and c1 are not separately identifiable from driven data
-                                       % (both multiply dth1; arm 1 has stiction so free-decay unavailable)
-                                       % pre-ID estimate = 0.20 + 0.01; TODO: identify from arm 1 experiment
+                                       % not separately identifiable; TODO: sysid_arm1_termvel
+p.tauc_static  = 1.772299;            % Coulomb breakaway torque [N·m] — sysid_arm1_ramp 2026-05-18
+p.tauc_kinetic = NaN;                 % Coulomb kinetic torque [N·m]   — TODO: sysid_arm1_termvel
 
 %% Environment
 p.g    = 9.81;                         % gravitational acceleration [m/s²]

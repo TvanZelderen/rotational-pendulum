@@ -7,8 +7,8 @@ pendulum_params;   % source of truth for physical constants
 
 %% ── Configuration ───────────────────────────────────────────────────────────
 % One file per arm-1 position, saved by run_arm1_ramp.m Cell A and Cell B.
-file_A      = '20260518_101824_arm1_ramp_th000_a10.mat';         % theta1 = 0 deg,  e.g. '20260514_120000_arm1_ramp_th000_a40.mat'
-file_B      = '20260518_101904_arm1_ramp_th090_a10.mat';         % theta1 = 90 deg, e.g. '20260514_120500_arm1_ramp_th090_a40.mat'
+file_A      = '20260518_104621_arm1_ramp_th000_a10.mat';         % theta1 = 0 deg,  e.g. '20260514_120000_arm1_ramp_th000_a40.mat'
+file_B      = '20260518_104700_arm1_ramp_th090_a10.mat';         % theta1 = 90 deg, e.g. '20260514_120500_arm1_ramp_th090_a40.mat'
 data_folder = 'data';
 
 theta1_A_deg = 0;    % [deg] — must match arm position used in Cell A
@@ -38,7 +38,7 @@ fprintf('Loaded: %d samples per run at h = %.3f s\n', length(t_A), h);
 
 %% ── Filter ───────────────────────────────────────────────────────────────────
 fs = 1/h;
-fc = 3;
+fc = 2;
 [b, a] = butter(2, fc/(fs/2));
 
 dth1_A_f = filtfilt(b, a, dth1_A);
@@ -73,15 +73,16 @@ subplot(2,2,4); plot(t_B, dth1_B_f);  xlabel('Time [s]');         grid on;
 %
 % You measure u_b at two angles → two equations, two unknowns (km, tauc_static).
 % Available: u_A, dth1_A_f, theta1_A_deg  |  u_B, dth1_B_f, theta1_B_deg
-%
-% TODO:
-%   1. Find the breakaway instant in each run — how does dth1_f behave before
-%      vs. after breakaway? What threshold makes sense given the noise floor?
-%   2. Extract u_b_A and u_b_B (the input value at each breakaway instant).
-%   3. Write and solve the 2×2 linear system for km and tauc_static.
 
-km          = NaN;   % [N·m per normalised unit]
-tauc_static = NaN;   % [N·m]
+u_break_A = 0.097;
+u_break_B = 0.105;
+
+A = [u_break_A, -1; u_break_B, -1];
+B = [0; (p.m1*p.lc1 + p.m2*p.l1)*p.g*sin(deg2rad(90))];
+x = A\B;
+
+km = x(1,:);
+tauc_static = x(2,:);
 
 %% ── Plots ────────────────────────────────────────────────────────────────────
 % TODO: add breakaway markers to the overview plot so the fit is visually verifiable.
@@ -90,5 +91,3 @@ tauc_static = NaN;   % [N·m]
 fprintf('\n--- Arm-1 ramp identification ---\n');
 fprintf('  km          = %.6f  N·m/unit\n', km);
 fprintf('  tauc_static = %.6f  N·m\n', tauc_static);
-fprintf('\nNext: run sysid_arm1_termvel.m to identify kbc1 and tauc_kinetic.\n');
-fprintf('Then update pendulum_params.m and validate with sysid_arm1_driven.m.\n');
