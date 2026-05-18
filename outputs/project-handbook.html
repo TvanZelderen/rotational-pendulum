@@ -233,15 +233,15 @@ details[open] summary::before { transform: rotate(90deg); }
     <button id="md-export">Copy as Markdown</button>
     <button id="theme-toggle" aria-label="Toggle dark/light mode">◑</button>
   </div>
-  <p class="gen-date">Generated 2026-05-14 · One doc to rule them all</p>
+  <p class="gen-date">Generated 2026-05-18 · One doc to rule them all</p>
 </header>
 
 <!-- ═══════════════════════════════════════════════ WHERE WE ARE -->
 <div class="section">
   <div class="callout">
     <div class="callout-label">Current status — 2026-05-18</div>
-    <p>Arm 1 sysid steps 1 and 2 complete. <strong>k<sub>m</sub> = 18.271 N·m/u</strong> (ramp, 2026-05-18). <strong>k<sub>bc1</sub> = 2.503 N·m·s/rad, τ<sub>c,kinetic</sub> = 1.291 N·m</strong> (terminal-velocity regression, R² = 0.9998, 2026-05-18). Sign convention confirmed: <code>rotpen_ode.m</code> uses <code>tau = −k<sub>m</sub>·u</code> (positive u drives θ₁ negative — hardware mounting). Encoder dead-zone at 82.18° patched in <code>unwrap_simout.m</code> (unwrap → linear fillmissing over bad mask).</p>
-    <p style="margin-top:8px;"><strong>Next step:</strong> Step 3 — validate on existing 0.2 Hz sine dataset with <code>sysid_arm1_driven.m</code>. Then linearise at both equilibria (θ₂ = 0° and 180°) to unblock observer and control design.</p>
+    <p>Arm 1 sysid steps 1 and 2 complete. <strong>k<sub>m</sub> = 18.271 N·m/u</strong> (ramp, 2026-05-18). <strong>k<sub>bc1</sub> = 2.503 N·m·s/rad</strong> initial value (terminal-velocity regression, R² = 0.9998, 2026-05-18) — <em>refit pending</em> via <code>nlgreyest</code> with WeightingFilter. Friction model simplified 2026-05-18: kinetic Coulomb folded into k<sub>bc1</sub>; arm 1 now viscous-only. Sign convention confirmed: <code>rotpen_ode.m</code> uses <code>tau = −k<sub>m</sub>·u</code> (positive u drives θ₁ negative — hardware mounting). Encoder dead-zone at 82.18° patched in <code>unwrap_simout.m</code>.</p>
+    <p style="margin-top:8px;"><strong>Next step:</strong> Fix FFT in <code>sysid_driven.m</code> → identify excitation band → refit k<sub>m</sub>, k<sub>bc1</sub> via <code>nlgreyest</code> with WeightingFilter. Then linearise at both equilibria (θ₂ = 0° and 180°) to unblock observer and control design.</p>
   </div>
 </div>
 
@@ -289,7 +289,7 @@ details[open] summary::before { transform: rotate(90deg); }
   </div>
   <div class="callout info" style="margin:10px 0;">
     <div class="callout-label">Code note</div>
-    Motor torque in code: <code>tau = -p.km*u</code> (negative sign — hardware convention: positive u drives θ₁ negative). Back-EMF and joint damping are combined into <code>p.kbc1</code>: net braking = <code>kbc1·dth1</code>. Coulomb term <code>tau_c·tanh(dth1/v_c)</code> added to rhs₁ (2026-05-14) — see rhs equation below.
+    Motor torque in code: <code>tau = -p.km*u</code> (negative sign — hardware convention: positive u drives θ₁ negative). <code>p.kbc1</code> is the composite viscous damping on arm 1: k<sub>b</sub> (back-EMF) + c₁ (joint damping) + folded kinetic Coulomb. Net braking = <code>kbc1·dth1</code>. Coulomb term removed from rhs₁ 2026-05-18 (kinetic Coulomb observationally equivalent to viscous in operating regime — absorbed into k<sub>bc1</sub>; k<sub>bc1</sub> refit pending).
   </div>
 
   <h3 style="margin-top:18px;">Mass matrix M(θ₂)</h3>
@@ -303,9 +303,9 @@ details[open] summary::before { transform: rotate(90deg); }
   <p style="font-size:14px;">Let \( h = m_2 l_1 l_2 \sin\theta_2 \) (Coriolis prefactor).</p>
   <div class="math-block">
     <div class="math-label">Coriolis + gravity + damping + input</div>
-    \[ \mathrm{rhs}_1 = \tau - k_{bc1}\dot\theta_1 - \tau_c\tanh\!\left(\tfrac{\dot\theta_1}{v_c}\right) + h\bigl(2\dot\theta_1\dot\theta_2 + \dot\theta_2^2\bigr) - \bigl(m_1 l_{c1} + m_2 l_1\bigr)g\sin\theta_1 - m_2 g l_2\sin(\theta_1+\theta_2) \]
+    \[ \mathrm{rhs}_1 = \tau - k_{bc1}\dot\theta_1 + h\bigl(2\dot\theta_1\dot\theta_2 + \dot\theta_2^2\bigr) - \bigl(m_1 l_{c1} + m_2 l_1\bigr)g\sin\theta_1 - m_2 g l_2\sin(\theta_1+\theta_2) \]
     \[ \mathrm{rhs}_2 = -c_2\dot\theta_2 - h\dot\theta_1^2 - m_2 g l_2\sin(\theta_1+\theta_2) \]
-    <p style="font-size:13px;color:var(--g500);margin-top:8px;">k<sub>bc1</sub> = k<sub>b</sub> + c₁ (back-EMF + joint damping — composite, not separately identifiable from driven data). τ<sub>c</sub> = Coulomb friction magnitude [N·m]; tanh smoothing with v<sub>c</sub> ≈ 0.02 rad/s for ODE solver continuity. Arm 2 stays viscous-only (free-swing fit 90% — no Coulomb needed).</p>
+    <p style="font-size:13px;color:var(--g500);margin-top:8px;">k<sub>bc1</sub> = k<sub>b</sub> + c₁ + folded kinetic Coulomb — composite effective viscous damping, not separately identifiable from driven data. Both arms viscous-only (2026-05-18). k<sub>bc1</sub> refit via <code>nlgreyest</code> pending.</p>
   </div>
 
   <h3 style="margin-top:18px;">Solve for accelerations</h3>
@@ -327,7 +327,7 @@ details[open] summary::before { transform: rotate(90deg); }
     </div>
     <div class="assume-card">
       <div class="assume-tag">A2 — Stiff arm 1</div>
-      <div class="assume-body">Reaction forces from arm 2 onto arm 1 negligible. Full coupling kept in M for accuracy; off-diagonal can be dropped as a simplification after hardware validation.</div>
+      <div class="assume-body">Reaction forces from arm 2 onto arm 1 negligible. Full coupling kept in M for accuracy; off-diagonal can be dropped as a simplification after hardware validation. <strong>Fallback:</strong> if joint sysid estimation struggles, drop off-diagonal of M to decouple the ID problem.</div>
       <div class="assume-trigger">Revisit if: arm 1 shows unexpected oscillations from arm 2 motion.</div>
     </div>
     <div class="assume-card">
@@ -337,8 +337,8 @@ details[open] summary::before { transform: rotate(90deg); }
     </div>
     <div class="assume-card">
       <div class="assume-tag">A4 — Viscous damping</div>
-      <div class="assume-body">Arm 1: viscous + Coulomb — <code>kbc1·θ̇₁ + τ_c·tanh(θ̇₁/v_c)</code>. Coulomb term added 2026-05-14 after stiction confirmed on hardware ("stops dead" on input release). Arm 2: viscous only — c₂·θ̇₂ (free-swing fit 90%, no Coulomb needed).</div>
-      <div class="assume-trigger">Revisit if: arm 2 residuals show stiction plateau, or static τ_s ≠ kinetic τ_d significantly (two-value Coulomb may be needed for swing-up accuracy).</div>
+      <div class="assume-body">Both arms viscous-only (2026-05-18). Arm 1: <code>kbc1·θ̇₁</code> — composite absorbing back-EMF, joint damping, and kinetic Coulomb (observationally equivalent at operating speed). Arm 2: <code>c₂·θ̇₂</code> (free-swing fit 90%). k<sub>bc1</sub> refit via <code>nlgreyest</code> pending.</div>
+      <div class="assume-trigger">Revisit if: nlgreyest residuals show systematic stiction plateau at low velocity (would indicate kinetic Coulomb is separable after all, or static &gt; kinetic gap matters).</div>
     </div>
     <div class="assume-card">
       <div class="assume-tag">A5 — Sensor bias</div>
@@ -432,10 +432,10 @@ details[open] summary::before { transform: rotate(90deg); }
       <text x="66"  y="36" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">run_open_loop.m</text>
 
       <rect x="136" y="14" width="152" height="36" rx="6" fill="rgba(192,99,64,.10)"  stroke="#C06340" stroke-width="1.5"/>
-      <text x="212" y="36" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">run_arm1_motor_id.m</text>
+      <text x="212" y="36" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">run_motor_id.m</text>
 
       <rect x="296" y="14" width="166" height="36" rx="6" fill="rgba(192,99,64,.10)"  stroke="#C06340" stroke-width="1.5"/>
-      <text x="379" y="36" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">collect_arm2_freeswing.m</text>
+      <text x="379" y="36" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">collect_freeswing.m</text>
 
       <rect x="470" y="14" width="96"  height="36" rx="6" fill="rgba(192,99,64,.10)"  stroke="#C06340" stroke-width="1.5"/>
       <text x="518" y="36" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">rotpentest.m</text>
@@ -448,13 +448,13 @@ details[open] summary::before { transform: rotate(90deg); }
       <text x="63"  y="100" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">sim_open_loop.m</text>
 
       <rect x="130" y="78" width="146" height="36" rx="6" fill="rgba(78,118,163,.10)"  stroke="#4E76A3" stroke-width="1.5"/>
-      <text x="203" y="100" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">sim_arm1_motor_id.m</text>
+      <text x="203" y="100" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">sim_motor_id.m</text>
 
       <rect x="284" y="78" width="144" height="36" rx="6" fill="rgba(78,118,163,.10)"  stroke="#4E76A3" stroke-width="1.5"/>
-      <text x="356" y="100" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">sysid_arm1_driven.m</text>
+      <text x="356" y="100" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">sysid_driven.m</text>
 
       <rect x="436" y="78" width="160" height="36" rx="6" fill="rgba(78,118,163,.10)"  stroke="#4E76A3" stroke-width="1.5"/>
-      <text x="516" y="100" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">sysid_arm2_freeswing.m</text>
+      <text x="516" y="100" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#141413">sysid_freeswing.m</text>
 
       <text x="612" y="92"  font-family="ui-serif,Georgia,serif" font-size="10" fill="#4E76A3" font-style="italic">Sim / offline</text>
       <text x="612" y="104" font-family="ui-serif,Georgia,serif" font-size="10" fill="#4E76A3" font-style="italic">entry points</text>
@@ -518,16 +518,16 @@ details[open] summary::before { transform: rotate(90deg); }
       <line x1="66"  y1="64" x2="379" y2="64" stroke="#C06340" stroke-width="1.2"/>
       <line x1="70"  y1="64" x2="70"  y2="156" stroke="#C06340" stroke-width="1.2" marker-end="url(#dep-hw)"/>
 
-      <!-- sim_open + sim_arm1 → run_sim: brace at y=144 -->
+      <!-- sim_open + sim_motor_id → run_sim: brace at y=144 -->
       <line x1="63"  y1="114" x2="63"  y2="144" stroke="#4E76A3" stroke-width="1.2"/>
       <line x1="203" y1="114" x2="203" y2="144" stroke="#4E76A3" stroke-width="1.2"/>
       <line x1="63"  y1="144" x2="203" y2="144" stroke="#4E76A3" stroke-width="1.2"/>
       <line x1="191" y1="144" x2="191" y2="156" stroke="#4E76A3" stroke-width="1.2" marker-end="url(#dep-sim)"/>
 
-      <!-- sysid_arm1_driven → rotpen_ode_idnlgrey -->
+      <!-- sysid_driven → rotpen_ode_idnlgrey -->
       <line x1="356" y1="114" x2="325" y2="156" stroke="#4E76A3" stroke-width="1.2" marker-end="url(#dep-sim)"/>
 
-      <!-- sysid_arm2_freeswing → link2_ode -->
+      <!-- sysid_freeswing → link2_ode -->
       <line x1="516" y1="114" x2="458" y2="156" stroke="#4E76A3" stroke-width="1.2" marker-end="url(#dep-sim)"/>
 
       <!-- run_sim + rotpen_ode_idnlgrey → rotpen_ode: brace at y=214 -->
@@ -581,18 +581,19 @@ details[open] summary::before { transform: rotate(90deg); }
     <!-- System ID -->
     <div class="card">
       <div class="card-head"><h3>System identification</h3><span class="pill prog">In Progress</span></div>
-      <div class="card-note">l₂ identified (90% fit). Arm 1 three-step ID complete through step 2 (2026-05-18): k<sub>m</sub> = 18.271, k<sub>bc1</sub> = 2.503, τ<sub>c,kinetic</sub> = 1.291. Step 3 (validation) is next.</div>
+      <div class="card-note">l₂ identified (90% fit). k<sub>m</sub> = 18.271 N·m/u, k<sub>bc1</sub> = 2.503 N·m·s/rad (initial, terminal-velocity regression, 2026-05-18). Friction model simplified 2026-05-18: viscous-only on both arms; k<sub>bc1</sub> refit via <code>nlgreyest</code> with WeightingFilter bandpass is next.</div>
       <ul class="checklist">
         <li class="isdone"><label><input type="checkbox" checked><span class="task">Sensor calibration — offsets and gains in <code>hwinit.m</code> (2026-05-01)</span></label></li>
         <li class="isdone"><label><input type="checkbox" checked><span class="task">Geometry: l₁ = 0.10 m (measured)</span></label></li>
         <li class="isdone"><label><input type="checkbox" checked><span class="task">Geometry: l<sub>eff</sub> = 0.0868 m identified (90% fit, 2026-05-11)</span></label></li>
         <li class="isdone"><label><input type="checkbox" checked><span class="task">Collect free-swing data — arm 2 (2026-05-08; re-run 2026-05-12)</span></label></li>
         <li><label><input type="checkbox"><span class="task">Average more free-swing runs to tighten α, β</span><span class="bsm prg">in progress</span></label></li>
-        <li class="isdone"><label><input type="checkbox" checked><span class="task">Step 1 — Two-angle ramp test (θ₁=0° and θ₁=90°) → k<sub>m</sub> = 18.271 N·m/u, τ<sub>c,static</sub> = 1.772 N·m (2026-05-18)</span></label></li>
-        <li class="isdone"><label><input type="checkbox" checked><span class="task">Step 2 — Terminal-velocity sweep → k<sub>bc1</sub> = 2.503 N·m·s/rad, τ<sub>c,kinetic</sub> = 1.291 N·m, R² = 0.9998 (2026-05-18)</span></label></li>
-        <li><label><input type="checkbox"><span class="task">Step 3 — Validate on 0.2 Hz sine dataset with <code>sysid_arm1_driven.m</code></span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task">Step 1 — Two-angle ramp test (θ₁=0° and θ₁=90°) → k<sub>m</sub> = 18.271 N·m/u (2026-05-18)</span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task">Step 2 — Terminal-velocity sweep → k<sub>bc1</sub> initial = 2.503 N·m·s/rad, R² = 0.9998 (2026-05-18)</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Refit k<sub>m</sub>, k<sub>bc1</sub> via <code>nlgreyest</code> on driven multisine data — WeightingFilter bandpass + freed initial velocities (see System ID workflow in Reference)</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Collect held-out multisine dataset for validation (course requirement)</span></label></li>
         <li><label><input type="checkbox"><span class="task">Identify coupled parameters (m₁, l<sub>c1</sub> — from multi-angle gravity balance if needed)</span></label></li>
-        <li><label><input type="checkbox"><span class="task">Validate on held-out dataset (course requirement)</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Validate on held-out dataset — compare + resid; show figures in report</span></label></li>
         <li><label><input type="checkbox"><span class="task">Closed-loop sysid at unstable eq. (required for upright balance)</span></label></li>
       </ul>
     </div>
@@ -640,42 +641,9 @@ details[open] summary::before { transform: rotate(90deg); }
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════ 06 STUDENT TODO -->
+<!-- ═══════════════════════════════════════════════ 06 RISK REGISTER -->
 <div class="section">
-  <div class="sec-head"><span class="idx">06</span><h2>Student TODO list</h2><span class="count">6 items</span></div>
-  <ul class="todo-list">
-    <li class="todo-item tdone">
-      <span class="todo-num">1</span>
-      <span class="todo-text">Derive M and rhs in <code>rotpen_ode.m</code> (Lagrangian — hints in file)</span>
-      <span class="todo-done">✓ done</span>
-    </li>
-    <li class="todo-item tdone">
-      <span class="todo-num">2</span>
-      <span class="todo-text">Fill in <code>p.bias_th*</code> from lab setup — values in <code>hwinit.m</code> per session (2026-05-01)</span>
-      <span class="todo-done">✓ done</span>
-    </li>
-    <li class="todo-item">
-      <span class="todo-num">3</span>
-      <span class="todo-text">Validate: zero input, small θ₂₀; check arm 2 oscillates near ω₀ = √(g/l₂) ≈ 9.9 rad/s (l₂ ≈ 0.10 m). Also verify l<sub>eff</sub> identification.</span>
-    </li>
-    <li class="todo-item">
-      <span class="todo-num">4</span>
-      <span class="todo-text">Identify k<sub>m</sub>, k<sub>bc1</sub>, τ<sub>c</sub> for arm 1 via three-step procedure: (a) two-angle slow ramp (θ₁=0° and 90°) → k<sub>m</sub> and τ<sub>c</sub> (static); (b) constant-u terminal-velocity sweep → k<sub>bc1</sub> and τ<sub>c</sub> (kinetic) via linear regression; (c) fix all three, validate on 0.2 Hz sine dataset with <code>sysid_arm1_driven.m</code>. See System ID workflow in the Reference section.</span>
-    </li>
-    <li class="todo-item">
-      <span class="todo-num">5</span>
-      <span class="todo-text">Design controller(s); test in simulation before hardware. Both target arm 2 up (θ₂=180°) — variant 1: arm 1 down; variant 2: arm 1 up. Methods: LQR and/or MPC (×2 required); INDI optional.</span>
-    </li>
-    <li class="todo-item">
-      <span class="todo-num">6</span>
-      <span class="todo-text">Compare sim vs hardware on identical <code>simin</code>. Validate model on held-out dataset (course requirement).</span>
-    </li>
-  </ul>
-</div>
-
-<!-- ═══════════════════════════════════════════════ 07 RISK REGISTER -->
-<div class="section">
-  <div class="sec-head"><span class="idx">07</span><h2>Risk register</h2><span class="count">6 risks</span></div>
+  <div class="sec-head"><span class="idx">06</span><h2>Risk register</h2><span class="count">6 risks</span></div>
   <div class="tbl-wrap">
     <table class="risk-table">
       <thead>
@@ -689,10 +657,10 @@ details[open] summary::before { transform: rotate(90deg); }
           <td>Use identified l_eff throughout; revisit A1 if fit residuals remain large. May need rotational inertia of distributed arm 2.</td>
         </tr>
         <tr>
-          <td><strong>Viscous-only friction (A4) poor near zero velocity</strong><br><span style="font-size:12.5px;color:var(--g500);">Addressed 2026-05-14 — Coulomb term τ<sub>c</sub>·tanh(θ̇₁/v<sub>c</sub>) added to arm 1 rhs. Static ≠ kinetic τ<sub>c</sub> gap TBD.</span></td>
+          <td><strong>Viscous-only friction (A4) may be insufficient near zero velocity</strong><br><span style="font-size:12.5px;color:var(--g500);">Kinetic Coulomb folded into k<sub>bc1</sub> (2026-05-18). kbc1 refit pending. Static breakaway torque (1.772 N·m) ignored in model.</span></td>
           <td><span class="badge mid">Medium</span></td>
           <td><span class="badge mid">Medium</span></td>
-          <td>Coulomb term in rhs₁; τ<sub>c</sub> identified via terminal-velocity regression (Step 2). If static/kinetic gap is large, consider two-value Coulomb for swing-up. Arm 2 remains viscous-only.</td>
+          <td>Viscous-only accepted as simplification. k<sub>bc1</sub> refit via <code>nlgreyest</code> will absorb kinetic Coulomb. If controller fails to stabilise upright (where θ̇₁ ≈ 0), revisit A4 — static friction may need separate treatment.</td>
         </tr>
         <tr>
           <td><strong>k<sub>m</sub> not in lab manual — must identify</strong><br><span style="font-size:12.5px;color:var(--g500);">k<sub>bc1</sub> = k<sub>b</sub>+c₁ composite; not separately identifiable. Arm-1 free-decay unavailable (stiction).</span></td>
@@ -723,9 +691,9 @@ details[open] summary::before { transform: rotate(90deg); }
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════ 08 REFERENCE -->
+<!-- ═══════════════════════════════════════════════ 07 REFERENCE -->
 <div class="section">
-  <div class="sec-head"><span class="idx">08</span><h2>Reference</h2></div>
+  <div class="sec-head"><span class="idx">07</span><h2>Reference</h2></div>
 
   <details>
     <summary>Hardware &amp; simulation stacks</summary>
@@ -749,15 +717,15 @@ details[open] summary::before { transform: rotate(90deg); }
       <table class="kv-table">
         <tr><td>run_open_loop.m</td><td>Hardware open-loop run (calls <code>sim rotpentemplate</code>)</td></tr>
         <tr><td>sim_open_loop.m</td><td>Simulation open-loop run (calls <code>run_sim</code>)</td></tr>
-        <tr><td>run_arm1_motor_id.m</td><td>Hardware motor characterisation — exploratory / pre_id</td></tr>
-        <tr><td>sim_arm1_motor_id.m</td><td>Simulation motor characterisation — auto-sweep / pre_id</td></tr>
-        <tr><td>collect_arm2_freeswing.m</td><td>Hardware arm-2 free-swing data collection</td></tr>
-        <tr><td>sysid_arm2_freeswing.m</td><td>Offline arm-2 fit from <code>data/</code>; D1–D5 diagnostics</td></tr>
-        <tr><td>run_arm1_ramp.m</td><td>Hardware two-angle ramp test — slow u=A·t at θ₁=0° and 90° → k<sub>m</sub>, τ<sub>c</sub> (static) <em style="color:var(--g500)">&lt;TBD&gt;</em></td></tr>
-        <tr><td>run_arm1_terminal_vel.m</td><td>Hardware constant-u sweep — terminal velocity at multiple u values → k<sub>bc1</sub>, τ<sub>c</sub> (kinetic) <em style="color:var(--g500)">&lt;TBD&gt;</em></td></tr>
-        <tr><td>sysid_arm1_driven.m</td><td>Offline arm-1 validation — k<sub>m</sub>, k<sub>bc1</sub>, τ<sub>c</sub> fixed from ramp + terminal-velocity steps; checks full nonlinear fit on sine data</td></tr>
+        <tr><td>run_motor_id.m</td><td>Hardware motor characterisation — exploratory / pre_id</td></tr>
+        <tr><td>sim_motor_id.m</td><td>Simulation motor characterisation — auto-sweep / pre_id</td></tr>
+        <tr><td>collect_freeswing.m</td><td>Hardware arm-2 free-swing data collection</td></tr>
+        <tr><td>sysid_freeswing.m</td><td>Offline arm-2 fit from <code>data/</code>; D1–D5 diagnostics</td></tr>
+        <tr><td>run_ramp.m</td><td>Hardware two-angle ramp test — slow u=A·t at θ₁=0° and 90° → k<sub>m</sub></td></tr>
+        <tr><td>run_terminal_vel.m</td><td>Hardware constant-u sweep — terminal velocity at multiple u values → k<sub>bc1</sub> initial estimate</td></tr>
+        <tr><td>sysid_driven.m</td><td>Offline driven-data fit — k<sub>m</sub>, k<sub>bc1</sub> via <code>nlgreyest</code> with WeightingFilter bandpass; compare + resid for report</td></tr>
         <tr><td>run_sim.m</td><td>ODE engine; called by <code>sim_*</code> scripts</td></tr>
-        <tr><td>rotpen_ode.m</td><td>Equations of motion — M and rhs filled; back-EMF active in rhs</td></tr>
+        <tr><td>rotpen_ode.m</td><td>Equations of motion — M and rhs filled; viscous-only friction</td></tr>
         <tr><td>pendulum_params.m</td><td>Physical parameters + noise/bias → struct <code>p</code></td></tr>
         <tr><td>wrap_simout.m</td><td>Helper — extract and wrap simout columns to (−180, 180]</td></tr>
         <tr><td>rotpentemplate.slx</td><td>Simulink model (hardware path) — wire controller here</td></tr>
@@ -789,34 +757,34 @@ details[open] summary::before { transform: rotate(90deg); }
       </ul>
 
       <h3 style="margin-top:16px;">Friction model (arm 1)</h3>
-      <p style="font-size:14px;">Chosen model: viscous + Coulomb. Back-EMF k<sub>b</sub> and joint damping c₁ are composited into k<sub>bc1</sub> (not separately identifiable from driven data — both multiply θ̇₁). Arm 2 stays viscous-only.</p>
-      <pre style="font-size:13px;">rhs₁ friction terms: -kbc1·dθ₁  -  τ_c·tanh(dθ₁ / v_c)
-                         viscous      Coulomb (smoothed)
-v_c ≈ 0.02 rad/s — ODE continuity, not a physical threshold.</pre>
+      <p style="font-size:14px;">Viscous-only on both arms (2026-05-18). k<sub>bc1</sub> is the composite: back-EMF k<sub>b</sub>, joint damping c₁, and folded kinetic Coulomb. These are not separately identifiable from driven data — all multiply θ̇₁. Arm 2 is also viscous-only.</p>
+      <pre style="font-size:13px;">rhs₁ friction: -kbc1·dθ₁     (viscous-only — effective composite)
+rhs₂ friction: -c2·dθ₂</pre>
 
-      <h3 style="margin-top:16px;">Arm 1 ID — three-step procedure</h3>
-      <p style="font-size:14px;"><strong>Why a single sine can't separate k<sub>m</sub> from k<sub>bc1</sub>:</strong> at 0.2 Hz the arm is in the integrator regime (ω ≪ k<sub>bc1</sub>/J₁ ≈ 200–300 rad/s); friction dominates gravity. The response constrains only the ratio k<sub>m</sub>/k<sub>bc1</sub>. A second equation requires a different experiment.</p>
+      <h3 style="margin-top:16px;">Arm 1 ID — two-step procedure</h3>
+      <p style="font-size:14px;"><strong>Why a single sine can't separate k<sub>m</sub> from k<sub>bc1</sub>:</strong> at 0.2 Hz the arm is in the integrator regime (ω ≪ k<sub>bc1</sub>/J₁); friction dominates. The response constrains only the ratio k<sub>m</sub>/k<sub>bc1</sub>. A second experiment breaks the degeneracy.</p>
       <ol style="padding-left:18px;font-size:14px;color:var(--g700);line-height:1.9;">
-        <li><strong>Two-angle ramp — gives k<sub>m</sub> and τ<sub>c</sub> (static).</strong><br>
-          Slow ramp u = A·t from rest at θ₁ = 0° and θ₁ = 90°. At breakaway ddθ₁ = dθ₁ = 0:<br>
-          <code>km · u_break_0   = τ_c</code><br>
-          <code>km · u_break_90  = τ_c + k_grav</code>,  where  <code>k_grav = (m₁·lc1 + m₂·l₁)·g</code><br>
-          ∴ <code>km = k_grav / (u_break_90 − u_break_0)</code>,  <code>τ_c = km · u_break_0</code>
+        <li><strong>Two-angle ramp — gives k<sub>m</sub>.</strong><br>
+          Slow ramp u = A·t from rest at θ₁ = 0° and θ₁ = 90°. At breakaway ddθ₁ = dθ₁ = 0 (gravity difference gives k<sub>m</sub> directly):<br>
+          <code>km = k_grav / (u_break_90 − u_break_0)</code>,  where  <code>k_grav = (m₁·lc1 + m₂·l₁)·g</code>
         </li>
-        <li><strong>Constant-u sweep — gives k<sub>bc1</sub> and τ<sub>c</sub> (kinetic).</strong><br>
-          Apply several constant u values above stiction; wait for steady-state velocity (ddθ₁ = 0):<br>
-          <code>km · u = kbc1 · dθ₁_ss + τ_c_kinetic</code><br>
-          Linear regression of (km·u) vs dθ₁_ss → slope = k<sub>bc1</sub>, intercept = τ<sub>c,kinetic</sub>.
-        </li>
-        <li><strong>Validate on sine data.</strong><br>
-          Fix k<sub>m</sub>, k<sub>bc1</sub>, τ<sub>c</sub> in <code>pendulum_params.m</code>. Run <code>sysid_arm1_driven.m</code> on the 0.2 Hz dataset — parameters fixed (or narrow bounds). Check residuals; static–kinetic τ<sub>c</sub> gap from step 1 vs step 2 quantifies stiction importance.
+        <li><strong>Driven multisine — gives k<sub>bc1</sub> (and refines k<sub>m</sub>).</strong><br>
+          Run <code>sysid_driven.m</code> with <code>nlgreyest</code>:<br>
+          — Free: <code>km</code>, <code>kbc1</code>. Keep geometry/inertia fixed.<br>
+          — Free initial velocities: <code>sys.InitialStates(2).Fixed = false; sys.InitialStates(4).Fixed = false</code><br>
+          — WeightingFilter bandpass: <code>opt.WeightingFilter = [w_lo, w_hi]</code> [rad/s] set from FFT of the excitation signal (kills DC drift and out-of-band noise — show before/after in report).<br>
+          — After fit: check <code>getcov(sys)</code> for parameter correlation (k<sub>bc1</sub> vs c₂ vs gravity terms).<br>
+          Terminal-velocity sweep is now a preliminary / sanity check, not the primary fit.
         </li>
       </ol>
 
       <div class="callout info" style="margin-top:14px;">
         <div class="callout-label">Validation rule</div>
-        Always validate on a held-out dataset. This is a course requirement — not optional.
+        Always validate on a held-out dataset. This is a course requirement — not optional. Collect a second multisine (or chirp) on the same hardware session as the training dataset.
       </div>
+
+      <h3 style="margin-top:16px;">Controller phase note</h3>
+      <p style="font-size:14px;">Controller target sample rate: h = 0.001 s (1 kHz). Update Simulink fundamental sample in <code>rotpentemplate.slx</code> when moving to controller design. Existing sysid data at h = 0.01 s is valid for current estimation.</p>
     </div>
   </details>
 
@@ -911,15 +879,15 @@ MathJax = {
 |---|---|
 | run_open_loop.m | Hardware open-loop run |
 | sim_open_loop.m | Simulation open-loop run |
-| run_arm1_motor_id.m | Hardware motor characterisation |
-| sim_arm1_motor_id.m | Simulation motor characterisation |
-| collect_arm2_freeswing.m | Hardware arm-2 free-swing data collection |
-| sysid_arm2_freeswing.m | Offline arm-2 fit (loads from data/) |
-| run_arm1_ramp.m | Hardware two-angle ramp test → km, τ_c (static) &lt;TBD&gt; |
-| run_arm1_terminal_vel.m | Hardware constant-u sweep → kbc1, τ_c (kinetic) &lt;TBD&gt; |
-| sysid_arm1_driven.m | Offline arm-1 validation — km, kbc1, τ_c fixed; checks sine-data fit |
+| run_motor_id.m | Hardware motor characterisation |
+| sim_motor_id.m | Simulation motor characterisation |
+| collect_freeswing.m | Hardware arm-2 free-swing data collection |
+| sysid_freeswing.m | Offline arm-2 fit (loads from data/) |
+| run_ramp.m | Hardware two-angle ramp test → km |
+| run_terminal_vel.m | Hardware constant-u sweep → kbc1 initial estimate |
+| sysid_driven.m | Offline driven-data fit — km, kbc1 via nlgreyest + WeightingFilter |
 | run_sim.m | ODE engine; called by sim_* scripts |
-| rotpen_ode.m | EOM — M and rhs filled; back-EMF active in rhs |
+| rotpen_ode.m | EOM — M and rhs filled; viscous-only friction |
 | pendulum_params.m | Physical params + noise/bias → struct p |
 | rotpentemplate.slx | Simulink model (hardware path) |
 | hwinit.m | Per-session sensor bias/gain values |
@@ -927,9 +895,9 @@ MathJax = {
 
 **Modelling assumptions:**
 - A1 — Point mass: arm 2 massless, m₂ at tip; J₁ = m₁l₁²/3
-- A2 — Stiff arm 1: full coupling in M; off-diagonal droppable after validation
+- A2 — Stiff arm 1: full coupling in M; off-diagonal droppable after validation (fallback if sysid struggles)
 - A3 — Simplified motor: τ = km·u − kb·θ̇₁ (back-EMF included; inductance ignored)
-- A4 — Viscous + Coulomb (arm 1): kbc1·θ̇₁ + τ_c·tanh(θ̇₁/v_c); arm 2: viscous only
+- A4 — Viscous only (both arms): kbc1·θ̇₁ (arm 1 — composite incl. folded kinetic Coulomb); c₂·θ̇₂ (arm 2)
 - A5 — Sensor bias: ~85° raw offset; p.bias_th1/th2 in pendulum_params.m; values in hwinit.m
 
 **Input scaling:** u ∈ [−1, +1]. Motor torque: τ = km·u − kb·dth1.`;
