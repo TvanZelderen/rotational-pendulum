@@ -7,8 +7,8 @@ pendulum_params;   % source of truth for physical constants
 
 %% ── Configuration ───────────────────────────────────────────────────────────
 % One file per arm-1 position, saved by run_arm1_ramp.m Cell A and Cell B.
-file_A      = '';         % theta1 = 0 deg,  e.g. '20260514_120000_arm1_ramp_th000_a40.mat'
-file_B      = '';         % theta1 = 90 deg, e.g. '20260514_120500_arm1_ramp_th090_a40.mat'
+file_A      = '20260518_101824_arm1_ramp_th000_a10.mat';         % theta1 = 0 deg,  e.g. '20260514_120000_arm1_ramp_th000_a40.mat'
+file_B      = '20260518_101904_arm1_ramp_th090_a10.mat';         % theta1 = 90 deg, e.g. '20260514_120500_arm1_ramp_th090_a40.mat'
 data_folder = 'data';
 
 theta1_A_deg = 0;    % [deg] — must match arm position used in Cell A
@@ -20,15 +20,25 @@ d_B   = load(fullfile(data_folder, file_B));
 
 t_A    = d_A.simin(:, 1);   u_A = d_A.simin(:, 2);
 t_B    = d_B.simin(:, 1);   u_B = d_B.simin(:, 2);
+
 dth1_A = deg2rad(d_A.simout.Data(:, 2));   % [rad/s]
 dth1_B = deg2rad(d_B.simout.Data(:, 2));
+
+ % ── Trim data ────────────────────────────────────────────────────────────────
+trim_s = 3; % s
+trim_n = trim_s * 100 + 1;
+t_A    = t_A(1:trim_n);   u_A = u_A(1:trim_n);
+t_B    = t_B(1:trim_n);   u_B = u_B(1:trim_n);
+
+dth1_A = dth1_A(1:trim_n);
+dth1_B = dth1_B(1:trim_n);
 
 h = mean(diff(t_A));
 fprintf('Loaded: %d samples per run at h = %.3f s\n', length(t_A), h);
 
 %% ── Filter ───────────────────────────────────────────────────────────────────
 fs = 1/h;
-fc = 5;
+fc = 3;
 [b, a] = butter(2, fc/(fs/2));
 
 dth1_A_f = filtfilt(b, a, dth1_A);
