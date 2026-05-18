@@ -611,12 +611,12 @@ details[open] summary::before { transform: rotate(90deg); }
     <!-- Control design -->
     <div class="card">
       <div class="card-head"><h3>Control design</h3><span class="pill todo">Not started</span></div>
-      <div class="card-note">Two linear methods required. One nonlinear optional. Natural candidates: pole placement + LQR. Swing-up via energy-based or NDI.</div>
+      <div class="card-note">Both controllers target arm 2 <strong>up</strong> (θ₂=180°). The operating-point split is <strong>arm 1 down</strong> (θ₁=0) vs <strong>arm 1 up</strong> (θ₁=180°). Two methods required from: LQR, MPC. One nonlinear optional: INDI. No pole placement.</div>
       <ul class="checklist">
-        <li><label><input type="checkbox"><span class="task">Choose 2 linear methods — pole placement and LQR</span><span class="bsm dsc">discussing</span></label></li>
-        <li><label><input type="checkbox"><span class="task">(Optional) nonlinear — swing-up energy-based or NDI</span><span class="bsm dsc">discussing</span></label></li>
-        <li><label><input type="checkbox"><span class="task">Controller 1 — stable eq. (both down) — easier starting point</span></label></li>
-        <li><label><input type="checkbox"><span class="task">Controller 2 — unstable eq. (θ₂=180°)</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Choose 2 methods from {LQR, MPC}</span><span class="bsm dsc">discussing</span></label></li>
+        <li><label><input type="checkbox"><span class="task">(Optional) nonlinear — INDI</span><span class="bsm dsc">discussing</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Controller 1 — arm 2 up, arm 1 down (θ₁=0, θ₂=180°)</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Controller 2 — arm 2 up, arm 1 up (θ₁=180°, θ₂=180°)</span></label></li>
         <li><label><input type="checkbox"><span class="task">Test controllers in simulation</span></label></li>
         <li><label><input type="checkbox"><span class="task">Test controllers on hardware</span></label></li>
         <li><label><input type="checkbox"><span class="task">Compare performance — robustness, disturbance rejection, SSE</span></label></li>
@@ -664,7 +664,7 @@ details[open] summary::before { transform: rotate(90deg); }
     </li>
     <li class="todo-item">
       <span class="todo-num">5</span>
-      <span class="todo-text">Design controller(s); test in simulation before hardware. Start with stable eq. (both down) — easier.</span>
+      <span class="todo-text">Design controller(s); test in simulation before hardware. Both target arm 2 up (θ₂=180°) — variant 1: arm 1 down; variant 2: arm 1 up. Methods: LQR and/or MPC (×2 required); INDI optional.</span>
     </li>
     <li class="todo-item">
       <span class="todo-num">6</span>
@@ -839,7 +839,7 @@ v_c ≈ 0.02 rad/s — ODE continuity, not a physical threshold.</pre>
           <ul style="padding-left:16px;margin-top:4px;">
             <li>Objectives</li>
             <li>Choice of control architecture(s)</li>
-            <li>Design (×2 controllers or ×2 operating points)</li>
+            <li>Design (×2 methods: LQR / MPC; both on arm-2-up setpoints)</li>
             <li>Evaluation and results</li>
           </ul>
         </li>
