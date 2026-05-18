@@ -48,15 +48,14 @@ fs = 1/h;                    % Your sample rate (100 Hz)
 fc = 5;                     % Cutoff frequency (20 Hz)
 [b, a] = butter(2, fc/(fs/2)); % 2nd order Butterworth
 
-%% 2. Apply Zero-Phase Filtering (CRITICAL)
+%% 2. Apply Zero-Phase Filtering
 % We use 'filtfilt' instead of 'filter' to ensure there is 0ms time delay.
-% Standard filters shift the data in time, which ruins inertia estimation!
 th1_f  = filtfilt(b, a, th1_rad);
 dth1_f = filtfilt(b, a, dth1_rad);
 th2_f  = filtfilt(b, a, th2_rad);
 dth2_f = filtfilt(b, a, dth2_rad);
 
-%% 3. Diagnostic Check (Don't skip this!)
+%% 3. Diagnostic Check
 % Make sure the red line (filtered) goes through the middle of the gray (raw)
 figure(10); clf;
 % Change this line:
@@ -114,18 +113,18 @@ u_test = interp1(t_trimmed, u_trimmed, t_test, 'linear', 'extrap');
 
 figure('Name', 'ODE test — check for blow-up (initial params)');
 subplot(3,1,1);
-  plot(t_test, rad2deg(x_test(:,1)), 'b',  t_test, rad2deg(x_test(:,3)),  'r'); hold on;
-  plot(t_grav, rad2deg(x_grav(:,1)), 'b--', t_grav, rad2deg(x_grav(:,3)), 'r--');
-  legend('\theta_1', '\theta_2', '\theta_1 (gravity only)', '\theta_2 (gravity only)');
-  ylabel('Angle [deg]'); title('ODE test — initial param guess'); grid on;
+plot(t_test, rad2deg(x_test(:,1)), 'b',  t_test, rad2deg(x_test(:,3)),  'r'); hold on;
+plot(t_grav, rad2deg(x_grav(:,1)), 'b--', t_grav, rad2deg(x_grav(:,3)), 'r--');
+legend('\theta_1', '\theta_2', '\theta_1 (gravity only)', '\theta_2 (gravity only)');
+ylabel('Angle [deg]'); title('ODE test — initial param guess'); grid on;
 subplot(3,1,2);
-  plot(t_test, x_test(:,2), 'b', t_test, x_test(:,4), 'r'); hold on;
-  plot(t_grav, x_grav(:,2), 'b--', t_grav, x_grav(:,4), 'r--');
-  legend('d\theta_1', 'd\theta_2', 'd\theta_1 (grav)', 'd\theta_2 (grav)');
-  ylabel('[rad/s]'); grid on;
+plot(t_test, x_test(:,2), 'b', t_test, x_test(:,4), 'r'); hold on;
+plot(t_grav, x_grav(:,2), 'b--', t_grav, x_grav(:,4), 'r--');
+legend('d\theta_1', 'd\theta_2', 'd\theta_1 (grav)', 'd\theta_2 (grav)');
+ylabel('[rad/s]'); grid on;
 subplot(3,1,3);
-  plot(t_test, u_test, 'k');
-  ylabel('u [-]'); xlabel('Time [s]'); grid on;
+plot(t_test, u_test, 'k');
+ylabel('u [-]'); xlabel('Time [s]'); grid on;
 
 %% ── Build idnlgrey model — validation only (all params fixed) ────────────────
 % Parameter order: km, kbc1, c2, J1, J2, l1, l2, lc1, m1, m2, g, tauc_kinetic
