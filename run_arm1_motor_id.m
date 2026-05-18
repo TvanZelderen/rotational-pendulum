@@ -16,7 +16,7 @@
 
 pendulum_params;
 
-run_type = 'pre_id';   % 'exploratory' | 'pre_id'
+run_type = 'multisine';   % 'exploratory' | 'pre_id'
 
 h = 0.01;   % sample period [s]
 
@@ -103,7 +103,7 @@ elseif strcmp(run_type, 'multisine')
     for i = 1:n_f
         u_raw = u_raw + sin(2*pi*freqs(i)*t + phases(i));
     end
-    amplitude = 0.02;   % START VERY SMALL — increase carefully
+    amplitude = 0.8;   % START VERY SMALL — increase carefully
     u_ms = amplitude * u_raw / max(abs(u_raw));
 
     simin = [t, u_ms];
