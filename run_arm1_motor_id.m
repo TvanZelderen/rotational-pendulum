@@ -16,7 +16,7 @@
 
 pendulum_params;
 
-run_type = 'multisine';   % 'exploratory' | 'pre_id'
+run_type = 'pre_id';   % 'exploratory' | 'pre_id'
 
 h = 0.01;   % sample period [s]
 
@@ -52,7 +52,7 @@ elseif strcmp(run_type, 'pre_id')
 
     freq_hz   = 0.3;
     amplitude = 0.3;
-    cycles    = 30*freq_hz;
+    cycles    = 100*freq_hz;
 
     t  = (0 : h : cycles/freq_hz)';
     u  = amplitude * sin(2*pi*freq_hz*(t));
