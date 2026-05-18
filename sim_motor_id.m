@@ -1,4 +1,4 @@
-% Motor characterisation — simulation only.  For hardware, see run_arm1_motor_id.m.
+% Motor characterisation — simulation only.  For hardware, see run_motor_id.m.
 %
 % Two run types (set run_type below):
 %
@@ -6,7 +6,7 @@
 %                   Goal: locate dth1_max and see where arm 2 coupling kicks in.
 %
 %   'pre_id'      — single run at 0.2 Hz, amp 0.3.
-%                   Useful for sanity-checking sysid_arm1_driven.m on noise-free data.
+%                   Useful for sanity-checking sysid_driven.m on noise-free data.
 
 clear; clc;
 

@@ -1,5 +1,5 @@
 % Offline arm-2 free-swing parameter fit.
-% Collect data first with collect_arm2_freeswing.m.
+% Collect data first with collect_freeswing.m.
 
 clear; clc;
 

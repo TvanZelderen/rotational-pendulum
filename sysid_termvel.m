@@ -1,9 +1,9 @@
 % Offline arm-1 terminal-velocity sweep analysis.
-% Collect data first with run_arm1_terminal_vel.m.
-% Identifies: kbc1 (composite back-EMF + joint damping) and tauc_kinetic
-% (Coulomb kinetic friction torque).
+% Collect data first with run_terminal_vel.m.
+% Identifies: kbc1 initial estimate (composite back-EMF + joint damping).
+% Note: tauc_kinetic folded into kbc1 (2026-05-18) — refit via nlgreyest recommended.
 %
-% Requires km to already be set in pendulum_params.m (from sysid_arm1_ramp.m).
+% Requires km to already be set in pendulum_params.m (from sysid_ramp.m).
 
 clear; clc;
 pendulum_params;
@@ -249,4 +249,4 @@ subplot(2,1,2);
 fprintf('\n--- Arm-1 terminal-velocity identification ---\n');
 fprintf('  kbc1         = %.6f  N·m·s/rad\n', kbc1);
 fprintf('  tauc_kinetic = %.6f  N·m\n', tauc_kinetic);
-fprintf('\nUpdate pendulum_params.m, then validate with sysid_arm1_driven.m.\n');
+fprintf('\nUpdate pendulum_params.m kbc1 (initial), then refit via sysid_driven.m + nlgreyest.\n');

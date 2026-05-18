@@ -1,4 +1,4 @@
-% Motor characterisation — hardware only.  For simulation, see sim_arm1_motor_id.m.
+% Motor characterisation — hardware only.  For simulation, see sim_motor_id.m.
 % Prerequisites (once per session, in order):
 %   calib.m  — opens fugiboard connection, resets encoder, activates relay
 %   hwinit.m — sets sensor gain/offset calibration values
@@ -10,7 +10,7 @@
 %
 %   'pre_id'      — low-amplitude, low-frequency sine (0.2 Hz, amp 0.3, 10 cycles).
 %                   Goal: clean arm 1 motor response with arm 2 quiet.
-%                   Saved with a labelled filename for sysid_arm1_driven.m.
+%                   Saved with a labelled filename for sysid_driven.m.
 
 %clear; clc;
 

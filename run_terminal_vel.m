@@ -1,6 +1,6 @@
 % Motor characterisation — terminal-velocity sweep, hardware only.
 % Applies a staircase of constant u levels; arm 1 reaches terminal velocity
-% at each step. Saves a single .mat file for sysid_arm1_termvel.m.
+% at each step. Saves a single .mat file for sysid_termvel.m.
 %
 % Prerequisites (once per session):
 %   calib.m  — opens fugiboard connection, resets encoder, activates relay

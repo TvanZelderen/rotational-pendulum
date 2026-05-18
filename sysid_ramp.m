@@ -1,12 +1,12 @@
 % Offline arm-1 ramp-test analysis.
-% Collect data first with run_arm1_ramp.m.
+% Collect data first with run_ramp.m.
 % Identifies: km (motor torque constant) and tauc_static (Coulomb breakaway torque).
 
 clear; clc;
 pendulum_params;   % source of truth for physical constants
 
 %% ── Configuration ───────────────────────────────────────────────────────────
-% One file per arm-1 position, saved by run_arm1_ramp.m Cell A and Cell B.
+% One file per arm-1 position, saved by run_ramp.m Cell A and Cell B.
 file_A      = '20260518_104621_arm1_ramp_th000_a10.mat';         % theta1 = 0 deg,  e.g. '20260514_120000_arm1_ramp_th000_a40.mat'
 file_B      = '20260518_104700_arm1_ramp_th090_a10.mat';         % theta1 = 90 deg, e.g. '20260514_120500_arm1_ramp_th090_a40.mat'
 data_folder = 'data';

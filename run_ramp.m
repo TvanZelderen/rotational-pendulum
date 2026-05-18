@@ -1,6 +1,6 @@
 % Motor characterisation — ramp test, hardware only.
 % Identifies breakaway input at two arm-1 positions for km / tauc_static.
-% See sysid_arm1_ramp.m for the offline fit.
+% See sysid_ramp.m for the offline fit.
 %
 % Prerequisites (once per session):
 %   calib.m  — opens fugiboard connection, resets encoder, activates relay
@@ -9,7 +9,7 @@
 % Procedure:
 %   1. Position arm 1 at theta1 = 0 deg (hanging straight down). Run Cell A.
 %   2. Position arm 1 at theta1 = 90 deg (horizontal). Run Cell B.
-%   Each cell saves its own .mat file for sysid_arm1_ramp.m.
+%   Each cell saves its own .mat file for sysid_ramp.m.
 
 %clear; clc;
 

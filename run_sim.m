@@ -1,5 +1,5 @@
 % Simulation runner — drop-in replacement for rotpentemplate.slx.
-% Invoked by sim_open_loop.m and sim_arm1_motor_id.m.
+% Invoked by sim_open_loop.m and sim_motor_id.m.
 % Produces simout Timeseries with columns [th1_deg, dth1_dps, th2_deg, dth2_dps, psi_deg].
 %
 % Prerequisites:
