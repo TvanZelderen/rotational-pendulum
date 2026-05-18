@@ -12,13 +12,13 @@ pendulum_params;
 
 %% ── Config ───────────────────────────────────────────────────────────────────
 h      = 0.01;   % sample period [s]
-t_step = 8;      % [s] per level — long enough for arm 1 to reach terminal velocity
+t_step = 5;      % [s] per level — long enough for arm 1 to reach terminal velocity
 
 % u levels to sweep. Include both signs so tauc_kinetic is well-conditioned:
 % positive u → positive omega_ss (sign = +1)
 % negative u → negative omega_ss (sign = −1)
 % Ascending positive then descending negative keeps direction changes minimal.
-u_seq = [0.2, 0.4, 0.6, 0.8, -0.8, -0.6, -0.4, -0.2];
+u_seq = [0.2, 0.4, 0.6, 0.8, 1, -1, -0.8, -0.6, -0.4, -0.2];
 
 %% ── Build staircase input ────────────────────────────────────────────────────
 n_steps = length(u_seq);
