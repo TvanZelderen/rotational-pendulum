@@ -35,10 +35,7 @@ if strcmp(run_type, 'exploratory')
     sim rotpentemplate;
 
     t_out = simout.Time;
-    y    = simout.Data;
-    th1  = mod(y(:,1) + 180, 360) - 180;
-    dth1 = y(:,2);
-    th2  = mod(y(:,3) + 180, 360) - 180;
+    [th1, dth1, th2] = unwrap_simout(simout);
 
     fprintf('freq = %.1f Hz | peak dth1 = %.1f deg/s | peak th2 = %.1f deg\n', ...
         freq_hz, max(abs(dth1)), max(abs(th2)));
@@ -63,10 +60,7 @@ elseif strcmp(run_type, 'pre_id')
     sim rotpentemplate;
 
     t_out = simout.Time;
-    y    = simout.Data;
-    th1  = mod(y(:,1) + 180, 360) - 180;
-    dth1 = y(:,2);
-    th2  = mod(y(:,3) + 180, 360) - 180;
+    [th1, dth1, th2] = unwrap_simout(simout);
 
     fprintf('Pre-ID | peak dth1 = %.1f deg/s | peak th2 = %.1f deg\n| peak ph1 = %.1f deg\n', ...
         max(abs(dth1)), max(abs(th2)), max(abs(th2+th1)));
@@ -114,10 +108,7 @@ elseif strcmp(run_type, 'multisine')
     sim rotpentemplate;
 
     t_out = simout.Time;
-    y     = simout.Data;
-    th1   = mod(y(:,1) + 180, 360) - 180;
-    dth1  = y(:,2);
-    th2   = mod(y(:,3) + 180, 360) - 180;
+    [th1, dth1, th2] = unwrap_simout(simout);
 
     fprintf('Peak th1 = %.1f deg | peak dth1 = %.1f deg/s | peak th2 = %.1f deg\n', ...
             max(abs(th1)), max(abs(dth1)), max(abs(th2)));

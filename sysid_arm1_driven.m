@@ -15,24 +15,17 @@ u_raw  = run_data.simin(:, 2);
 y_raw  = run_data.simout.Data;   % [N×5]: [th1_deg, dth1_dps, th2_deg, dth2_dps, psi_deg]
 h      = mean(diff(t_raw));
 
-th1_rad  = deg2rad(y_raw(:, 1));
-dth1_rad = deg2rad(y_raw(:, 2));
-th2_rad  = deg2rad(y_raw(:, 3));
-dth2_rad = deg2rad(y_raw(:, 4));
+[th1_deg, dth1_dps, th2_deg, dth2_dps] = unwrap_simout(run_data.simout, 0, h);
+th1_rad  = deg2rad(th1_deg);
+dth1_rad = deg2rad(dth1_dps);
+th2_rad  = deg2rad(th2_deg);
+dth2_rad = deg2rad(dth2_dps);
 
-%% ── Trim: calmest start within wrap-safe window ─────────────────────────────
+%% ── Trim: find calmest start in window ──────────────────────────────────────
 i_start = round(trim_start / h) + 1;
 i_end   = min(round(trim_end / h) + 1, length(t_raw));
 
-wrap_mask  = abs(th1_rad(i_start:i_end)) < deg2rad(170) & ...
-             abs(th2_rad(i_start:i_end)) < deg2rad(170);
-
-if sum(wrap_mask) < 500
-    warning('sysid_arm1_driven: fewer than 5 s of wrap-safe data — widen trim window.');
-end
-
 v_combined = abs(dth1_rad(i_start:i_end)) + abs(dth2_rad(i_start:i_end));
-v_combined(~wrap_mask) = inf;
 [~, i_min] = min(v_combined);
 i_start    = i_start + i_min - 1;
 

@@ -36,7 +36,7 @@ sim rotpentemplate;
 %% -----------------------------------------------------------------------
 %  Extract outputs
 % -----------------------------------------------------------------------
-[th1, dth1, th2, dth2, psi] = wrap_simout(simout);
+[th1, dth1, th2, dth2, psi] = unwrap_simout(simout);
 
 %% Save
 save_run(simin, simout, run_label);

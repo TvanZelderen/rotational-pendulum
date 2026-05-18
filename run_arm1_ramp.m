@@ -31,9 +31,7 @@ simin = [t, u];
 sim rotpentemplate;
 
 t_out = simout.Time;
-y     = simout.Data;
-th1_A  = mod(y(:,1) + 180, 360) - 180;
-dth1_A = y(:,2);
+[th1_A, dth1_A] = unwrap_simout(simout);
 
 figure(1); clf;
 subplot(2,1,1); plot(t_out, th1_A);  ylabel('\theta_1 [deg]'); grid on;
@@ -54,9 +52,7 @@ simin = [t, u];
 sim rotpentemplate;
 
 t_out = simout.Time;
-y     = simout.Data;
-th1_B  = mod(y(:,1) + 180, 360) - 180;
-dth1_B = y(:,2);
+[th1_B, dth1_B] = unwrap_simout(simout);
 
 figure(2); clf;
 subplot(2,1,1); plot(t_out, th1_B);  ylabel('\theta_1 [deg]'); grid on;
