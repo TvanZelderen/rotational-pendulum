@@ -21,6 +21,7 @@ dth1_rad = deg2rad(dth1_dps);
 th2_rad  = deg2rad(th2_deg);
 dth2_rad = deg2rad(dth2_dps);
 
+
 %% ── Frequency analysis ──────────────────────────────────────────────────────
 
 n = length(th1_rad);
