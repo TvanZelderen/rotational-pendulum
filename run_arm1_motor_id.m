@@ -15,8 +15,6 @@
 %clear; clc;
 
 pendulum_params;
-assert(exist('fugihandle', 'var'), ...
-    'Run calib.m and hwinit.m before using hardware mode.');
 
 run_type = 'pre_id';   % 'exploratory' | 'pre_id'
 

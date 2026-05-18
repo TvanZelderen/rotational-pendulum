@@ -14,8 +14,6 @@
 %clear; clc;
 
 pendulum_params;
-assert(exist('fugihandle', 'var'), ...
-    'Run calib.m and hwinit.m before using hardware mode.');
 
 %% ── Shared config ────────────────────────────────────────────────────────────
 h         = 0.01;    % sample period [s]
