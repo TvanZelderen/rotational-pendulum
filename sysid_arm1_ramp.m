@@ -65,14 +65,8 @@ subplot(2,2,4); plot(t_B, dth1_B_f);  xlabel('Time [s]');         grid on;
 % The ramp is run at two arm-1 positions so that the gravity torque gives a
 % known reference to separate km from tauc_static.
 %
-% At each test angle theta1, the motor just overcomes static friction + gravity:
-%
-%   km * u_b = tauc_static + m1 * g * lc1 * sin(theta1_rad)
-%
-% where u_b is the breakaway input (the u at which arm 1 first moves).
-%
-% You measure u_b at two angles → two equations, two unknowns (km, tauc_static).
-% Available: u_A, dth1_A_f, theta1_A_deg  |  u_B, dth1_B_f, theta1_B_deg
+%   km * u_break = tauc_static + m1 * g * lc1 * sin(theta1_rad)
+
 
 u_break_A = 0.097;
 u_break_B = 0.105;
@@ -84,8 +78,6 @@ x = A\B;
 km = x(1,:);
 tauc_static = x(2,:);
 
-%% ── Plots ────────────────────────────────────────────────────────────────────
-% TODO: add breakaway markers to the overview plot so the fit is visually verifiable.
 
 %% ── Results ─────────────────────────────────────────────────────────────────
 fprintf('\n--- Arm-1 ramp identification ---\n');

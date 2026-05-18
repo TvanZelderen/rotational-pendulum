@@ -26,6 +26,15 @@ min_seg_s    = 3;          % [s]
 % Threshold on |du| to detect step transitions (tune if edges are missed)
 edge_thresh  = 0.05;       % [normalised u]
 
+% %% Intermission
+% 
+% run_data = load('data/20260518_115759_arm1_termvel_10steps.mat');
+% y = run_data.simout.Data;
+% th1_raw = y(:,1);
+% % Where exactly is the flat section in deg?
+% figure; plot(mod(th1_raw, 360)); ylabel('\theta_1 mod 360 [deg]'); grid on;
+% % The flat section should cluster around THETA_DEAD
+
 %% ── Load data ────────────────────────────────────────────────────────────────
 run_data = load(fullfile(data_folder, file_name));
 t_raw  = run_data.simin(:, 1);
@@ -36,6 +45,69 @@ h      = mean(diff(t_raw));
 [th1_deg, dth1_dps] = unwrap_simout(run_data.simout, 0, h);
 th1_raw  = deg2rad(th1_deg);
 dth1_raw = deg2rad(dth1_dps);
+
+%% ── Unwrap diagnostics ───────────────────────────────────────────────────────
+% Four-panel figure: raw vs patched th1, bad mask, and derivative comparison.
+% Zoom in on the dead-zone crossing to see what's happening sample by sample.
+THETA_DEAD_DBG = 82.1813;
+TOL_DBG        = 8;
+
+t_so           = run_data.simout.Time;                    % simout time vector
+th1_orig_deg   = y_raw(:,1);                              % raw encoder [deg]
+th1_orig_rad   = deg2rad(th1_orig_deg);
+dth1_orig      = [0; diff(th1_orig_rad)] / h;             % raw diff [rad/s]
+dth1_col2      = deg2rad(y_raw(:,2));                     % Simulink derivative [rad/s]
+
+th1_mod_raw    = mod(th1_orig_deg - THETA_DEAD_DBG, 360);
+near_dead_dbg  = th1_mod_raw < TOL_DBG | th1_mod_raw > 360 - TOL_DBG;
+bad_dbg        = near_dead_dbg | [false; diff(near_dead_dbg(:)) < 0];
+
+% col2 from Simulink has HW derivative overflow spikes (~1e10); clip for display only
+PLOT_CLIP      = 80;    % [rad/s]
+dth1_col2_c    = max(min(dth1_col2, PLOT_CLIP), -PLOT_CLIP);
+
+figure('Name', 'Unwrap diagnostics — full run');
+subplot(4,1,1);
+  plot(t_so, th1_orig_deg, 'Color',[0.7 0.7 0.7]); hold on;
+  plot(t_so, th1_deg, 'b');
+  ylabel('\theta_1 [deg]'); legend('Raw','Patched'); grid on;
+  title('th1: raw (grey) vs unwrap\_simout output (blue)');
+subplot(4,1,2);
+  plot(t_so, bad_dbg, 'k'); ylabel('bad mask'); ylim([-0.1 1.1]); grid on;
+  title(sprintf('Bad mask — %d samples patched (%d windows)', ...
+        sum(bad_dbg), sum(diff([0; bad_dbg(:)]) > 0)));
+subplot(4,1,3);
+  plot(t_so, dth1_orig,    'Color',[0.8 0.8 0.8]); hold on;
+  plot(t_so, dth1_col2_c, 'g');
+  plot(t_so, dth1_raw,    'b');
+  ylabel('d\theta_1 [rad/s]');
+  legend('diff(raw th1)/h',sprintf('col2 (clipped ±%d)',PLOT_CLIP),'unwrap\_simout'); grid on;
+  title('Derivative: three sources');
+subplot(4,1,4);
+  plot(t_so, dth1_col2_c - dth1_raw, 'r');
+  ylabel('\Delta d\theta_1 [rad/s]'); xlabel('Time [s]'); grid on;
+  title('col2 − unwrap\_simout derivative (should be ~0 except at crossings)');
+
+% Zoom in on first dead-zone crossing
+first_bad = find(bad_dbg, 1);
+if ~isempty(first_bad)
+    zoom_win = max(1, first_bad-50) : min(numel(t_so), first_bad+150);
+    figure('Name', 'Unwrap diagnostics — crossing zoom');
+    subplot(3,1,1);
+      plot(t_so(zoom_win), th1_orig_deg(zoom_win), 'ko-', 'MarkerSize', 4); hold on;
+      plot(t_so(zoom_win), th1_deg(zoom_win),      'bs-', 'MarkerSize', 4);
+      ylabel('\theta_1 [deg]'); legend('Raw','Patched'); grid on;
+      title('Zoom: first crossing (sample by sample)');
+    subplot(3,1,2);
+      plot(t_so(zoom_win), bad_dbg(zoom_win), 'k'); ylim([-0.1 1.1]); grid on;
+      ylabel('bad'); title('Bad mask in window');
+    subplot(3,1,3);
+      plot(t_so(zoom_win), dth1_orig(zoom_win),    'ko-', 'MarkerSize',4); hold on;
+      plot(t_so(zoom_win), dth1_col2_c(zoom_win), 'g.-', 'MarkerSize',8);
+      plot(t_so(zoom_win), dth1_raw(zoom_win),    'bs-', 'MarkerSize',4);
+      ylabel('d\theta_1 [rad/s]'); legend('diff(raw)/h','col2','patched'); grid on;
+      title('Derivative comparison in window');
+end
 
 %% ── Trim ─────────────────────────────────────────────────────────────────────
 i_start = round(trim_start / h) + 1;
@@ -117,10 +189,10 @@ end
 %
 % where:
 %   A = [omega_ss,  sign(omega_ss)]   (N×2 regressor matrix)
-%   b = p.km * u_levels               (N×1 right-hand side, using km from ramp ID)
+%   b = -p.km * u_levels              (N×1 right-hand side; minus because rotpen_ode uses tau = -km·u)
 
 A = [omega_ss, sign(omega_ss)];
-b = p.km * u_levels;
+b = -p.km * u_levels;
 
 % Least-squares solve: overdetermined for N>2, exact for N=2
 theta = A \ b;
@@ -141,20 +213,29 @@ end
 
 %% ── Plots ────────────────────────────────────────────────────────────────────
 % Fitted line evaluated over a dense omega grid (handles the sign discontinuity)
-omega_pos = linspace(0,   max(omega_ss(omega_ss>0)+0.1), 100)';
-omega_neg = linspace(min(omega_ss(omega_ss<0)-0.1), 0, 100)';
-b_pos = kbc1*omega_pos + tauc_kinetic;   % sign = +1
-b_neg = kbc1*omega_neg - tauc_kinetic;   % sign = -1
+tau_meas = -p.km * u_levels;   % motor torque consistent with rotpen_ode: tau = -km*u
+if any(omega_ss > 0)
+    omega_pos = linspace(0, max(omega_ss(omega_ss>0))+0.1, 100)';
+    b_pos = kbc1*omega_pos + tauc_kinetic;
+else
+    omega_pos = []; b_pos = [];
+end
+if any(omega_ss < 0)
+    omega_neg = linspace(min(omega_ss(omega_ss<0))-0.1, 0, 100)';
+    b_neg = kbc1*omega_neg - tauc_kinetic;
+else
+    omega_neg = []; b_neg = [];
+end
 
 figure('Name', 'Terminal-velocity regression');
 subplot(2,1,1); hold on;
-  % Measured (u, omega_ss) pairs plotted as torque vs velocity
-  plot(omega_ss(omega_ss>0), p.km*u_levels(omega_ss>0), 'bo', 'MarkerFaceColor','b');
-  plot(omega_ss(omega_ss<0), p.km*u_levels(omega_ss<0), 'rs', 'MarkerFaceColor','r');
-  plot(omega_pos, b_pos, 'b-', 'LineWidth', 1.5);
-  plot(omega_neg, b_neg, 'r-', 'LineWidth', 1.5);
-  xlabel('\omega_{ss} [rad/s]'); ylabel('km \cdot u [N\cdotm]');
-  legend('Data (+)', 'Data (−)', 'Fit (+)', 'Fit (−)');
+  % Measured (tau, omega_ss) pairs plotted as torque vs velocity
+  plot(omega_ss(omega_ss>0), tau_meas(omega_ss>0), 'bo', 'MarkerFaceColor','b');
+  plot(omega_ss(omega_ss<0), tau_meas(omega_ss<0), 'rs', 'MarkerFaceColor','r');
+  if ~isempty(omega_pos); plot(omega_pos, b_pos, 'b-', 'LineWidth', 1.5); end
+  if ~isempty(omega_neg); plot(omega_neg, b_neg, 'r-', 'LineWidth', 1.5); end
+  xlabel('\omega_{ss} [rad/s]'); ylabel('\tau_{motor} = -k_m u  [N\cdotm]');
+  legend('Data (+\omega)', 'Data (-\omega)', 'Fit (+\omega)', 'Fit (-\omega)');
   title(sprintf('kbc1 = %.4f  N·m·s/rad,   tauc\\_kinetic = %.4f  N·m,   R² = %.3f', ...
       kbc1, tauc_kinetic, R2));
   grid on;

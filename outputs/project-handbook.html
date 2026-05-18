@@ -239,9 +239,9 @@ details[open] summary::before { transform: rotate(90deg); }
 <!-- ═══════════════════════════════════════════════ WHERE WE ARE -->
 <div class="section">
   <div class="callout">
-    <div class="callout-label">Current status — 2026-05-14</div>
-    <p>Link-2 free-swing identification done: 90% fit. Effective length <strong>l<sub>eff</sub> = 0.0868 m</strong> identified. EOM fully transcribed in <code>rotpen_ode.m</code> — M and rhs filled; back-EMF active. <strong>Arm 1 sysid strategy reworked:</strong> single 0.2 Hz sine only constrains k<sub>m</sub>/k<sub>bc1</sub> ratio (integrator regime at ω ≪ k<sub>bc1</sub>/J₁); "stops dead" on release confirmed Coulomb/stiction, violating A4. Coulomb term added to rhs₁.</p>
-    <p style="margin-top:8px;"><strong>Next steps — arm 1 three-step ID:</strong> (1) Two-angle slow ramp (θ₁=0° and 90°) → k<sub>m</sub> and τ<sub>c</sub> (static). (2) Constant-u terminal-velocity sweep → k<sub>bc1</sub> and τ<sub>c</sub> (kinetic) via linear regression. (3) Fix k<sub>m</sub>, k<sub>bc1</sub>, τ<sub>c</sub>; validate on existing 0.2 Hz sine dataset with <code>sysid_arm1_driven.m</code>. Then linearise at both equilibria.</p>
+    <div class="callout-label">Current status — 2026-05-18</div>
+    <p>Arm 1 sysid steps 1 and 2 complete. <strong>k<sub>m</sub> = 18.271 N·m/u</strong> (ramp, 2026-05-18). <strong>k<sub>bc1</sub> = 2.503 N·m·s/rad, τ<sub>c,kinetic</sub> = 1.291 N·m</strong> (terminal-velocity regression, R² = 0.9998, 2026-05-18). Sign convention confirmed: <code>rotpen_ode.m</code> uses <code>tau = −k<sub>m</sub>·u</code> (positive u drives θ₁ negative — hardware mounting). Encoder dead-zone at 82.18° patched in <code>unwrap_simout.m</code> (unwrap → linear fillmissing over bad mask).</p>
+    <p style="margin-top:8px;"><strong>Next step:</strong> Step 3 — validate on existing 0.2 Hz sine dataset with <code>sysid_arm1_driven.m</code>. Then linearise at both equilibria (θ₂ = 0° and 180°) to unblock observer and control design.</p>
   </div>
 </div>
 
@@ -581,16 +581,16 @@ details[open] summary::before { transform: rotate(90deg); }
     <!-- System ID -->
     <div class="card">
       <div class="card-head"><h3>System identification</h3><span class="pill prog">In Progress</span></div>
-      <div class="card-note">l₂ identified (90% fit). Arm 1 strategy reworked 2026-05-14: ramp → constant-u sweep → validate. k<sub>m</sub>, k<sub>bc1</sub>, τ<sub>c</sub> separately identifiable. Arm-1 free-decay not usable (stiction holds arm at rest).</div>
+      <div class="card-note">l₂ identified (90% fit). Arm 1 three-step ID complete through step 2 (2026-05-18): k<sub>m</sub> = 18.271, k<sub>bc1</sub> = 2.503, τ<sub>c,kinetic</sub> = 1.291. Step 3 (validation) is next.</div>
       <ul class="checklist">
         <li class="isdone"><label><input type="checkbox" checked><span class="task">Sensor calibration — offsets and gains in <code>hwinit.m</code> (2026-05-01)</span></label></li>
         <li class="isdone"><label><input type="checkbox" checked><span class="task">Geometry: l₁ = 0.10 m (measured)</span></label></li>
         <li class="isdone"><label><input type="checkbox" checked><span class="task">Geometry: l<sub>eff</sub> = 0.0868 m identified (90% fit, 2026-05-11)</span></label></li>
         <li class="isdone"><label><input type="checkbox" checked><span class="task">Collect free-swing data — arm 2 (2026-05-08; re-run 2026-05-12)</span></label></li>
         <li><label><input type="checkbox"><span class="task">Average more free-swing runs to tighten α, β</span><span class="bsm prg">in progress</span></label></li>
-        <li><label><input type="checkbox"><span class="task">Step 1 — Two-angle ramp test (θ₁=0° and θ₁=90°) → k<sub>m</sub> and τ<sub>c</sub> (static breakaway)</span></label></li>
-        <li><label><input type="checkbox"><span class="task">Step 2 — Constant-u terminal-velocity sweep → k<sub>bc1</sub> and τ<sub>c</sub> (kinetic) via linear regression</span></label></li>
-        <li><label><input type="checkbox"><span class="task">Step 3 — Fix k<sub>m</sub>, k<sub>bc1</sub>, τ<sub>c</sub>; validate on existing 0.2 Hz sine dataset with <code>sysid_arm1_driven.m</code></span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task">Step 1 — Two-angle ramp test (θ₁=0° and θ₁=90°) → k<sub>m</sub> = 18.271 N·m/u, τ<sub>c,static</sub> = 1.772 N·m (2026-05-18)</span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task">Step 2 — Terminal-velocity sweep → k<sub>bc1</sub> = 2.503 N·m·s/rad, τ<sub>c,kinetic</sub> = 1.291 N·m, R² = 0.9998 (2026-05-18)</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Step 3 — Validate on 0.2 Hz sine dataset with <code>sysid_arm1_driven.m</code></span></label></li>
         <li><label><input type="checkbox"><span class="task">Identify coupled parameters (m₁, l<sub>c1</sub> — from multi-angle gravity balance if needed)</span></label></li>
         <li><label><input type="checkbox"><span class="task">Validate on held-out dataset (course requirement)</span></label></li>
         <li><label><input type="checkbox"><span class="task">Closed-loop sysid at unstable eq. (required for upright balance)</span></label></li>
