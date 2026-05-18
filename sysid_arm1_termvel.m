@@ -9,7 +9,7 @@ clear; clc;
 pendulum_params;
 
 %% ── Configuration ───────────────────────────────────────────────────────────
-file_name    = '';         % e.g. '20260518_100000_arm1_termvel_8steps.mat'
+file_name    = '20260518_115759_arm1_termvel_10steps.mat';         % e.g. '20260518_100000_arm1_termvel_8steps.mat'
 data_folder  = 'data';
 
 trim_start   = 1;          % [s] skip any startup transient at the very beginning
@@ -33,6 +33,7 @@ u_raw  = run_data.simin(:, 2);
 y_raw  = run_data.simout.Data;   % [N×5]: [th1_deg, dth1_dps, th2_deg, dth2_dps, psi_deg]
 h      = mean(diff(t_raw));
 
+th1_raw = deg2rad(y_raw(:, 1));    % [rad/s]
 dth1_raw = deg2rad(y_raw(:, 2));   % [rad/s]
 
 %% ── Trim ─────────────────────────────────────────────────────────────────────
@@ -41,9 +42,17 @@ i_end   = min(round(trim_end / h) + 1, length(t_raw));
 
 t        = t_raw(i_start:i_end);
 u        = u_raw(i_start:i_end);
+th1_raw  = th1_raw(i_start:i_end);
 dth1_raw = dth1_raw(i_start:i_end);
 
 fprintf('Loaded: %.1f s of data at h = %.3f s\n', t(end)-t(1), h);
+
+%% ── Clip hardware glitches ───────────────────────────────────────────────────
+% Encoder derivative overflows at step transitions produce ~1e11 deg/s spikes.
+% Clip to a generous physical maximum before filtering so filtfilt backward
+% pass cannot spread them into the steady-state windows.
+clip_rads = 200;           % [rad/s] — well above any real terminal velocity
+dth1_raw  = max(min(dth1_raw, clip_rads), -clip_rads);
 
 %% ── Filter ───────────────────────────────────────────────────────────────────
 fs = 1/h;
@@ -59,8 +68,9 @@ legend('Raw', 'Filtered'); title('Filter verification'); grid on;
 
 %% ── Overview plot ────────────────────────────────────────────────────────────
 figure('Name', 'Terminal-velocity overview');
-subplot(2,1,1); plot(t, u);      ylabel('u [-]');           grid on; title('Input staircase');
-subplot(2,1,2); plot(t, dth1_f); ylabel('d\theta_1 [rad/s]'); xlabel('Time [s]'); grid on;
+subplot(3,1,1); plot(t, u);      ylabel('u [-]');           grid on; title('Input staircase');
+subplot(3,1,2); plot(t, dth1_f); ylabel('d\theta_1 [rad/s]'); xlabel('Time [s]'); grid on;
+subplot(3,1,3); plot(t, th1_raw); ylabel('theta_1 [rad]'); xlabel('Time [s]'); grid on;
 
 %% ── Step segmentation ────────────────────────────────────────────────────────
 % Detect step edges from the raw (unfiltered) input — transitions are sharp
