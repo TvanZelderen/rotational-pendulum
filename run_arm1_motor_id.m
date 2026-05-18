@@ -80,4 +80,60 @@ elseif strcmp(run_type, 'pre_id')
     save_run(simin, simout, sprintf('arm1_pre_id_f%03dmHz_a%02d', ...
         round(freq_hz*1000), round(amplitude*100)));
 
+elseif strcmp(run_type, 'multisine')
+    % Generate multisine input
+    Tsim = 30;
+    t    = (0 : h : Tsim)';
+    N    = length(t);
+    df   = 1/Tsim;
+
+    % Frequency range around known natural frequency (1.691 Hz)
+    f_min = 0.2;    % [Hz]
+    f_max = 5.0;    % [Hz]
+    freq_indices = round(f_min/df) : 2 : round(f_max/df);
+    freqs = freq_indices * df;
+    n_f   = length(freqs);
+
+    % Schroeder phases
+    k      = 1:n_f;
+    phases = -pi * k.*(k-1) / n_f;
+
+    % Build and scale
+    u_raw = zeros(N, 1);
+    for i = 1:n_f
+        u_raw = u_raw + sin(2*pi*freqs(i)*t + phases(i));
+    end
+    amplitude = 0.02;   % START VERY SMALL — increase carefully
+    u_ms = amplitude * u_raw / max(abs(u_raw));
+
+    simin = [t, u_ms];
+
+    fprintf('Multisine: %d freqs, %.2f–%.2f Hz, peak=%.3f\n', ...
+            n_f, freqs(1), freqs(end), max(abs(u_ms)));
+
+    sim rotpentemplate;
+
+    t_out = simout.Time;
+    y     = simout.Data;
+    th1   = mod(y(:,1) + 180, 360) - 180;
+    dth1  = y(:,2);
+    th2   = mod(y(:,3) + 180, 360) - 180;
+
+    fprintf('Peak th1 = %.1f deg | peak dth1 = %.1f deg/s | peak th2 = %.1f deg\n', ...
+            max(abs(th1)), max(abs(dth1)), max(abs(th2)));
+
+    % Warn if rotating
+    if max(abs(th1)) > 90
+        warning('Arm 1 rotating! Reduce amplitude.');
+    else
+        figure(3); clf;
+        subplot(3,1,1); plot(t_out, th1);  ylabel('\theta_1 [deg]'); grid on;
+        subplot(3,1,2); plot(t_out, dth1); ylabel('d\theta_1 [deg/s]'); grid on;
+        subplot(3,1,3); plot(t_out, th2);  ylabel('\theta_2 [deg]'); grid on;
+        xlabel('Time [s]');
+        sgtitle(sprintf('Multisine — %d freqs, amp=%.3f', n_f, amplitude));
+
+        save_run(simin, simout, sprintf('multisine_amp%03d', round(amplitude*1000)));
+        fprintf('Saved: multisine_amp%03d\n', round(amplitude*1000));
+    end
 end
