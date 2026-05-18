@@ -54,7 +54,7 @@ sys = idnlgrey('link2_ode', [1, 0, 2], {alpha0; beta0}, x0, 0);
 sys.InitialStates(1).Fixed = false;
 sys.InitialStates(2).Fixed = false;
 
-opt = nlgreyestOptions('Display', 'on');
+opt = nlgreyestOptions('Display', 'on'); %WeightingFilter -> "bandpass [a, b]" -> "focus on estimation"
 sys_est = nlgreyest(data, sys, opt);
 
 fprintf('alpha (c2/m2/l2^2) = %.6f\n', sys_est.Parameters(1).Value);
