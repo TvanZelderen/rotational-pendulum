@@ -2,7 +2,7 @@ clear; clc;
 pendulum_params;   % populates struct p — source of truth for guesses + fixed values
 
 %% ── Configuration ──────────────────────────────────────────────────────────
-file_name   = '20260513_163112_arm1_pre_id_f200mHz_a30.mat';
+file_name   = '20260518_111640_multisine_amp200.mat';
 data_folder = 'data';
 
 trim_start = 3;     % [s] skip initial transient
@@ -20,6 +20,29 @@ th1_rad  = deg2rad(th1_deg);
 dth1_rad = deg2rad(dth1_dps);
 th2_rad  = deg2rad(th2_deg);
 dth2_rad = deg2rad(dth2_dps);
+
+%% ── Frequency analysis ──────────────────────────────────────────────────────
+
+n = length(th1_rad);
+f = (0:n-1)*(50/n);
+
+th1_fft = fft(th1_rad);
+power_th1 = abs(th1_fft).^2/n;
+
+dth1_fft = fft(dth1_rad);
+power_dth1 = abs(dth1_fft).^2/n;
+
+th2_fft = fft(th2_rad);
+power_th2 = abs(th2_fft).^2/n;
+
+dth2_fft = fft(dth2_rad);
+power_dth2 = abs(dth2_fft).^2/n;
+
+figure('Name', 'FFT of output');
+subplot(4,1,1); plot(f, power_th1);      ylabel('th1');     grid on; title('FFT');
+subplot(4,1,2); plot(f, power_dth1);     ylabel('dth1');    grid on;
+subplot(4,1,3); plot(f, power_th2);      ylabel('th2');     grid on;
+subplot(4,1,4); plot(f, power_dth2);     ylabel('dth2');    xlabel('Time [s]'); grid on;
 
 %% ── Trim: find calmest start in window ──────────────────────────────────────
 i_start = round(trim_start / h) + 1;
@@ -146,12 +169,6 @@ end
 for i = 1:4
     sys_val.InitialStates(i).Fixed = true;   % fixed to measured x0_est
 end
-
-% %% ── Sign check ────────────────────────────────────────────────────────────────
-% figure;
-% subplot(2,1,1); plot(t_trimmed, u_trimmed); ylabel('u'); grid on;
-% subplot(2,1,2); plot(t_trimmed, th1_rad(i_start:i_end)); ylabel('\theta_1 [rad]'); grid on;
-% xlabel('Time [s]');
 
 %% ── Results ─────────────────────────────────────────────────────────────────
 fprintf('\n--- Parameters used for validation (all from pendulum_params) ---\n');
