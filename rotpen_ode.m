@@ -72,7 +72,7 @@ function dxdt = rotpen_ode(~, x, u, p)
     
     %% Right-hand side  (Coriolis + gravity + damping + input)
     h = p.m2*p.l1*p.l2*sin(th2);
-    v_c = 0.1;   % Coulomb smoothing velocity [rad/s]; tanh(dth1/v_c) ≈ sign(dth1) for |dth1| >> v_c
+    v_c = 0.02;  % Coulomb smoothing velocity [rad/s]; tanh(dth1/v_c) ≈ sign(dth1) for |dth1| >> v_c
     rhs = [tau - p.kbc1*dth1 - p.tauc_kinetic*tanh(dth1/v_c) - (-h*(2*dth1*dth2+dth2^2)) - ((p.m1*p.lc1+p.m2*p.l1)*p.g*sin(th1) + p.m2*p.g*p.l2*sin(th1+th2)); ...
            -p.c2*dth2 - (h*dth1^2) - (p.m2*p.g*p.l2*sin(th1+th2))];
     

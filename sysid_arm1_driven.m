@@ -140,18 +140,18 @@ param_names = {'km','kbc1','c2','J1','J2','l1','l2','lc1','m1','m2','g','tauc_ki
 
 for i = 1:numel(param_names)
     sys_val.Parameters(i).Name  = param_names{i};
-    sys_val.Parameters(i).Fixed = true;   % all fixed — no estimation, pure validation
+    sys_val.Parameters(i).Fixed = true;   % validation
 end
 
 for i = 1:4
-    sys_val.InitialStates(i).Fixed = false;
+    sys_val.InitialStates(i).Fixed = true;   % fixed to measured x0_est
 end
 
-%% ── Sign check ────────────────────────────────────────────────────────────────
-figure;
-subplot(2,1,1); plot(t_trimmed, u_trimmed); ylabel('u'); grid on;
-subplot(2,1,2); plot(t_trimmed, th1_rad(i_start:i_end)); ylabel('\theta_1 [rad]'); grid on;
-xlabel('Time [s]');
+% %% ── Sign check ────────────────────────────────────────────────────────────────
+% figure;
+% subplot(2,1,1); plot(t_trimmed, u_trimmed); ylabel('u'); grid on;
+% subplot(2,1,2); plot(t_trimmed, th1_rad(i_start:i_end)); ylabel('\theta_1 [rad]'); grid on;
+% xlabel('Time [s]');
 
 %% ── Results ─────────────────────────────────────────────────────────────────
 fprintf('\n--- Parameters used for validation (all from pendulum_params) ---\n');
