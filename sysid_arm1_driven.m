@@ -24,26 +24,28 @@ dth2_rad = deg2rad(dth2_dps);
 
 %% ── Frequency analysis ──────────────────────────────────────────────────────
 
-n = length(th1_rad);
-f = (0:n-1)*(50/n);
+fs     = 1/h;
+n      = length(th1_rad);
+n_half = floor(n/2);
+f      = (0:n_half-1) * (fs/n);   % one-sided, bin spacing = fs/n [Hz]
 
-th1_fft = fft(th1_rad);
-power_th1 = abs(th1_fft).^2/n;
+th1_fft    = fft(th1_rad);
+power_th1  = abs(th1_fft(1:n_half)).^2/n;
 
-dth1_fft = fft(dth1_rad);
-power_dth1 = abs(dth1_fft).^2/n;
+dth1_fft   = fft(dth1_rad);
+power_dth1 = abs(dth1_fft(1:n_half)).^2/n;
 
-th2_fft = fft(th2_rad);
-power_th2 = abs(th2_fft).^2/n;
+th2_fft    = fft(th2_rad);
+power_th2  = abs(th2_fft(1:n_half)).^2/n;
 
-dth2_fft = fft(dth2_rad);
-power_dth2 = abs(dth2_fft).^2/n;
+dth2_fft   = fft(dth2_rad);
+power_dth2 = abs(dth2_fft(1:n_half)).^2/n;
 
 figure('Name', 'FFT of output');
 subplot(4,1,1); plot(f, power_th1);      ylabel('th1');     grid on; title('FFT');
 subplot(4,1,2); plot(f, power_dth1);     ylabel('dth1');    grid on;
 subplot(4,1,3); plot(f, power_th2);      ylabel('th2');     grid on;
-subplot(4,1,4); plot(f, power_dth2);     ylabel('dth2');    xlabel('Time [s]'); grid on;
+subplot(4,1,4); plot(f, power_dth2);     ylabel('dth2');    xlabel('Frequency [Hz]'); grid on;
 
 %% ── Trim: find calmest start in window ──────────────────────────────────────
 i_start = round(trim_start / h) + 1;
@@ -68,8 +70,7 @@ fprintf('Trim window: t = %.2f to %.2f s  (%d samples)\n', ...
 % title('Sign check — do they go the same direction?');
 
 %% 1. Design the Filter
-fs = 1/h;                    % Your sample rate (100 Hz)
-fc = 5;                     % Cutoff frequency (20 Hz)
+fc = 5;                     % Cutoff frequency (Hz)
 [b, a] = butter(2, fc/(fs/2)); % 2nd order Butterworth
 
 %% 2. Apply Zero-Phase Filtering
