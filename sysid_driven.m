@@ -2,10 +2,10 @@ clear; clc;
 pendulum_params;   % populates struct p — source of truth for guesses + fixed values
 
 %% ── Configuration ──────────────────────────────────────────────────────────
-file_name   = '20260518_111640_multisine_amp200.mat';
+file_name   = '20260518_162634_arm1_pre_id_f300mHz_a30.mat';
 data_folder = 'data';
 
-trim_start = 3;     % [s] skip initial transient
+trim_start = 1;     % [s] skip initial transient
 trim_end   = 28;    % [s]
 
 %% ── Load data ───────────────────────────────────────────────────────────────
@@ -14,6 +14,8 @@ t_raw  = run_data.simin(:, 1);
 u_raw  = run_data.simin(:, 2);
 y_raw  = run_data.simout.Data;   % [N×5]: [th1_deg, dth1_dps, th2_deg, dth2_dps, psi_deg]
 h      = mean(diff(t_raw));
+f_min  = 0.2;   % multisine band [Hz]
+f_max  = 5.0;
 
 [th1_deg, dth1_dps, th2_deg, dth2_dps] = unwrap_simout(run_data.simout, 0, h);
 th1_rad  = deg2rad(th1_deg);
@@ -21,35 +23,17 @@ dth1_rad = deg2rad(dth1_dps);
 th2_rad  = deg2rad(th2_deg);
 dth2_rad = deg2rad(dth2_dps);
 
+% simout and simin may have different lengths; use simout's time as master
+t_sim  = run_data.simout.Time;
+h_out  = mean(diff(t_sim));    % simout sample interval — may differ from simin
+fs_out = 1/h_out;
+u_sim  = interp1(t_raw, u_raw, t_sim, 'linear', 'extrap');
 
-%% ── Frequency analysis ──────────────────────────────────────────────────────
-
-fs     = 1/h;
-n      = length(th1_rad);
-n_half = floor(n/2);
-f      = (0:n_half-1) * (fs/n);   % one-sided, bin spacing = fs/n [Hz]
-
-th1_fft    = fft(th1_rad);
-power_th1  = abs(th1_fft(1:n_half)).^2/n;
-
-dth1_fft   = fft(dth1_rad);
-power_dth1 = abs(dth1_fft(1:n_half)).^2/n;
-
-th2_fft    = fft(th2_rad);
-power_th2  = abs(th2_fft(1:n_half)).^2/n;
-
-dth2_fft   = fft(dth2_rad);
-power_dth2 = abs(dth2_fft(1:n_half)).^2/n;
-
-figure('Name', 'FFT of output');
-subplot(4,1,1); plot(f, power_th1);      ylabel('th1');     grid on; title('FFT');
-subplot(4,1,2); plot(f, power_dth1);     ylabel('dth1');    grid on;
-subplot(4,1,3); plot(f, power_th2);      ylabel('th2');     grid on;
-subplot(4,1,4); plot(f, power_dth2);     ylabel('dth2');    xlabel('Frequency [Hz]'); grid on;
+fs = 1/h;
 
 %% ── Trim: find calmest start in window ──────────────────────────────────────
-i_start = round(trim_start / h) + 1;
-i_end   = min(round(trim_end / h) + 1, length(t_raw));
+i_start = round(trim_start / h_out) + 1;
+i_end   = min(round(trim_end  / h_out) + 1, length(t_sim));
 
 v_combined = abs(dth1_rad(i_start:i_end)) + abs(dth2_rad(i_start:i_end));
 [~, i_min] = min(v_combined);
@@ -57,11 +41,69 @@ i_start    = i_start + i_min - 1;
 
 y_trimmed = [th1_rad(i_start:i_end),  dth1_rad(i_start:i_end), ...
              th2_rad(i_start:i_end),  dth2_rad(i_start:i_end)];
-u_trimmed  = u_raw(i_start:i_end);
-t_trimmed  = t_raw(i_start:i_end);
+u_trimmed  = u_sim(i_start:i_end);
+t_trimmed  = t_sim(i_start:i_end);
 
 fprintf('Trim window: t = %.2f to %.2f s  (%d samples)\n', ...
         t_trimmed(1), t_trimmed(end), length(t_trimmed));
+
+%% ── Time domain ─────────────────────────────────────────────────────────────
+figure('Name', 'Time domain — trimmed window');
+subplot(3,1,1);
+    plot(t_trimmed, rad2deg(th1_rad(i_start:i_end)), 'b', ...
+         t_trimmed, rad2deg(th2_rad(i_start:i_end)), 'r');
+    legend('\theta_1', '\theta_2'); ylabel('[deg]'); grid on;
+    title('Angles — trimmed window');
+subplot(3,1,2);
+    plot(t_trimmed, rad2deg(dth1_rad(i_start:i_end)), 'b', ...
+         t_trimmed, rad2deg(dth2_rad(i_start:i_end)), 'r');
+    legend('d\theta_1', 'd\theta_2'); ylabel('[deg/s]'); grid on;
+subplot(3,1,3);
+    plot(t_trimmed, u_trimmed, 'k');
+    ylabel('u [-]'); xlabel('Time [s]'); grid on;
+
+%% ── Frequency analysis ───────────────────────────────────────────────────────
+
+% u: full simin record — preserves designed tone spacing (df = 1/Tsim)
+n_u    = length(u_raw);
+f_u    = (0:floor(n_u/2)-1) * (fs/n_u);
+amp_u  = 2*abs(fft(detrend(u_raw), n_u)) / n_u;
+
+% outputs: trimmed simout data
+n      = length(t_trimmed);
+n_half = floor(n/2);
+f_out  = (0:n_half-1) * (fs_out/n);
+
+fft_amp = @(x) 2*abs(fft(detrend(x), n)) / n;
+
+amp_th1  = fft_amp(th1_rad(i_start:i_end));
+amp_dth1 = fft_amp(dth1_rad(i_start:i_end));
+amp_th2  = fft_amp(th2_rad(i_start:i_end));
+amp_dth2 = fft_amp(dth2_rad(i_start:i_end));
+
+% designed multisine tone frequencies (from input design: every other bin)
+Tsim_in = t_raw(end);
+df_in   = 1 / Tsim_in;
+f_tones = (round(f_min/df_in) : 2 : round(f_max/df_in)) * df_in;
+
+figure('Name', 'FFT — full band');
+subplot(5,1,1); stem(f_u,   amp_u(1:floor(n_u/2)),    'filled', 'MarkerSize', 2); ylabel('u');    grid on; title('FFT (full band, detrended)');
+subplot(5,1,2); stem(f_out, amp_th1(1:n_half),  'filled', 'MarkerSize', 2); ylabel('th1');  grid on;
+subplot(5,1,3); stem(f_out, amp_dth1(1:n_half), 'filled', 'MarkerSize', 2); ylabel('dth1'); grid on;
+subplot(5,1,4); stem(f_out, amp_th2(1:n_half),  'filled', 'MarkerSize', 2); ylabel('th2');  grid on;
+subplot(5,1,5); stem(f_out, amp_dth2(1:n_half), 'filled', 'MarkerSize', 2); ylabel('dth2'); xlabel('Frequency [Hz]'); grid on;
+
+figure('Name', 'FFT — multisine band zoom');
+subplot(3,1,1);
+    stem(f_u, amp_u(1:floor(n_u/2)), 'filled', 'MarkerSize', 2); ylabel('u [-]'); grid on;
+    title(sprintf('FFT zoomed %.1f–%.1f Hz', f_min, f_max)); xlim([f_min f_max]);
+subplot(3,1,2);
+    stem(f_out, amp_th1(1:n_half), 'filled', 'MarkerSize', 2); ylabel('th1 [rad]'); grid on;
+    xline(f_tones, 'r:', 'Alpha', 0.5); xlim([f_min f_max]);
+subplot(3,1,3);
+    stem(f_out, amp_th2(1:n_half), 'filled', 'MarkerSize', 2); ylabel('th2 [rad]'); grid on;
+    xline(f_tones, 'r:', 'Alpha', 0.5); xlim([f_min f_max]);
+    xlabel('Frequency [Hz]');
 
 % plot(t_trimmed, y_trimmed(:,1))
 
