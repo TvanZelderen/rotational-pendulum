@@ -16,7 +16,7 @@
 
 pendulum_params;
 
-run_type = 'pre_id';   % 'exploratory' | 'pre_id'
+run_type = 'pre_id';   % 'exploratory' | 'pre_id' | 'multisine'
 
 h = 0.01;   % sample period [s] UPDATE THIS TO 0.001
 
