@@ -3,7 +3,7 @@
 %   calib.m  — opens fugiboard connection, resets encoder, activates relay
 %   hwinit.m — sets sensor gain/offset calibration values
 %
-% Two run types (set run_type below):
+% Three run types (set run_type below):
 %
 %   'exploratory' — full-amplitude sine.  Set freq_hz and re-run for each frequency.
 %                   Goal: read off dth1_max and see where arm 2 coupling kicks in.
@@ -11,6 +11,8 @@
 %   'pre_id'      — low-amplitude, low-frequency sine (0.2 Hz, amp 0.3, 10 cycles).
 %                   Goal: clean arm 1 motor response with arm 2 quiet.
 %                   Saved with a labelled filename for sysid_driven.m.
+%
+%   'multisine'   — combination of sine waves, tuned with offset phases to stay within u-saturation.
 
 %clear; clc;
 
