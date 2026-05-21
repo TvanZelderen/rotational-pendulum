@@ -19,6 +19,7 @@ pendulum_params;
 run_type = 'pre_id';   % 'exploratory' | 'pre_id' | 'multisine'
 
 h = 0.01;   % sample period [s] UPDATE THIS TO 0.001
+run_time = 30; % to be used in simulink [s]
 
 %% -----------------------------------------------------------------------
 %  Run
@@ -27,9 +28,9 @@ if strcmp(run_type, 'exploratory')
 
     freq_hz   = 1;
     amplitude = 0.3;
-    cycles    = 30*freq_hz; % set this, then re-run for each frequency
+    cycles    = run_time / freq_hz;
 
-    t  = (0 : h : cycles/freq_hz)';
+    t  = (0 : h : run_time)';
     u  = amplitude * sin(2*pi*freq_hz*t);
     simin = [t, u];
     sim rotpentemplate;
@@ -52,9 +53,9 @@ elseif strcmp(run_type, 'pre_id')
 
     freq_hz   = 0.3;
     amplitude = 0.3;
-    cycles    = 100*freq_hz;
+    cycles    = run_time / freq_hz;
 
-    t  = (0 : h : cycles/freq_hz)';
+    t  = (0 : h : run_time)';
     u  = amplitude * sin(2*pi*freq_hz*(t));
     simin = [t, u];
     sim rotpentemplate;
@@ -76,10 +77,9 @@ elseif strcmp(run_type, 'pre_id')
 
 elseif strcmp(run_type, 'multisine')
     % Generate multisine input
-    Tsim = 30;
-    t    = (0 : h : Tsim)';
+    t    = (0 : h : run_time)';
     N    = length(t);
-    df   = 1/Tsim;
+    df   = 1/run_time;
 
     % Frequency range around known natural frequency (1.691 Hz)
     f_min = 0.2;    % [Hz]
