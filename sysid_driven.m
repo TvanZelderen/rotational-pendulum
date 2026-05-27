@@ -212,32 +212,25 @@ for i = 1:4
     sys_val.InitialStates(i).Fixed = true;   % fixed to measured x0_est
 end
 
-%% ── Build idnlgrey model — fit (J1, kbc1 floating) ────────────────
-% Parameter order: km, kbc1, c2, J1, J2, l1, l2, lc1, m1, m2, g
-% (must match rotpen_ode_idnlgrey.m argument list — 11 params)
-param_cell = {p.km; p.kbc1; p.c2; p.J1; p.J2; p.l1; p.l2; p.lc1; p.m1; p.m2; p.g};
-x0_est     = y_trimmed(1, :)';
+%% ── Build idnlgrey model — fit (J1, kbc1 floating) ──────────────────────────
+free_params = {'kbc1', 'J1'};
 
 sys_fit = idnlgrey('rotpen_ode_idnlgrey', [2 1 4], param_cell, x0_est, 0);
 
-param_names = {'km','kbc1','c2','J1','J2','l1','l2','lc1','m1','m2','g'};
-
 for i = 1:numel(param_names)
     sys_fit.Parameters(i).Name  = param_names{i};
-    free_params = {'kbc1', 'J1'};
-    if ismember(param_names{i}, free_params)
-        sys_fit.Parameters(i).Fixed = false;
-    else
-        sys_fit.Parameters(i).Fixed = true;
-    end
+    sys_fit.Parameters(i).Fixed = ~ismember(param_names{i}, free_params);
 end
-
 
 for i = [1, 3]
-    sys_fit.InitialStates(i).Fixed = true;
-for i = [2, 4]
-    sys_fit.InitialStates(i).Fixed = false;   % floating as dth's cannot be trusted.
+    sys_fit.InitialStates(i).Fixed = true;    % angles: measured, trusted
 end
+for i = [2, 4]
+    sys_fit.InitialStates(i).Fixed = false;   % velocities: not trusted at trim start
+end
+
+opt = nlgreyestOptions('Display', 'on');
+sys_fit = nlgreyest(data, sys_fit, opt);
 
 %% ── Results ─────────────────────────────────────────────────────────────────
 fprintf('\n--- Parameters used for validation (all from pendulum_params) ---\n');
@@ -250,3 +243,15 @@ compare(data, sys_val);
 
 figure('Name', 'Residual analysis');
 resid(data, sys_val);
+
+fprintf('\n--- Fitted parameters ---\n');
+for i = 1:numel(param_names)
+    fprintf('  %-5s = %.6f  (fixed: %d)\n', ...
+        param_names{i}, sys_fit.Parameters(i).Value, sys_fit.Parameters(i).Fixed);
+end
+
+figure('Name', 'Compare: measured vs fitted model');
+compare(data, sys_fit);
+
+figure('Name', 'Residual analysis — fitted model');
+resid(data, sys_fit);

@@ -50,7 +50,12 @@ function [th1, dth1, th2, dth2, psi] = unwrap_simout(simout, fc_Hz, h)
         dth1 = dth1_raw;
     end
 
-    th2  = y(:,3);
-    dth2 = y(:,4);
+    th2     = unwrap(deg2rad(y(:,3))) * (180/pi);
+    dth2_raw = [0; diff(th2)] / h;
+    if fc_Hz > 0
+        dth2 = filtfilt(b_f, a_f, dth2_raw);
+    else
+        dth2 = dth2_raw;
+    end
     psi  = th1 + th2;
 end
