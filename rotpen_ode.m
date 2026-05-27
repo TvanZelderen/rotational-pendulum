@@ -11,20 +11,20 @@ function dxdt = rotpen_ode(~, x, u, p)
     % Input:
     %   u  [-]   normalised motor input, u in [-1, +1]  (NOT raw volts)
     %   p        parameter struct from pendulum_params.m
-    
+
     %% Unpack state
     th1  = x(1);
     dth1 = x(2);
     th2  = x(3);
     dth2 = x(4);
-    
+
     %% Motor torque on joint 1
     % Assumption A2 (stiff arm): reaction forces from arm 2 back onto arm 1 are
     % negligible, so tau drives arm 1 independently.  The full coupling term
     % still appears in M and rhs below (more accurate); dropping it is a
     % simplification to validate later against hardware data.
     tau = -p.km * u;   % [N·m]   velocity-dependent braking lumped into kbc1 below
-    
+
     % -----------------------------------------------------------------------
     % TODO — Derive the equations of motion using the Euler-Lagrange method.
     %
@@ -66,22 +66,18 @@ function dxdt = rotpen_ode(~, x, u, p)
     % Tip: expand v_c2x and v_c2y before squaring — you'll get a cos(th2) term
     %      in the off-diagonal of M. That coupling is the heart of the problem.
     % -----------------------------------------------------------------------
-    
+
     %% Inertia matrix  M(th2)  — 2×2, function of th2 only
     M = [p.J1+p.m2*(p.l1^2+p.l2^2+2*p.l1*p.l2*cos(th2)), p.m2*(p.l2^2+p.l1*p.l2*cos(th2)); p.m2*(p.l2^2+p.l1*p.l2*cos(th2)), p.m2*p.l2^2];
-    
+
     %% Right-hand side  (Coriolis + gravity + damping + input)
     h = p.m2*p.l1*p.l2*sin(th2);
     rhs = [tau - p.kbc1*dth1 - (-h*(2*dth1*dth2+dth2^2)) - ((p.m1*p.lc1+p.m2*p.l1)*p.g*sin(th1) + p.m2*p.g*p.l2*sin(th1+th2)); ...
            -p.c2*dth2 - (h*dth1^2) - (p.m2*p.g*p.l2*sin(th1+th2))];
-    
+
     %% Solve for angular accelerations
     ddq = M \ rhs;
-    
+
     %% Assemble state derivative
-    dxdt      = zeros(4, 1);
-    dxdt(1)   = dth1;
-    dxdt(2)   = ddq(1);
-    dxdt(3)   = dth2;
-    dxdt(4)   = ddq(2);
+    dxdt = [dth1; ddq(1); dth2; ddq(2)];
 end
