@@ -14,7 +14,7 @@ pendulum_params;
 %% ── Config ───────────────────────────────────────────────────────────────────
 h          = 0.01;   % sample period [s]
 t_zero     = 5;      % [s] dwell at u=0 between steps (arm stops)
-t_step     = 10;     % [s] dwell at each u level (arm reaches steady state)
+t_step     = 5;     % [s] dwell at each u level (arm reaches steady state)
 
 u_levels = [0.2, 0.4, 0.6, 0.8, 1.0];
 
