@@ -2,7 +2,7 @@ clear; clc;
 pendulum_params;   % populates struct p — source of truth for guesses + fixed values
 
 %% ── Configuration ──────────────────────────────────────────────────────────
-file_name   = '20260518_162634_arm1_pre_id_f300mHz_a30.mat';
+file_name   = '20260527_100747_multisine_amp800.mat';
 data_folder = 'data';
 
 trim_start = 1;     % [s] skip initial transient
@@ -196,8 +196,6 @@ ylabel('u [-]'); xlabel('Time [s]'); grid on;
 %% ── Build idnlgrey model — validation only (all params fixed) ────────────────
 % Parameter order: km, kbc1, c2, J1, J2, l1, l2, lc1, m1, m2, g
 % (must match rotpen_ode_idnlgrey.m argument list — 11 params)
-% Update pendulum_params.m with identified values, then run this script to
-% see how well the model reproduces the driven sine data.
 param_cell = {p.km; p.kbc1; p.c2; p.J1; p.J2; p.l1; p.l2; p.lc1; p.m1; p.m2; p.g};
 x0_est     = y_trimmed(1, :)';
 
@@ -212,6 +210,33 @@ end
 
 for i = 1:4
     sys_val.InitialStates(i).Fixed = true;   % fixed to measured x0_est
+end
+
+%% ── Build idnlgrey model — fit (J1, kbc1 floating) ────────────────
+% Parameter order: km, kbc1, c2, J1, J2, l1, l2, lc1, m1, m2, g
+% (must match rotpen_ode_idnlgrey.m argument list — 11 params)
+param_cell = {p.km; p.kbc1; p.c2; p.J1; p.J2; p.l1; p.l2; p.lc1; p.m1; p.m2; p.g};
+x0_est     = y_trimmed(1, :)';
+
+sys_fit = idnlgrey('rotpen_ode_idnlgrey', [2 1 4], param_cell, x0_est, 0);
+
+param_names = {'km','kbc1','c2','J1','J2','l1','l2','lc1','m1','m2','g'};
+
+for i = 1:numel(param_names)
+    sys_fit.Parameters(i).Name  = param_names{i};
+    free_params = {'kbc1', 'J1'};
+    if ismember(param_names{i}, free_params)
+        sys_fit.Parameters(i).Fixed = false;
+    else
+        sys_fit.Parameters(i).Fixed = true;
+    end
+end
+
+
+for i = [1, 3]
+    sys_fit.InitialStates(i).Fixed = true;
+for i = [2, 4]
+    sys_fit.InitialStates(i).Fixed = false;   % floating as dth's cannot be trusted.
 end
 
 %% ── Results ─────────────────────────────────────────────────────────────────
