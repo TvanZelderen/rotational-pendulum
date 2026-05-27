@@ -1,7 +1,7 @@
 % Offline arm-1 terminal-velocity sweep analysis.
 % Collect data first with run_terminal_vel.m.
-% Identifies: kbc1 initial estimate (composite back-EMF + joint damping).
-% Note: tauc_kinetic folded into kbc1 (2026-05-18) — refit via nlgreyest recommended.
+% Identifies: kbc1 composite initial estimate (viscous-only ODE; Coulomb folded in).
+% Refit via nlgreyest on multisine data recommended.
 %
 % Requires km to already be set in pendulum_params.m (from sysid_ramp.m).
 
@@ -9,7 +9,7 @@ clear; clc;
 pendulum_params;
 
 %% ── Configuration ───────────────────────────────────────────────────────────
-file_name    = '20260518_115759_arm1_termvel_10steps.mat';         % e.g. '20260518_100000_arm1_termvel_8steps.mat'
+file_name    = '20260527_115804_arm1_termvel_10steps.mat';         % e.g. '20260518_100000_arm1_termvel_8steps.mat'
 data_folder  = 'data';
 
 trim_start   = 1;          % [s] skip any startup transient at the very beginning
@@ -27,7 +27,7 @@ min_seg_s    = 3;          % [s]
 edge_thresh  = 0.05;       % [normalised u]
 
 % %% Intermission
-% 
+%
 % run_data = load('data/20260518_115759_arm1_termvel_10steps.mat');
 % y = run_data.simout.Data;
 % th1_raw = y(:,1);
@@ -88,25 +88,29 @@ subplot(4,1,4);
   ylabel('\Delta d\theta_1 [rad/s]'); xlabel('Time [s]'); grid on;
   title('col2 − unwrap\_simout derivative (should be ~0 except at crossings)');
 
-% Zoom in on first dead-zone crossing
-first_bad = find(bad_dbg, 1);
-if ~isempty(first_bad)
-    zoom_win = max(1, first_bad-50) : min(numel(t_so), first_bad+150);
-    figure('Name', 'Unwrap diagnostics — crossing zoom');
+% Zoom in on every dead-zone crossing — one figure per crossing
+crossing_starts = find(diff([0; bad_dbg(:)]) > 0);   % rising edges of bad mask
+fprintf('%d dead-zone crossings detected.\n', numel(crossing_starts));
+
+for ci = 1:numel(crossing_starts)
+    ic       = crossing_starts(ci);
+    zoom_win = max(1, ic-30) : min(numel(t_so), ic+80);
+
+    figure('Name', sprintf('Crossing %d of %d  (t=%.2fs)', ci, numel(crossing_starts), t_so(ic)));
     subplot(3,1,1);
       plot(t_so(zoom_win), th1_orig_deg(zoom_win), 'ko-', 'MarkerSize', 4); hold on;
       plot(t_so(zoom_win), th1_deg(zoom_win),      'bs-', 'MarkerSize', 4);
       ylabel('\theta_1 [deg]'); legend('Raw','Patched'); grid on;
-      title('Zoom: first crossing (sample by sample)');
+      title(sprintf('Crossing %d — t = %.2f s', ci, t_so(ic)));
     subplot(3,1,2);
       plot(t_so(zoom_win), bad_dbg(zoom_win), 'k'); ylim([-0.1 1.1]); grid on;
-      ylabel('bad'); title('Bad mask in window');
+      ylabel('bad mask');
     subplot(3,1,3);
-      plot(t_so(zoom_win), dth1_orig(zoom_win),    'ko-', 'MarkerSize',4); hold on;
-      plot(t_so(zoom_win), dth1_col2_c(zoom_win), 'g.-', 'MarkerSize',8);
-      plot(t_so(zoom_win), dth1_raw(zoom_win),    'bs-', 'MarkerSize',4);
+      plot(t_so(zoom_win), dth1_orig(zoom_win),    'ko-', 'MarkerSize', 4); hold on;
+      plot(t_so(zoom_win), dth1_col2_c(zoom_win), 'g.-', 'MarkerSize', 8);
+      plot(t_so(zoom_win), dth1_raw(zoom_win),    'bs-', 'MarkerSize', 4);
       ylabel('d\theta_1 [rad/s]'); legend('diff(raw)/h','col2','patched'); grid on;
-      title('Derivative comparison in window');
+      xlabel('Time [s]');
 end
 
 %% ── Trim ─────────────────────────────────────────────────────────────────────
@@ -124,7 +128,7 @@ fprintf('Loaded: %.1f s of data at h = %.3f s\n', t(end)-t(1), h);
 fs = 1/h;
 fc = 5;                    % cutoff [Hz] — smooth velocity without lagging the steps
 [b_f, a_f] = butter(2, fc/(fs/2));
-dth1_f = filtfilt(b_f, a_f, dth1_raw);
+dth1_f = filtfilt(b_f, a_f, medfilt1(dth1_raw, 7));
 
 figure('Name', 'Filter check — dth1');
 plot(t, dth1_raw, 'Color', [0.8 0.8 0.8]); hold on;
@@ -177,31 +181,21 @@ if length(u_levels) < 2
     error('Too few pairs — check edge_thresh or min_seg_s, or check that the run has multiple u levels.');
 end
 
-%% ── Fit: kbc1 and tauc_kinetic ───────────────────────────────────────────────
+%% ── Fit: kbc1 (viscous-only) ─────────────────────────────────────────────────
 % At terminal velocity, ddth1 = 0 and gravity averages out over full rotations.
-% The averaged arm-1 EOM reduces to:
+% Viscous-only ODE reduces to:
 %
-%   km * u  =  kbc1 * omega_ss  +  tauc_kinetic * sign(omega_ss)
+%   km * u  =  kbc1 * omega_ss
 %
-% This is linear in the two unknowns [kbc1, tauc_kinetic]:
+% Single-parameter least-squares: kbc1 = omega_ss \ b
 %
-%   A * [kbc1; tauc_kinetic]  =  b
-%
-% where:
-%   A = [omega_ss,  sign(omega_ss)]   (N×2 regressor matrix)
-%   b = -p.km * u_levels              (N×1 right-hand side; minus because rotpen_ode uses tau = -km·u)
+%   b = -p.km * u_levels   (minus: rotpen_ode uses tau = -km·u)
 
-A = [omega_ss, sign(omega_ss)];
-b = -p.km * u_levels;
-
-% Least-squares solve: overdetermined for N>2, exact for N=2
-theta = A \ b;
-
-kbc1         = theta(1);   % [N·m·s/rad]
-tauc_kinetic = theta(2);   % [N·m]
+b     = -p.km * u_levels;
+kbc1  = omega_ss \ b;   % [N·m·s/rad] composite: true viscous + Coulomb folded in
 
 % Goodness of fit — R² on the torque residuals
-b_hat  = A * theta;
+b_hat  = kbc1 * omega_ss;
 SS_res = sum((b - b_hat).^2);
 SS_tot = sum((b - mean(b)).^2);
 R2     = 1 - SS_res / SS_tot;
@@ -212,41 +206,60 @@ if R2 < 0.9
 end
 
 %% ── Plots ────────────────────────────────────────────────────────────────────
-% Fitted line evaluated over a dense omega grid (handles the sign discontinuity)
-tau_meas = -p.km * u_levels;   % motor torque consistent with rotpen_ode: tau = -km*u
-if any(omega_ss > 0)
-    omega_pos = linspace(0, max(omega_ss(omega_ss>0))+0.1, 100)';
-    b_pos = kbc1*omega_pos + tauc_kinetic;
-else
-    omega_pos = []; b_pos = [];
-end
-if any(omega_ss < 0)
-    omega_neg = linspace(min(omega_ss(omega_ss<0))-0.1, 0, 100)';
-    b_neg = kbc1*omega_neg - tauc_kinetic;
-else
-    omega_neg = []; b_neg = [];
-end
+tau_meas  = -p.km * u_levels;
+omega_fit = linspace(min(omega_ss)-0.1, max(omega_ss)+0.1, 200)';
+tau_fit   = kbc1 * omega_fit;
 
 figure('Name', 'Terminal-velocity regression');
 subplot(2,1,1); hold on;
-  % Measured (tau, omega_ss) pairs plotted as torque vs velocity
-  plot(omega_ss(omega_ss>0), tau_meas(omega_ss>0), 'bo', 'MarkerFaceColor','b');
-  plot(omega_ss(omega_ss<0), tau_meas(omega_ss<0), 'rs', 'MarkerFaceColor','r');
-  if ~isempty(omega_pos); plot(omega_pos, b_pos, 'b-', 'LineWidth', 1.5); end
-  if ~isempty(omega_neg); plot(omega_neg, b_neg, 'r-', 'LineWidth', 1.5); end
+  plot(omega_ss, tau_meas, 'ko', 'MarkerFaceColor','k');
+  plot(omega_fit, tau_fit, 'r-', 'LineWidth', 1.5);
   xlabel('\omega_{ss} [rad/s]'); ylabel('\tau_{motor} = -k_m u  [N\cdotm]');
-  legend('Data (+\omega)', 'Data (-\omega)', 'Fit (+\omega)', 'Fit (-\omega)');
-  title(sprintf('kbc1 = %.4f  N·m·s/rad,   tauc\\_kinetic = %.4f  N·m,   R² = %.3f', ...
-      kbc1, tauc_kinetic, R2));
+  legend('Data', 'Fit (viscous-only)');
+  title(sprintf('kbc1 = %.4f  N·m·s/rad  (composite)   R² = %.4f', kbc1, R2));
   grid on;
 subplot(2,1,2);
   plot(omega_ss, b - b_hat, 'ko', 'MarkerFaceColor','k');
   yline(0, '--k'); yline(2*std(b-b_hat), '--', '+2\sigma'); yline(-2*std(b-b_hat), '--', '-2\sigma');
   xlabel('\omega_{ss} [rad/s]'); ylabel('Residual [N\cdotm]');
-  title('Residuals — should be small and unsystematic'); grid on;
+  title('Residuals — systematic curve = Coulomb not captured by viscous model'); grid on;
+
+%% ── Per-segment diagnostic ───────────────────────────────────────────────────
+n_pairs  = length(u_levels);
+n_cols   = ceil(sqrt(n_pairs));
+n_rows   = ceil(n_pairs / n_cols);
+
+figure('Name', 'Per-segment steady-state windows');
+pair_idx = 0;
+
+for k = 1:length(edges)-1
+    i0      = edges(k);
+    i1      = edges(k+1) - 1;
+    seg_len = i1 - i0 + 1;
+
+    if seg_len < round(min_seg_s / h); continue; end
+
+    i_ss   = round(i0 + (1 - settle_frac)*seg_len) : i1;
+    u_mean = mean(u(i_ss));
+
+    if abs(u_mean) < edge_thresh; continue; end
+
+    pair_idx = pair_idx + 1;
+    w_mean   = mean(dth1_f(i_ss));
+
+    subplot(n_rows, n_cols, pair_idx); hold on;
+    plot(t(i0:i1), dth1_f(i0:i1), 'b');
+    patch([t(i_ss(1)) t(i_ss(end)) t(i_ss(end)) t(i_ss(1))], ...
+          [min(dth1_f(i0:i1))-0.1 min(dth1_f(i0:i1))-0.1 ...
+           max(dth1_f(i0:i1))+0.1 max(dth1_f(i0:i1))+0.1], ...
+          [0.9 0.95 0.9], 'EdgeColor', 'none', 'FaceAlpha', 0.4);
+    yline(w_mean, 'r--', sprintf('%.2f rad/s', w_mean), 'LabelHorizontalAlignment', 'left');
+    title(sprintf('u = %.2f', u_mean));
+    ylabel('[rad/s]'); grid on;
+end
+sgtitle('Per-segment dth1 — shaded = SS window, dashed = extracted \omega_{ss}');
 
 %% ── Results ─────────────────────────────────────────────────────────────────
 fprintf('\n--- Arm-1 terminal-velocity identification ---\n');
-fprintf('  kbc1         = %.6f  N·m·s/rad\n', kbc1);
-fprintf('  tauc_kinetic = %.6f  N·m\n', tauc_kinetic);
-fprintf('\nUpdate pendulum_params.m kbc1 (initial), then refit via sysid_driven.m + nlgreyest.\n');
+fprintf('  kbc1 (composite) = %.6f  N·m·s/rad\n', kbc1);
+fprintf('\nUpdate pendulum_params.m p.kbc1, then refit via sysid_driven.m + nlgreyest.\n');
