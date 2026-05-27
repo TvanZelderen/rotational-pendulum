@@ -18,7 +18,7 @@
 
 pendulum_params;
 
-run_type = 'multisine';   % 'exploratory' | 'pre_id' | 'multisine'
+run_type = 'pre_id';   % 'exploratory' | 'pre_id' | 'multisine'
 
 h = 0.001;   % sample period [s] UPDATE THIS TO 0.001
 run_time = 30; % to be used in simulink [s]
