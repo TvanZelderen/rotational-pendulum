@@ -36,7 +36,7 @@ p.l2   = 0.086841;                     % length of arm 2, joint to ball [m]  —
 p.m2   = 0.024;                        % tip mass [kg]  — placeholder; m2 NOT independently
                                         % identifiable from free-swing data alone.
                                         % TODO: confirm with additional free-swing runs.
-p.J2   = p.m2 * p.l2^2;               % point mass inertia about joint [kg·m²] 
+p.J2   = p.m2 * p.l2^2;               % point mass inertia about joint [kg·m²]
 
 % Identified composites (free-swing experiment, latest averaged run, 2026-05-12):
 %   alpha2 = c2 / (m2 * l2^2) = 0.164111  [1/s]
@@ -53,7 +53,7 @@ p.c2     = p.alpha2 * p.m2 * p.l2^2;  % derived from alpha2 and current m2 estim
 % Inductance still neglected (A3 applies to inductance only now).
 p.km   = 18.271125;                    % peak motor torque [N·m per normalised unit] — sysid_ramp 2026-05-18
 %p.km = 0.25;
-p.kbc1 = 2.502519;                     % composite: kb + c1 + folded kinetic Coulomb [N·m·s/rad]
+p.kbc1 = 2.588876;                     % composite: kb + c1 + folded kinetic Coulomb [N·m·s/rad]
 %p.kbc1 = 1;                                       % initial value from terminal-velocity regression 2026-05-18
                                        % tauc_static = 1.772 and tauc_kinetic = 1.291 N·m were
                                        % identified separately but folded into kbc1 (2026-05-18):
