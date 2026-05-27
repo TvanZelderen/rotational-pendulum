@@ -18,7 +18,7 @@
 
 pendulum_params;
 
-run_type = 'pre_id';   % 'exploratory' | 'pre_id' | 'multisine'
+run_type = 'multisine';   % 'exploratory' | 'pre_id' | 'multisine'
 
 h = 0.001;   % sample period [s] UPDATE THIS TO 0.001
 run_time = 30; % to be used in simulink [s]
@@ -118,15 +118,16 @@ elseif strcmp(run_type, 'multisine')
     % Warn if rotating
     if max(abs(th1)) > 90
         warning('Arm 1 rotating! Reduce amplitude.');
-    else
-        figure(3); clf;
-        subplot(3,1,1); plot(t_out, th1);  ylabel('\theta_1 [deg]'); grid on;
-        subplot(3,1,2); plot(t_out, dth1); ylabel('d\theta_1 [deg/s]'); grid on;
-        subplot(3,1,3); plot(t_out, th2);  ylabel('\theta_2 [deg]'); grid on;
-        xlabel('Time [s]');
-        sgtitle(sprintf('Multisine — %d freqs, amp=%.3f', n_f, amplitude));
-
-        save_run(simin, simout, sprintf('multisine_amp%03d', round(amplitude*1000)));
-        fprintf('Saved: multisine_amp%03d\n', round(amplitude*1000));
     end
+    
+    figure(3); clf;
+    subplot(3,1,1); plot(t_out, th1);  ylabel('\theta_1 [deg]'); grid on;
+    subplot(3,1,2); plot(t_out, dth1); ylabel('d\theta_1 [deg/s]'); grid on;
+    subplot(3,1,3); plot(t_out, th2);  ylabel('\theta_2 [deg]'); grid on;
+    xlabel('Time [s]');
+    sgtitle(sprintf('Multisine — %d freqs, amp=%.3f', n_f, amplitude));
+
+    save_run(simin, simout, sprintf('multisine_amp%03d', round(amplitude*1000)));
+    fprintf('Saved: multisine_amp%03d\n', round(amplitude*1000));
+    
 end
