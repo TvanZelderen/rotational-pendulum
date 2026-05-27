@@ -51,5 +51,15 @@ subplot(2,1,2);
 
 fprintf('Peak |dth1| = %.1f deg/s\n', max(abs(dth1)));
 
+fprintf('\n--- Terminal velocity per level ---\n');
+fprintf('  %-6s  %-12s  %-12s\n', 'u', 'dth1 [deg/s]', 'dth1 [rad/s]');
+for k = 1:n_steps
+    i0 = round((k-1)*t_step / h) + 1;
+    i1 = min(round(k*t_step / h) + 1, length(t_out));
+    last_quarter = round(i0 + 0.75*(i1-i0)) : i1;
+    dth1_ss = mean(dth1(last_quarter));
+    fprintf('  %-6.2f  %-12.2f  %-12.4f\n', u_seq(k), dth1_ss, deg2rad(dth1_ss));
+end
+
 %% ── Save ─────────────────────────────────────────────────────────────────────
 save_run(simin, simout, sprintf('arm1_termvel_%dsteps', n_steps));
