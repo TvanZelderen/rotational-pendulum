@@ -30,9 +30,10 @@ for k = 1:length(u_levels)
 end
 u_vec = [u_vec; zeros(n_zero, 1)];   % trailing zero
 
-n_total = length(u_vec);
-t = (0 : h : (n_total-1)*h)';
-simin = [t, u_vec];
+n_total  = length(u_vec);
+t        = (0 : h : (n_total-1)*h)';
+run_time = t(end);   % picked up by rotpentemplate StopTime
+simin    = [t, u_vec];
 
 %% ── Run ──────────────────────────────────────────────────────────────────────
 sim rotpentemplate;
