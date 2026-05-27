@@ -2,7 +2,7 @@ clear; clc;
 pendulum_params;   % populates struct p — source of truth for guesses + fixed values
 
 %% ── Configuration ──────────────────────────────────────────────────────────
-file_name   = '20260518_162634_arm1_pre_id_f300mHz_a30.mat';
+file_name   = '20260527_100747_multisine_amp800.mat';
 data_folder = 'data';
 
 trim_start = 1;     % [s] skip initial transient

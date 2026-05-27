@@ -36,7 +36,7 @@ p.l2   = 0.086841;                     % length of arm 2, joint to ball [m]  —
 p.m2   = 0.024;                        % tip mass [kg]  — placeholder; m2 NOT independently
                                         % identifiable from free-swing data alone.
                                         % TODO: confirm with additional free-swing runs.
-p.J2   = p.m2 * p.l2^2;               % point mass inertia about joint [kg·m²]
+p.J2   = p.m2 * p.l2^2;               % point mass inertia about joint [kg·m²] 
 
 % Identified composites (free-swing experiment, latest averaged run, 2026-05-12):
 %   alpha2 = c2 / (m2 * l2^2) = 0.164111  [1/s]
