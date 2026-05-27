@@ -11,8 +11,8 @@
 pendulum_params;
 
 %% ── Config ───────────────────────────────────────────────────────────────────
-h      = 0.01;   % sample period [s]
-t_step = 5;      % [s] per level — long enough for arm 1 to reach terminal velocity
+h        = 0.01;   % sample period [s]
+run_time = 50;     % [s] total — divided equally across all u levels
 
 % u levels to sweep. Include both signs so tauc_kinetic is well-conditioned:
 % positive u → positive omega_ss (sign = +1)
@@ -22,7 +22,8 @@ u_seq = [0.2, 0.4, 0.6, 0.8, 1, -1, -0.8, -0.6, -0.4, -0.2];
 
 %% ── Build staircase input ────────────────────────────────────────────────────
 n_steps = length(u_seq);
-t_total = n_steps * t_step;
+t_step  = run_time / n_steps;
+t_total = run_time;
 
 t = (0:h:t_total)';
 u = zeros(size(t));
