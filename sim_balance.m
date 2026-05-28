@@ -4,7 +4,15 @@
 clear; clc;
 
 pendulum_params;
-linearise_upright;   % populates K, ref, A_num, B_num, C
+load('lqr_gains.mat');   % K_up_up, K_down_up
+
+%% -----------------------------------------------------------------------
+%  Select operating point  (swap K and ref to switch controller)
+% -----------------------------------------------------------------------
+K   = K_up_up;
+ref = [pi; 0; 0; 0];    % up-up
+% K   = K_down_up;
+% ref = [0; 0; pi; 0];  % down-up
 
 use_lqr  = true;
 h        = 0.001;    % [s]
