@@ -10,8 +10,8 @@ pendulum_params;
 dxdt_sym = rotpen_ode(0, x, u, p);
 
 % Equilibrium position
-x0 = [0; 0; pi; 0]; % down up
-% x0 = [pi; 0; pi; 0]; % up up
+% x0 = [0; 0; pi; 0]; % down up
+x0 = [pi; 0; 0; 0]; % up up
 u0 = 0;
 ref = x0;
 

@@ -15,12 +15,12 @@ simin    = [t, zeros(size(t))];   % unused under use_lqr; kept for run_sim shape
 %% -----------------------------------------------------------------------
 %  Initial condition  (edit this line to test different perturbations)
 % -----------------------------------------------------------------------
-x0 = ref + [0; 0; 0.1; 0];   % small arm-2 angular perturbation [rad]
+x0 = ref + [0; 0; deg2rad(10); 0.1];   % small arm-2 angular perturbation [rad]
 
 %% -----------------------------------------------------------------------
 %  Run
 % -----------------------------------------------------------------------
-run_sim;
+run_sim
 
 %% -----------------------------------------------------------------------
 %  Extract clean states (pre-noise, pre-wrap — use x_out from run_sim)
