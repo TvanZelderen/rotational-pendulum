@@ -1,100 +1,121 @@
+% test_offline_linear_observer.m
+% Runs a purely Linear Luenberger Observer using only A, B, C, and L matrices.
+
 clear; clc;
-pendulum_params;   % populates struct p — source of truth for guesses + fixed values
+pendulum_params; 
 
-%% ── Configuration ──────────────────────────────────────────────────────────
-file_name   = '20260527_123500_arm1_pre_id_f300mHz_a30.mat';
+%% 1. Load Data
 data_folder = 'data';
+file_name   = '20260527_125403_multisine_amp400.mat';
+run_data    = load(fullfile(data_folder, file_name));
 
-trim_start = 1;     % [s] skip initial transient
-trim_end   = 28;    % [s]
+t_raw = run_data.simin(:,1);
+u_raw = run_data.simin(:,2);
+y_raw = run_data.simout.Data;
+h     = mean(diff(t_raw));
+fprintf('Sample time used: h = %.4f s\n', h);
 
-%% ── Load data ───────────────────────────────────────────────────────────────
-run_data = load(fullfile(data_folder, file_name));
-t_raw  = run_data.simin(:, 1);
-u_raw  = run_data.simin(:, 2);
-y_raw  = run_data.simout.Data;   % [N×6]: [th1_deg, dth1_dps, th2_deg, dth2_dps, psi_deg, x_hat]
-h      = mean(diff(t_raw));
-f_min  = 0.2;   % multisine band [Hz]
-f_max  = 5.0;
+%% 2. Central Difference Linearization (Downward)
+fprintf('\n--- Calculating A and B Matrices ---\n');
+eps_jac = 1e-6;
+x_eq = [0; 0; 0; 0];
+A_s = zeros(4,4);
 
-[th1_deg, dth1_dps, th2_deg, dth2_dps] = unwrap_simout(run_data.simout, 0, h);
-th1_rad  = deg2rad(th1_deg);
-dth1_rad = deg2rad(dth1_dps);
-th2_rad  = deg2rad(th2_deg);
-dth2_rad = deg2rad(dth2_dps);
+% Compute A
+for i = 1:4
+    xp = x_eq; xp(i) = xp(i) + eps_jac;
+    xm = x_eq; xm(i) = xm(i) - eps_jac;
+    A_s(:,i) = (rotpen_ode(0, xp, 0, p) - rotpen_ode(0, xm, 0, p)) / (2*eps_jac);
+end
 
-% simout and simin may have different lengths; use simout's time as master
-t_sim  = run_data.simout.Time;
-h_out  = mean(diff(t_sim));    % simout sample interval — may differ from simin
-fs_out = 1/h_out;
-u_sim  = interp1(t_raw, u_raw, t_sim, 'linear', 'extrap');
+% Compute B
+u_plus = eps_jac;
+u_minus = -eps_jac;
+B_s = (rotpen_ode(0, x_eq, u_plus, p) - rotpen_ode(0, x_eq, u_minus, p)) / (2*eps_jac);
 
-%% Extract observer states from simout
-% Assuming simout column order: [th1, dth1, th2, dth2, phi, xhat1, xhat2, xhat3, xhat4]
-% Adjust indices based on what the column check prints above
+C = [1 0 0 0; 
+     0 0 1 0]; 
 
-xhat_th1  = deg2rad(y_raw(:, 6));   % observer th1  estimate [rad]
-xhat_dth1 = deg2rad(y_raw(:, 7));   % observer dth1 estimate [rad/s]
-xhat_th2  = deg2rad(y_raw(:, 8));   % observer th2  estimate [rad]
-xhat_dth2 = deg2rad(y_raw(:, 9));   % observer dth2 estimate [rad/s]
+%% 3. Observer Design (Optimal Kalman / LQR Approach)
+fprintf('\n--- Calculating Optimal L Matrix ---\n');
 
-% Note: if observer outputs radians already, remove deg2rad()
-% Check by comparing ranges:
-fprintf('\nObserver state ranges:\n');
-fprintf('  xhat_th1:  %.1f to %.1f\n', min(y_raw(:,6)), max(y_raw(:,6)));
-fprintf('  xhat_dth1: %.1f to %.1f\n', min(y_raw(:,7)), max(y_raw(:,7)));
-fprintf('  xhat_th2:  %.1f to %.1f\n', min(y_raw(:,8)), max(y_raw(:,8)));
-fprintf('  xhat_dth2: %.1f to %.1f\n', min(y_raw(:,9)), max(y_raw(:,9)));
+% Q relates to how much we want the observer to aggressively track the states.
+% (Higher numbers = track states faster)
+Q_obs = diag([1000, 0, 1000, 0]); 
 
-%% Trim
-iS = round(trim_start/h_out) + 1;
-iE = min(round(trim_end/h_out) + 1, length(t_sim));
+% R relates to the encoders (we thrust them fully)
+R_obs = diag([1, 1]); 
 
-t_plot     = t_sim(iS:iE);
-u_plot     = u_sim(iS:iE);
+% Calculate L using the Linear Quadratic Estimator (Dual LQR) method.
+L_s = lqr(A_s', C', Q_obs, R_obs)'
 
-%% Plot all 4 states: differentiator vs observer
-figure('Name', 'Observer vs differentiator — all states');
+fprintf('Max |L| gain = %.2f\n', max(abs(L_s(:))));
 
-% th1
-subplot(4,1,1);
-plot(t_plot, rad2deg(th1_rad(iS:iE)),  'b', 'LineWidth', 1.2); hold on;
-plot(t_plot, rad2deg(xhat_th1(iS:iE)), 'r--', 'LineWidth', 1.2);
-ylabel('th1 [deg]', 'Interpreter','none'); grid on;
-legend('Encoder','Observer','Location','best','Interpreter','none');
-title('Observer vs encoder — angles should match exactly');
+%% 4. Data Processing & Trimming
+iS = round(3/h) + 1;
+iE = min(round(28/h) + 1, length(t_raw));
 
-% dth1
-subplot(4,1,2);
-plot(t_plot, rad2deg(dth1_rad(iS:iE)),  'b', 'LineWidth', 1.2); hold on;
-plot(t_plot, rad2deg(xhat_dth1(iS:iE)), 'r--', 'LineWidth', 1.5);
-ylabel('dth1 [deg/s]', 'Interpreter','none'); grid on;
-legend('Differentiator','Observer','Location','best','Interpreter','none');
-title('Velocity: observer should be smoother than differentiator');
+t_trim = t_raw(iS:iE);
+u_trim = u_raw(iS:iE);
+N      = length(t_trim);
 
-% th2
-subplot(4,1,3);
-plot(t_plot, rad2deg(th2_rad(iS:iE)),  'b', 'LineWidth', 1.2); hold on;
-plot(t_plot, rad2deg(xhat_th2(iS:iE)), 'r--', 'LineWidth', 1.2);
-ylabel('th2 [deg]', 'Interpreter','none'); grid on;
-legend('Encoder','Observer','Location','best','Interpreter','none');
+true_states = zeros(4, N);
+true_states(1,:) = deg2rad(y_raw(iS:iE, 1))'; 
+true_states(2,:) = deg2rad(y_raw(iS:iE, 2))'; 
+true_states(3,:) = deg2rad(y_raw(iS:iE, 3))'; 
+true_states(4,:) = deg2rad(y_raw(iS:iE, 4))'; 
 
-% dth2
-subplot(4,1,4);
-plot(t_plot, rad2deg(dth2_rad(iS:iE)),  'b', 'LineWidth', 1.2); hold on;
-plot(t_plot, rad2deg(xhat_dth2(iS:iE)), 'r--', 'LineWidth', 1.5);
-ylabel('dth2 [deg/s]', 'Interpreter','none'); grid on;
-legend('Differentiator','Observer','Location','best','Interpreter','none');
+%% 5.Observer Loop
+fprintf('\n--- Running Linear Observer ---\n');
+x_hat = zeros(4, N);
+x_hat(:,1) = true_states(:,1); % Initialize 
+
+
+for k = 1:N-1
+    if any(isnan(x_hat(:,k))) || any(abs(x_hat(:,k)) > 100)
+        fprintf('WARNING: Observer diverged at t=%.2f s\n', t_trim(k));
+        x_hat(:,k+1:end) = NaN;
+        break;
+    end
+    
+    % Get the current real-world sensor data
+    y_meas = [true_states(1,k); true_states(3,k)]; 
+  
+    xk = x_hat(:,k);    % Grab current observer state
+    uk = u_trim(k);     % Grab current motor comman
+    
+    % Calculate how many tiny math steps fit inside one hardware step
+    math_step_size = 0.0001;
+    sub_steps = max(1, round(h / math_step_size)); 
+    h_math = h / sub_steps; % Guarantee perfect time alignment
+    
+    % Run the physics engine 'sub_steps' times before looking at the next sensor data
+    for s = 1:sub_steps
+        error_y = y_meas - C * xk;
+        dx_hat  = A_s * xk + B_s * uk + L_s * error_y;
+        xk      = xk + (h_math * dx_hat);
+    end
+    
+    % Save the state at the exact moment it catches up to the hardware time
+    x_hat(:,k+1) = xk;
+end
+
+
+
+
+%% 6. Plotting Results
+figure('Name', 'Linear Observer Verification', 'Position', [100, 100, 800, 800]);
+labels = {'th1 [deg]', 'dth1 [deg/s]', 'th2 [deg]', 'dth2 [deg/s]'};
+
+for i = 1:4
+    subplot(4,1,i);
+    plot(t_trim, rad2deg(true_states(i,:)), 'b', 'LineWidth', 1.2); hold on;
+    plot(t_trim, rad2deg(x_hat(i,:)), 'r--', 'LineWidth', 1.5);
+    ylabel(labels{i}, 'Interpreter', 'none'); 
+    grid on;
+    if i == 1
+        legend('Hardware Data', 'Linear Observer', 'Location', 'best');
+        title('Linear Luenberger Observer Tracking (Matrix Math Only)');
+    end
+end
 xlabel('Time [s]');
-
-%% RMS errors
-fprintf('\n--- Observer performance ---\n');
-fprintf('th1  RMS error: %.3f deg\n',   rms(rad2deg(th1_rad(iS:iE)  - xhat_th1(iS:iE))));
-fprintf('dth1 RMS error: %.2f deg/s\n', rms(rad2deg(dth1_rad(iS:iE) - xhat_dth1(iS:iE))));
-fprintf('th2  RMS error: %.3f deg\n',   rms(rad2deg(th2_rad(iS:iE)  - xhat_th2(iS:iE))));
-fprintf('dth2 RMS error: %.2f deg/s\n', rms(rad2deg(dth2_rad(iS:iE) - xhat_dth2(iS:iE))));
-
-fprintf('\nWhat to look for:\n');
-fprintf('  th1/th2 errors ~ 0      : angles tracked correctly\n');
-fprintf('  dth1/dth2 smoother      : observer filtering noise\n');
-fprintf('  dth errors < 20 deg/s   : good observer performance\n');
