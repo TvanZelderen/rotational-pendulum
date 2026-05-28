@@ -239,9 +239,9 @@ details[open] summary::before { transform: rotate(90deg); }
 <!-- ═══════════════════════════════════════════════ WHERE WE ARE -->
 <div class="section">
   <div class="callout">
-    <div class="callout-label">Current status — 2026-05-18</div>
-    <p>Arm 1 sysid steps 1 and 2 complete. <strong>k<sub>m</sub> = 18.271 N·m/u</strong> (ramp, 2026-05-18). <strong>k<sub>bc1</sub> = 2.503 N·m·s/rad</strong> initial value (terminal-velocity regression, R² = 0.9998, 2026-05-18) — <em>refit pending</em> via <code>nlgreyest</code> with WeightingFilter. Friction model simplified 2026-05-18: kinetic Coulomb folded into k<sub>bc1</sub>; arm 1 now viscous-only. Sign convention confirmed: <code>rotpen_ode.m</code> uses <code>tau = −k<sub>m</sub>·u</code> (positive u drives θ₁ negative — hardware mounting). Encoder dead-zone at 82.18° patched in <code>unwrap_simout.m</code>.</p>
-    <p style="margin-top:8px;"><strong>Next step:</strong> Fix FFT in <code>sysid_driven.m</code> → identify excitation band → refit k<sub>m</sub>, k<sub>bc1</sub> via <code>nlgreyest</code> with WeightingFilter. Then linearise at both equilibria (θ₂ = 0° and 180°) to unblock observer and control design.</p>
+    <div class="callout-label">Current status — 2026-05-28</div>
+    <p>Linearisation complete at both equilibria: <code>linearise_upright.m</code> done (symbolic Jacobian, subs at operating point [π; 0; 0; 0], ctrb/obsv checks). Observer in progress (teammate) — initial design at down-down; re-linearisation at correct up-up operating point pending. LQR basis laid: <code>sim_balance.m</code> closed-loop balance simulation working at up-up; arm 2 stabilises with perturbation, animation correct. <strong>k<sub>m</sub> = 18.271 N·m/u</strong>, <strong>k<sub>bc1</sub> = 2.503 N·m·s/rad</strong> (refit via <code>nlgreyest</code> still pending).</p>
+    <p style="margin-top:8px;"><strong>Next steps:</strong> (1) Refit k<sub>bc1</sub> via <code>nlgreyest</code> on driven data. (2) Observer: re-linearise at up-up operating point, validate state estimates. (3) Wire LQR gain K into <code>rotpentemplate.slx</code> for hardware test. (4) Design Controller 1 (arm 1 down, arm 2 up).</p>
   </div>
 </div>
 
@@ -384,23 +384,23 @@ details[open] summary::before { transform: rotate(90deg); }
       <text x="311" y="60" text-anchor="middle" font-family="ui-serif,Georgia,serif" font-size="11.5" fill="#141413">(params)</text>
       <text x="311" y="84" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#D97757" letter-spacing="0.04em">IN PROGRESS</text>
 
-      <!-- Arrow 3→4 (clay→gray) -->
-      <line x1="366" y1="50" x2="378" y2="50" stroke="#D1CFC5" stroke-width="1.5" marker-end="url(#arr-gray)"/>
+      <!-- Arrow 3→4 (clay→clay) -->
+      <line x1="366" y1="50" x2="378" y2="50" stroke="#D97757" stroke-width="1.5" marker-end="url(#arr-clay)"/>
 
-      <!-- Node 4: Observer (todo) -->
-      <rect x="382" y="26" width="110" height="48" rx="8" fill="#F0EEE6" stroke="#D1CFC5" stroke-width="1.5"/>
-      <text x="437" y="50" text-anchor="middle" font-family="ui-serif,Georgia,serif" font-size="11.5" fill="#87867F">Observer</text>
-      <text x="437" y="64" text-anchor="middle" font-family="ui-serif,Georgia,serif" font-size="11.5" fill="#87867F">(Kalman/Luenb.)</text>
-      <text x="437" y="84" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#87867F" letter-spacing="0.04em">NOT STARTED</text>
+      <!-- Node 4: Observer (in progress) -->
+      <rect x="382" y="26" width="110" height="48" rx="8" fill="rgba(217,119,87,.10)" stroke="#D97757" stroke-width="2"/>
+      <text x="437" y="50" text-anchor="middle" font-family="ui-serif,Georgia,serif" font-size="11.5" fill="#141413">Observer</text>
+      <text x="437" y="64" text-anchor="middle" font-family="ui-serif,Georgia,serif" font-size="11.5" fill="#141413">(Kalman/Luenb.)</text>
+      <text x="437" y="84" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#D97757" letter-spacing="0.04em">IN PROGRESS</text>
 
-      <!-- Arrow 4→5 -->
-      <line x1="492" y1="50" x2="504" y2="50" stroke="#D1CFC5" stroke-width="1.5" marker-end="url(#arr-gray)"/>
+      <!-- Arrow 4→5 (clay→clay) -->
+      <line x1="492" y1="50" x2="504" y2="50" stroke="#D97757" stroke-width="1.5" marker-end="url(#arr-clay)"/>
 
-      <!-- Node 5: Control (todo) -->
-      <rect x="508" y="26" width="110" height="48" rx="8" fill="#F0EEE6" stroke="#D1CFC5" stroke-width="1.5"/>
-      <text x="563" y="50" text-anchor="middle" font-family="ui-serif,Georgia,serif" font-size="11.5" fill="#87867F">Control</text>
-      <text x="563" y="64" text-anchor="middle" font-family="ui-serif,Georgia,serif" font-size="11.5" fill="#87867F">(×2 methods)</text>
-      <text x="563" y="84" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#87867F" letter-spacing="0.04em">NOT STARTED</text>
+      <!-- Node 5: Control (in progress) -->
+      <rect x="508" y="26" width="110" height="48" rx="8" fill="rgba(217,119,87,.10)" stroke="#D97757" stroke-width="2"/>
+      <text x="563" y="50" text-anchor="middle" font-family="ui-serif,Georgia,serif" font-size="11.5" fill="#141413">Control</text>
+      <text x="563" y="64" text-anchor="middle" font-family="ui-serif,Georgia,serif" font-size="11.5" fill="#141413">(×2 methods)</text>
+      <text x="563" y="84" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#D97757" letter-spacing="0.04em">IN PROGRESS</text>
 
       <!-- Arrow 5→6 -->
       <line x1="618" y1="50" x2="630" y2="50" stroke="#D1CFC5" stroke-width="1.5" marker-end="url(#arr-gray)"/>
@@ -572,9 +572,9 @@ details[open] summary::before { transform: rotate(90deg); }
         <li class="isdone"><label><input type="checkbox" checked><span class="task">Full coupled EOM (Lagrangian) — M, n, g derived</span></label></li>
         <li class="isdone"><label><input type="checkbox" checked><span class="task">Fill M and rhs in <code>rotpen_ode.m</code></span></label></li>
         <li class="isdone"><label><input type="checkbox" checked><span class="task">Hook up back-EMF: replace <code>p.km*u</code> with <code>tau</code> in rhs(1) — done Stage 1</span></label></li>
-        <li><label><input type="checkbox"><span class="task">Linearise at stable eq. (θ₁=0, θ₂=0 — both down)</span></label></li>
-        <li><label><input type="checkbox"><span class="task">Linearise at unstable eq. (θ₂=180° — arm 2 up)</span></label></li>
-        <li><label><input type="checkbox"><span class="task">Discretise — h=0.01 s; ZOH or Tustin</span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task">Linearise at stable eq. (θ₁=0, θ₂=0 — both down) — used by observer design</span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task">Linearise at unstable eq. (arm 2 up — x₀=[π;0;0;0]) — <code>linearise_upright.m</code> complete; ctrb/obsv checked; LQR K computed (2026-05-28)</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Discretise — h=0.001 s; ZOH or Tustin</span></label></li>
       </ul>
     </div>
 
@@ -600,25 +600,30 @@ details[open] summary::before { transform: rotate(90deg); }
 
     <!-- Observer -->
     <div class="card">
-      <div class="card-head"><h3>Observer</h3><span class="pill todo">Not started</span></div>
-      <div class="card-note">States: θ₁, θ̇₁, θ₂, θ̇₂. Outputs: θ₁, θ₂ only (no rate sensors). Requires linearised model from Modelling.</div>
+      <div class="card-head"><h3>Observer</h3><span class="pill prog">In Progress</span></div>
+      <div class="card-note">Teammate has observer running. Initial design used down-down operating point — re-linearisation at up-up [π;0;0;0] required before integration with balance controller.</div>
       <ul class="checklist">
-        <li><label><input type="checkbox"><span class="task">Decide observer type: Luenberger vs Kalman</span><span class="bsm dsc">open</span></label></li>
-        <li><label><input type="checkbox"><span class="task">Design observer in simulation</span></label></li>
-        <li><label><input type="checkbox"><span class="task">Validate observer performance</span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task">Decide observer type: Luenberger</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Re-linearise observer at correct operating point x₀=[π;0;0;0]</span><span class="bsm prg">in progress</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Design observer gains (pole placement / Kalman weighting)</span><span class="bsm prg">in progress</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Validate observer state estimates in simulation</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Integrate observer with LQR balance controller</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Test observer + controller on hardware</span></label></li>
       </ul>
     </div>
 
     <!-- Control design -->
     <div class="card">
-      <div class="card-head"><h3>Control design</h3><span class="pill todo">Not started</span></div>
-      <div class="card-note">Both controllers target arm 2 <strong>up</strong> (θ₂=180°). The operating-point split is <strong>arm 1 down</strong> (θ₁=0) vs <strong>arm 1 up</strong> (θ₁=180°). Two methods required from: LQR, MPC. One nonlinear optional: INDI. No pole placement.</div>
+      <div class="card-head"><h3>Control design</h3><span class="pill prog">In Progress</span></div>
+      <div class="card-note">LQR balance controller working in simulation at up-up (x₀=[π;0;0;0], 2026-05-28): <code>linearise_upright.m</code> + <code>sim_balance.m</code>. Arm 2 stabilises with perturbation; animation correct. Two methods required: LQR + MPC. No pole placement.</div>
       <ul class="checklist">
-        <li><label><input type="checkbox"><span class="task">Choose 2 methods from {LQR, MPC}</span><span class="bsm dsc">discussing</span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task">Choose 2 methods: LQR + MPC</span></label></li>
         <li><label><input type="checkbox"><span class="task">(Optional) nonlinear — INDI</span><span class="bsm dsc">discussing</span></label></li>
-        <li><label><input type="checkbox"><span class="task">Controller 1 — arm 2 up, arm 1 down (θ₁=0, θ₂=180°)</span></label></li>
-        <li><label><input type="checkbox"><span class="task">Controller 2 — arm 2 up, arm 1 up (θ₁=180°, θ₂=180°)</span></label></li>
-        <li><label><input type="checkbox"><span class="task">Test controllers in simulation</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Controller 1 — arm 2 up, arm 1 down (x₀=[0;0;π;0])</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Controller 2 — arm 2 up, arm 1 up (x₀=[π;0;0;0]) — LQR sim done</span><span class="bsm prg">in progress</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Add disturbance rejection test to <code>sim_balance.m</code> (impulse torque mid-run)</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Wire K into <code>rotpentemplate.slx</code> Gain block for hardware path</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Test controllers in simulation (full suite — both operating points)</span></label></li>
         <li><label><input type="checkbox"><span class="task">Test controllers on hardware</span></label></li>
         <li><label><input type="checkbox"><span class="task">Compare performance — robustness, disturbance rejection, SSE</span></label></li>
       </ul>
