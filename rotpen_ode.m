@@ -1,4 +1,4 @@
-function dxdt = rotpen_ode(~, x, u, p)
+function dxdt = rotpen_ode(t, x, u, p)
     % Equations of motion for the planar rotational pendulum.
     % Both arms swing in the same vertical plane; the motor axis is horizontal.
     %
@@ -70,10 +70,17 @@ function dxdt = rotpen_ode(~, x, u, p)
     %% Inertia matrix  M(th2)  — 2×2, function of th2 only
     M = [p.J1+p.m2*(p.l1^2+p.l2^2+2*p.l1*p.l2*cos(th2)), p.m2*(p.l2^2+p.l1*p.l2*cos(th2)); p.m2*(p.l2^2+p.l1*p.l2*cos(th2)), p.m2*p.l2^2];
 
+    %% External disturbance on joint 2 (zero unless p.tau_d2_fn is set by run_sim)
+    if isfield(p, 'tau_d2_fn')
+        tau_d2 = p.tau_d2_fn(t);
+    else
+        tau_d2 = 0;
+    end
+
     %% Right-hand side  (Coriolis + gravity + damping + input)
     h = p.m2*p.l1*p.l2*sin(th2);
     rhs = [tau - p.kbc1*dth1 - (-h*(2*dth1*dth2+dth2^2)) - ((p.m1*p.lc1+p.m2*p.l1)*p.g*sin(th1) + p.m2*p.g*p.l2*sin(th1+th2)); ...
-           -p.c2*dth2 - (h*dth1^2) - (p.m2*p.g*p.l2*sin(th1+th2))];
+           tau_d2 - p.c2*dth2 - (h*dth1^2) - (p.m2*p.g*p.l2*sin(th1+th2))];
 
     %% Solve for angular accelerations
     ddq = M \ rhs;

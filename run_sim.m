@@ -41,6 +41,10 @@ u_cmd  = simin(:, 2);
 %% -----------------------------------------------------------------------
 %  Integrate the ODE
 % -----------------------------------------------------------------------
+if exist('tau_dist', 'var')
+    p.tau_d2_fn = @(t) tau_dist.amp * (t >= tau_dist.t0) * (t < tau_dist.t0 + tau_dist.width);
+end
+
 if exist('use_lqr', 'var') && use_lqr
     u_fn = @(t, x) max(-1, min(1, -K * (x - ref)));
 else
