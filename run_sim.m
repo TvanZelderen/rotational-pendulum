@@ -3,8 +3,10 @@
 % Produces simout Timeseries with columns [th1_deg, dth1_dps, th2_deg, dth2_dps, psi_deg].
 %
 % Prerequisites:
-%   pendulum_params.m   — must have been run (populates struct p)
-%   rotpen_ode.m        — must have your EOM filled in
+pendulum_params;
+if ~exist('K', 'var')
+    linearise_upright;
+end
 
 %% -----------------------------------------------------------------------
 %  Initial conditions
@@ -13,7 +15,7 @@
 % -----------------------------------------------------------------------
 th1_0  = 0;      % [rad]
 dth1_0 = 0;      % [rad/s]
-th2_0  = 0.5;    % [rad]  small push away from equilibrium
+th2_0  = pi;     % [rad]
 dth2_0 = 0;      % [rad/s]
 
 x0 = [th1_0; dth1_0; th2_0; dth2_0];
@@ -37,11 +39,20 @@ u_cmd  = simin(:, 2);
 %% -----------------------------------------------------------------------
 %  Integrate the ODE
 % -----------------------------------------------------------------------
-u_interp = @(t) interp1(t_span, u_cmd, t, 'linear', u_cmd(end));
-odefun   = @(t, x) rotpen_ode(t, x, u_interp(t), p);
+if exist('use_lqr', 'var') && use_lqr
+    u_fn = @(t, x) max(-1, min(1, -K * (x - ref)));
+else
+    u_interp = @(t) interp1(t_span, u_cmd, t, 'linear', u_cmd(end));
+    u_fn     = @(t, x) u_interp(t);
+end
+odefun = @(t, x) rotpen_ode(t, x, u_fn(t, x), p);
 
 opts = odeset('RelTol', 1e-6, 'AbsTol', 1e-8);
 [t_out, x_out] = ode45(odefun, [t_span(1), t_span(end)], x0, opts);
+
+% Reconstruct u at each sample instant (for logging/plotting)
+u_log = arrayfun(@(k) u_fn(t_span(k), interp1(t_out, x_out, t_span(k))'), ...
+                 (1:length(t_span))');
 
 %% -----------------------------------------------------------------------
 %  Resample onto the fixed grid and convert to degrees
