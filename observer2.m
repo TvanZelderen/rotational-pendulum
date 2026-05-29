@@ -23,8 +23,10 @@ for i = 1:4
     xp = x_eq_s; xp(i) = xp(i) + eps_jac;
     A_s(:,i) = (rotpen_ode(0, xp, 0, p) - f0) / eps_jac;
 end
+A_s 
+
 B_s = zeros(4,1);
-B_s = (rotpen_ode(0, x_eq_s, eps_jac, p) - f0) / eps_jac;
+B_s = (rotpen_ode(0, x_eq_s, eps_jac, p) - f0) / eps_jac
 
 ev_s = eig(A_s);
 fprintf('\nOpen-loop eigenvalues:\n');
@@ -48,7 +50,8 @@ fprintf('Designing observer to handle slow poles only\n');
 % Use these poles — slightly faster than open-loop slow poles
 % Open-loop slow poles: -0.698, -0.146±10.6j
 % Observer poles: 5x faster
-obs_poles = [-0.1+11j; -0.1; -0.1-11j; -3005];
+%obs_poles = [-0.1+11j; -0.1; -0.1-11j; -3005];
+obs_poles = [-3+11j; -3-11j; -15; -300];
 % Keep the -251 pole where it is — dont move it!
 % Only move the 3 slow poles
 
