@@ -19,19 +19,19 @@ fprintf('Sample time used: h = %.4f s\n', h);
 fprintf('\n--- Calculating A and B Matrices ---\n');
 eps_jac = 1e-6;
 x_eq = [0; 0; 0; 0];
-A_s = zeros(4,4);
+A = zeros(4,4);
 
 % Compute A
 for i = 1:4
     xp = x_eq; xp(i) = xp(i) + eps_jac;
     xm = x_eq; xm(i) = xm(i) - eps_jac;
-    A_s(:,i) = (rotpen_ode(0, xp, 0, p) - rotpen_ode(0, xm, 0, p)) / (2*eps_jac);
+    A(:,i) = (rotpen_ode(0, xp, 0, p) - rotpen_ode(0, xm, 0, p)) / (2*eps_jac);
 end
 
 % Compute B
 u_plus = eps_jac;
 u_minus = -eps_jac;
-B_s = (rotpen_ode(0, x_eq, u_plus, p) - rotpen_ode(0, x_eq, u_minus, p)) / (2*eps_jac);
+B = (rotpen_ode(0, x_eq, u_plus, p) - rotpen_ode(0, x_eq, u_minus, p)) / (2*eps_jac);
 
 C = [1 0 0 0; 
      0 0 1 0]; 
@@ -47,9 +47,9 @@ Q_obs = diag([1000, 0, 1000, 0]);
 R_obs = diag([1, 1]); 
 
 % Calculate L using the Linear Quadratic Estimator (Dual LQR) method.
-L_s = lqr(A_s', C', Q_obs, R_obs)'
+L = lqr(A', C', Q_obs, R_obs)'
 
-fprintf('Max |L| gain = %.2f\n', max(abs(L_s(:))));
+fprintf('Max |L| gain = %.2f\n', max(abs(L(:))));
 
 %% 4. Data Processing & Trimming
 iS = round(3/h) + 1;
@@ -92,7 +92,7 @@ for k = 1:N-1
     % Run the physics engine 'sub_steps' times before looking at the next sensor data
     for s = 1:sub_steps
         error_y = y_meas - C * xk;
-        dx_hat  = A_s * xk + B_s * uk + L_s * error_y;
+        dx_hat  = A * xk + B * uk + L * error_y;
         xk      = xk + (h_math * dx_hat);
     end
     
