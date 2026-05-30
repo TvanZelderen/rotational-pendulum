@@ -9,7 +9,7 @@ clear; clc;
 pendulum_params;
 
 %% ── Configuration ───────────────────────────────────────────────────────────
-file_name    = '20260527_115804_arm1_termvel_10steps.mat';         % e.g. '20260518_100000_arm1_termvel_8steps.mat'
+file_name    = '20260527_130529_arm1_stepid_5levels.mat';         % e.g. '20260518_100000_arm1_termvel_8steps.mat'
 data_folder  = 'data';
 
 trim_start   = 1;          % [s] skip any startup transient at the very beginning
@@ -46,72 +46,6 @@ h      = mean(diff(t_raw));
 th1_raw  = deg2rad(th1_deg);
 dth1_raw = deg2rad(dth1_dps);
 
-%% ── Unwrap diagnostics ───────────────────────────────────────────────────────
-% Four-panel figure: raw vs patched th1, bad mask, and derivative comparison.
-% Zoom in on the dead-zone crossing to see what's happening sample by sample.
-THETA_DEAD_DBG = 82.1813;
-TOL_DBG        = 8;
-
-t_so           = run_data.simout.Time;                    % simout time vector
-th1_orig_deg   = y_raw(:,1);                              % raw encoder [deg]
-th1_orig_rad   = deg2rad(th1_orig_deg);
-dth1_orig      = [0; diff(th1_orig_rad)] / h;             % raw diff [rad/s]
-dth1_col2      = deg2rad(y_raw(:,2));                     % Simulink derivative [rad/s]
-
-th1_mod_raw    = mod(th1_orig_deg - THETA_DEAD_DBG, 360);
-near_dead_dbg  = th1_mod_raw < TOL_DBG | th1_mod_raw > 360 - TOL_DBG;
-bad_dbg        = near_dead_dbg | [false; diff(near_dead_dbg(:)) < 0];
-
-% col2 from Simulink has HW derivative overflow spikes (~1e10); clip for display only
-PLOT_CLIP      = 80;    % [rad/s]
-dth1_col2_c    = max(min(dth1_col2, PLOT_CLIP), -PLOT_CLIP);
-
-figure('Name', 'Unwrap diagnostics — full run');
-subplot(4,1,1);
-  plot(t_so, th1_orig_deg, 'Color',[0.7 0.7 0.7]); hold on;
-  plot(t_so, th1_deg, 'b');
-  ylabel('\theta_1 [deg]'); legend('Raw','Patched'); grid on;
-  title('th1: raw (grey) vs unwrap\_simout output (blue)');
-subplot(4,1,2);
-  plot(t_so, bad_dbg, 'k'); ylabel('bad mask'); ylim([-0.1 1.1]); grid on;
-  title(sprintf('Bad mask — %d samples patched (%d windows)', ...
-        sum(bad_dbg), sum(diff([0; bad_dbg(:)]) > 0)));
-subplot(4,1,3);
-  plot(t_so, dth1_orig,    'Color',[0.8 0.8 0.8]); hold on;
-  plot(t_so, dth1_col2_c, 'g');
-  plot(t_so, dth1_raw,    'b');
-  ylabel('d\theta_1 [rad/s]');
-  legend('diff(raw th1)/h',sprintf('col2 (clipped ±%d)',PLOT_CLIP),'unwrap\_simout'); grid on;
-  title('Derivative: three sources');
-subplot(4,1,4);
-  plot(t_so, dth1_col2_c - dth1_raw, 'r');
-  ylabel('\Delta d\theta_1 [rad/s]'); xlabel('Time [s]'); grid on;
-  title('col2 − unwrap\_simout derivative (should be ~0 except at crossings)');
-
-% Zoom in on every dead-zone crossing — one figure per crossing
-crossing_starts = find(diff([0; bad_dbg(:)]) > 0);   % rising edges of bad mask
-fprintf('%d dead-zone crossings detected.\n', numel(crossing_starts));
-
-for ci = 1:numel(crossing_starts)
-    ic       = crossing_starts(ci);
-    zoom_win = max(1, ic-30) : min(numel(t_so), ic+80);
-
-    figure('Name', sprintf('Crossing %d of %d  (t=%.2fs)', ci, numel(crossing_starts), t_so(ic)));
-    subplot(3,1,1);
-      plot(t_so(zoom_win), th1_orig_deg(zoom_win), 'ko-', 'MarkerSize', 4); hold on;
-      plot(t_so(zoom_win), th1_deg(zoom_win),      'bs-', 'MarkerSize', 4);
-      ylabel('\theta_1 [deg]'); legend('Raw','Patched'); grid on;
-      title(sprintf('Crossing %d — t = %.2f s', ci, t_so(ic)));
-    subplot(3,1,2);
-      plot(t_so(zoom_win), bad_dbg(zoom_win), 'k'); ylim([-0.1 1.1]); grid on;
-      ylabel('bad mask');
-    subplot(3,1,3);
-      plot(t_so(zoom_win), dth1_orig(zoom_win),    'ko-', 'MarkerSize', 4); hold on;
-      plot(t_so(zoom_win), dth1_col2_c(zoom_win), 'g.-', 'MarkerSize', 8);
-      plot(t_so(zoom_win), dth1_raw(zoom_win),    'bs-', 'MarkerSize', 4);
-      ylabel('d\theta_1 [rad/s]'); legend('diff(raw)/h','col2','patched'); grid on;
-      xlabel('Time [s]');
-end
 
 %% ── Trim ─────────────────────────────────────────────────────────────────────
 i_start = round(trim_start / h) + 1;
