@@ -213,7 +213,7 @@ for i = 1:4
 end
 
 %% ── Build idnlgrey model — fit (J1, kbc1 floating) ──────────────────────────
-free_params = {'kbc1', 'J1'};
+free_params = {'kbc1'};
 
 sys_fit = idnlgrey('rotpen_ode_idnlgrey', [2 1 4], param_cell, x0_est, 0);
 
