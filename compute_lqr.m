@@ -19,8 +19,10 @@ Q = diag([1/pi^2, 1/8^2, 1/pi^2, 1/26.18^2]);
 
 K = lqr(A, B, Q, R);
 
-obs_poles = [-30, -35, -40, -45];
-L = place(A, C', obs_poles)';
+%observer
+Q_obs = diag([1000, 0, 1000, 0]); 
+R_obs = diag([1, 1]); 
+L = lqr(A', C', Q_obs, R_obs)';
 
 end
 
