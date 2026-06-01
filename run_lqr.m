@@ -16,6 +16,18 @@ disp('Observer poles:');   disp(sort(eig(A - L*C), 'descend'))
 
 run_time = 20;
 
+% Controller poles:
+%  -76.8432 + 0.0000i
+%   -0.6431 +10.5164i
+%   -0.6431 -10.5164i
+%   -1.0083 + 0.0000i
+% 
+% Observer poles:
+%    -5.9341
+%   -26.3648
+%   -32.3341
+%   -72.5983
+
 %% -- Run -------------------------------------------------
 sim rotpentemplate;
 save_run(0, simout, sprintf('lqr03dmHz'));
