@@ -16,7 +16,7 @@ clear; clc;
 pendulum_params;
 
 %% ── Configuration ────────────────────────────────────────────────────────────
-file_name   = '20260527_130529_arm1_stepid_5levels.mat';
+file_name   = '20260601_130050_arm1_stepid_5levels.mat';
 data_folder = 'data';
 
 trim_start  = 0.5;       % [s] skip any startup glitch
@@ -76,7 +76,7 @@ for k = 1:length(edges)-1
 
     if abs(u_mean) < edge_thresh; continue; end   % zero dwell — skip
 
-    step_segs(end+1, :) = [i0, i1, u_mean];  %#ok<AGROW>
+    step_segs(end+1, :) = [i0, i1, u_mean];  
 end
 
 n_steps = size(step_segs, 1);
@@ -151,27 +151,41 @@ fprintf('  kbc1 cross-check mean = %.4f  N·m·s/rad  (staircase: %.4f)\n', ...
         kbc1_mean, p.kbc1);
 
 if J1_std / J1_mean > 0.1
-    warning('J1 spread > 10%% across levels — check for speed-dependent friction or model mismatch.');
+    warning('J1 spread > 10%% across levels — speed-dependent friction confirmed; use cherry-picked ranges below.');
 end
 
-%% ── Summary figure ───────────────────────────────────────────────────────────
-u_levels_plot = step_segs(:, 3);
+%% ── Cherry-picked estimates ──────────────────────────────────────────────────
+% J1   reliable at low u  — transient well-resolved, Coulomb small vs viscous
+% kbc1 reliable at high u — SS well-defined, viscous dominates over Coulomb
+u_levels_arr = step_segs(:, 3);
+J1_mask   = u_levels_arr <= 0.61;
+kbc1_mask = u_levels_arr >= 0.6;
 
-figure('Name', 'J1 and kbc1 cross-check across u levels');
-subplot(2,1,1);
-    scatter(u_levels_plot, J1_est, 60, 'ko', 'filled'); hold on;
-    yline(J1_mean, 'r--', sprintf('mean = %.4f', J1_mean));
-    ylabel('J_1 [kg·m²]'); xlabel('u level [-]');
-    title('J_1 estimate per step'); grid on;
-subplot(2,1,2);
-    scatter(u_levels_plot, kbc1_est, 60, 'bs', 'filled'); hold on;
-    yline(kbc1_mean, 'b--', sprintf('cross-check mean = %.4f', kbc1_mean));
-    yline(p.kbc1, 'k:', sprintf('staircase = %.4f', p.kbc1));
-    ylabel('kbc1 [N·m·s/rad]'); xlabel('u level [-]');
-    title('kbc1 cross-check vs staircase'); grid on;
+J1_fit   = mean(J1_est(J1_mask),     'omitnan');
+kbc1_fit = mean(kbc1_est(kbc1_mask), 'omitnan');
+
+fprintf('\n--- Cherry-picked results ---\n');
+fprintf('  J1   (u <= 0.6) = %.6f  kg*m^2\n',     J1_fit);
+fprintf('  kbc1 (u >= 0.6) = %.6f  N*m*s/rad\n',  kbc1_fit);
+
+%% ── Summary figure ───────────────────────────────────────────────────────────
+figure('Name', 'J1 and kbc1 — cherry-picked');
+subplot(2,1,1); hold on;
+    scatter(u_levels_arr(~J1_mask),  J1_est(~J1_mask),  60, [0.7 0.7 0.7], 'filled');
+    scatter(u_levels_arr(J1_mask),   J1_est(J1_mask),   60, 'ko', 'filled');
+    yline(J1_fit, 'r--', sprintf('fit = %.4f', J1_fit));
+    ylabel('J_1 [kg*m^2]'); xlabel('u level [-]');
+    title('J_1  (black = used, grey = excluded)'); grid on;
+subplot(2,1,2); hold on;
+    scatter(u_levels_arr(~kbc1_mask), kbc1_est(~kbc1_mask), 60, [0.7 0.7 0.7], 'filled');
+    scatter(u_levels_arr(kbc1_mask),  kbc1_est(kbc1_mask),  60, 'bs', 'filled');
+    yline(kbc1_fit, 'b--', sprintf('fit = %.4f',  kbc1_fit));
+    yline(p.kbc1,   'k:',  sprintf('old = %.4f',  p.kbc1));
+    ylabel('kbc1 [N*m*s/rad]'); xlabel('u level [-]');
+    title('kbc1  (blue = used, grey = excluded)'); grid on;
 
 %% ── Next step ────────────────────────────────────────────────────────────────
 fprintf('\n--- Next step ---\n');
 fprintf('Update pendulum_params.m:\n');
-fprintf('  p.J1 = %.6f;  %% kg·m^2 -- step-response ID, %s\n', J1_mean, datestr(now,'yyyy-mm-dd'));
-fprintf('If kbc1_check differs from staircase by >10%%, flag for nlgreyest.\n');
+fprintf('  p.J1   = %.6f;  %% kg*m^2    -- step-response ID (u<=0.6), %s\n', J1_fit,   datestr(now,'yyyy-mm-dd'));
+fprintf('  p.kbc1 = %.6f;  %% N*m*s/rad -- step-response ID (u>=0.6), %s\n', kbc1_fit, datestr(now,'yyyy-mm-dd'));

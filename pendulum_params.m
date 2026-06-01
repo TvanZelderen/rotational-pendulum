@@ -28,15 +28,15 @@
 %% Arm 1  (c1 — motor to joint)
 p.l1   = 0.10;                         % length of arm 1, pivot to joint [m]  (measured)
 p.m1   = 0.25;                         % mass of arm 1 [kg]  — pre-ID estimate; TODO: identify
-p.lc1  = p.l1 / 2;                     % CoM distance from pivot [m]  (uniform rod assumption)
-p.J1   = (1/3) * p.m1 * p.l1^2;       % moment of inertia about pivot [kg·m²]  (uniform rod)
+p.lc1  = p.l1 * 0.5;                     % CoM distance from pivot [m]  (uniform rod assumption)
+p.J1   = 0.048348;                     % moment of inertia about pivot [kg·m²]  (uniform rod)
 
 %% Arm 2 / pendulum  (c2 — joint to ball)  — see assumption A1
 p.l2   = 0.086841;                     % length of arm 2, joint to ball [m]  — identified via beta=g/l2
 p.m2   = 0.024;                        % tip mass [kg]  — placeholder; m2 NOT independently
                                         % identifiable from free-swing data alone.
                                         % TODO: confirm with additional free-swing runs.
-p.J2   = p.m2 * p.l2^2;               % point mass inertia about joint [kg·m²]
+p.J2   = p.m2 * p.l2^2;               % point mass inertia about joint [kg·m²] - sysid_step 1-7
 
 % Identified composites (free-swing experiment, latest averaged run, 2026-05-12):
 %   alpha2 = c2 / (m2 * l2^2) = 0.164111  [1/s]
@@ -51,14 +51,9 @@ p.c2     = p.alpha2 * p.m2 * p.l2^2;  % derived from alpha2 and current m2 estim
 % km represents peak torque [N·m per normalised unit].
 % Back-EMF braking: tau_bemf = kb * dth1, where kb = kt*ke/R.
 % Inductance still neglected (A3 applies to inductance only now).
-p.km   = 18.271125;                    % peak motor torque [N·m per normalised unit] — sysid_ramp 2026-05-18
+p.km   = 18.271125;                    % peak motor torque [N·m per normalised unit] - sysid_ramp 18-5
 %p.km = 0.25;
-p.kbc1 = 2.588876;                     % composite: kb + c1 + folded kinetic Coulomb [N·m·s/rad]
-%p.kbc1 = 1;                                       % initial value from terminal-velocity regression 2026-05-18
-                                       % tauc_static = 1.772 and tauc_kinetic = 1.291 N·m were
-                                       % identified separately but folded into kbc1 (2026-05-18):
-                                       % kinetic Coulomb and viscous are observationally equivalent
-                                       % at our operating speed; kbc1 refit via nlgreyest is pending.
+p.kbc1 = 2.515825;                     % composite: kb + c1 + folded kinetic Coulomb [N·m·s/rad] - sysid_step 1-7
 
 %% Environment
 p.g    = 9.81;                         % gravitational acceleration [m/s²]

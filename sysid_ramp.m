@@ -7,8 +7,8 @@ pendulum_params;   % source of truth for physical constants
 
 %% ── Configuration ───────────────────────────────────────────────────────────
 % One file per arm-1 position, saved by run_ramp.m Cell A and Cell B.
-file_A      = '20260518_104621_arm1_ramp_th000_a10.mat';         % theta1 = 0 deg,  e.g. '20260514_120000_arm1_ramp_th000_a40.mat'
-file_B      = '20260518_104700_arm1_ramp_th090_a10.mat';         % theta1 = 90 deg, e.g. '20260514_120500_arm1_ramp_th090_a40.mat'
+file_A      = '20260601_131151_arm1_ramp_th000_a10.mat';         % theta1 = 0 deg,  e.g. '20260514_120000_arm1_ramp_th000_a40.mat'
+file_B      = '20260601_131213_arm1_ramp_th090_a10.mat';         % theta1 = 90 deg, e.g. '20260514_120500_arm1_ramp_th090_a40.mat'
 data_folder = 'data';
 
 theta1_A_deg = 0;    % [deg] — must match arm position used in Cell A
@@ -25,7 +25,7 @@ dth1_A = deg2rad(d_A.simout.Data(:, 2));   % [rad/s]
 dth1_B = deg2rad(d_B.simout.Data(:, 2));
 
  % ── Trim data ────────────────────────────────────────────────────────────────
-trim_s = 3; % s
+trim_s = 2.5; % s
 trim_n = trim_s * 100 + 1;
 t_A    = t_A(1:trim_n);   u_A = u_A(1:trim_n);
 t_B    = t_B(1:trim_n);   u_B = u_B(1:trim_n);
@@ -68,8 +68,8 @@ subplot(2,2,4); plot(t_B, dth1_B_f);  xlabel('Time [s]');         grid on;
 %   km * u_break = tauc_static + m1 * g * lc1 * sin(theta1_rad)
 
 
-u_break_A = 0.097;
-u_break_B = 0.105;
+u_break_A = 0.08;
+u_break_B = 0.1;
 
 A = [u_break_A, -1; u_break_B, -1];
 B = [0; (p.m1*p.lc1 + p.m2*p.l1)*p.g*sin(deg2rad(90))];
