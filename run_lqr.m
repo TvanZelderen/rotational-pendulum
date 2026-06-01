@@ -6,7 +6,8 @@ hwinit;
 pendulum_params;
 
 h = 0.001;
-R = 500;
+R = 50;
+controller_sat = 0.5;
 ref = [pi; 0; 0; 0];
 [K, L, A, B, C] = compute_lqr(ref, R, p);
 
