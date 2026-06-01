@@ -1,4 +1,4 @@
-function [K,L] = compute_lqr(x0, R, p)
+function [K,L,A,B,C] = compute_lqr(x0, R, p)
 % Returns LQR gain for operating point x0.
 % Bryson Q: x_max = [pi, 8, pi, 26.18] rad (or rad/s)
 
