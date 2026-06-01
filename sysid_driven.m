@@ -2,7 +2,7 @@ clear; clc;
 pendulum_params;   % populates struct p — source of truth for guesses + fixed values
 
 %% ── Configuration ──────────────────────────────────────────────────────────
-file_name   = '20260527_100747_multisine_amp800.mat';
+file_name   = '20260601_134415_multisine_amp600.mat';
 data_folder = 'data';
 
 trim_start = 1;     % [s] skip initial transient
@@ -111,39 +111,6 @@ subplot(3,1,3);
 % legend('u (normalised)', 'th1 (normalised)'); grid on;
 % title('Sign check — do they go the same direction?');
 
-%% 1. Design the Filter
-fc = 5;                     % Cutoff frequency (Hz)
-[b, a] = butter(2, fc/(fs/2)); % 2nd order Butterworth
-
-%% 2. Apply Zero-Phase Filtering
-% We use 'filtfilt' instead of 'filter' to ensure there is 0ms time delay.
-th1_f  = filtfilt(b, a, th1_rad);
-dth1_f = filtfilt(b, a, dth1_rad);
-th2_f  = filtfilt(b, a, th2_rad);
-dth2_f = filtfilt(b, a, dth2_rad);
-
-%% 3. Diagnostic Check
-% Make sure the red line (filtered) goes through the middle of the gray (raw)
-figure(10); clf;
-% Change this line:
-plot(t_trimmed, dth1_rad(i_start:i_end), 'Color', [0.8 0.8 0.8]); hold on;
-plot(t_trimmed, dth1_f(i_start:i_end), 'r', 'LineWidth', 1.5);
-ylabel('Velocity [rad/s]');
-legend('Raw (Fuzzy)', 'Filtered (Clean)');
-title('Filter Verification');
-
-%% 4. Create the Clean iddata
-y_clean = [th1_f(i_start:i_end), th2_f(i_start:i_end)];
-data = iddata(y_clean, u_trimmed, h);
-%% ── iddata ──────────────────────────────────────────────────────────────────
-%y_angles = [th1_rad(i_start:i_end), th2_rad(i_start:i_end)];
-%data = iddata(y_angles, u_trimmed, h);
-data.OutputName = {'th1', 'th2'};
-data.OutputUnit = {'rad', 'rad'};
-data.InputName  = {'u'};
-data.InputUnit  = {'normalised'};
-data.Tstart     = t_trimmed(1);
-
 %% ── ODE diagnostic ──────────────────────────────────────────────────────────
 % Call rotpen_ode_idnlgrey directly with the current p values.
 % Verifies no NaN/Inf before handing to the optimiser.
@@ -162,96 +129,98 @@ if any(isnan(dx_diag)) || any(isinf(dx_diag))
     error('ODE returns NaN/Inf — check initial parameters and trim window.');
 end
 
-%% ── Quick ode45 test ────────────────────────────────────────────────────────
-ode_fun  = @(t_ode, x_ode) rotpen_ode_idnlgrey(t_ode, x_ode, ...
+%% ── Custom 1-D kbc1 fit: residual high-pass cost ────────────────────────────
+% Strategy: simulate the ODE with true absolute angles (gravity stays intact),
+% high-pass the prediction error at hp_fc to reject sub-0.1 Hz drift, then
+% minimise the filtered SSE over kbc1 with fminbnd (only 1 free parameter).
+%
+% Prefiltering the *data* angles is invalid for this model because θ₁ enters
+% the gravity potential (sin θ₁ in the EOM) — removing the DC mean corrupts
+% the restoring torque.  Filtering the residual avoids this entirely.
+
+th1_meas = th1_rad(i_start:i_end);
+th2_meas = th2_rad(i_start:i_end);
+x0_fit   = y_trimmed(1, :)';       % [th1; dth1; th2; dth2] at trim start
+
+hp_fc      = 0.1;                                    % [Hz] residual high-pass corner
+[bhp, ahp] = butter(2, hp_fc/(fs_out/2), 'high');
+ode_opts   = odeset('RelTol',1e-6,'AbsTol',1e-8);
+
+costfun = @(k) resid_sse(k, p, t_trimmed, u_trimmed, x0_fit, ...
+                         th1_meas, th2_meas, bhp, ahp, ode_opts);
+
+fprintf('\nFitting kbc1 via fminbnd (residual high-passed at %.2f Hz)...\n', hp_fc);
+opt_fb = optimset('Display','iter','TolX',1e-4);
+[kbc1_fit, J_fit] = fminbnd(costfun, 0.5, 5.0, opt_fb);
+fprintf('\nFitted kbc1 = %.4f N·m·s/rad  (cost J = %.4g)\n', kbc1_fit, J_fit);
+fprintf('Reference values:  step-ID ~ 2.44,  terminal-vel ~ 2.37\n');
+
+%% ── Re-simulate at fitted kbc1 ──────────────────────────────────────────────
+odef_fit = @(t_ode, x_ode) rotpen_ode_idnlgrey(t_ode, x_ode, ...
     interp1(t_trimmed, u_trimmed, t_ode, 'linear', 'extrap'), ...
-    p.km, p.kbc1, p.c2, p.J1, p.J2, p.l1, p.l2, p.lc1, p.m1, p.m2, p.g);
-ode_opts = odeset('RelTol', 1e-6, 'AbsTol', 1e-8);
-period_s = 1 / 0.2;                              % input period [s] — update if freq changes
-n_test   = min(round(2 * period_s / h), length(t_trimmed));   % 2 full periods
+    p.km, kbc1_fit, p.c2, p.J1, p.J2, p.l1, p.l2, p.lc1, p.m1, p.m2, p.g);
+[~, xs_fit] = ode45(odef_fit, t_trimmed, x0_fit, ode_opts);
 
-[t_test, x_test] = ode45(ode_fun, t_trimmed(1:n_test), x0_diag, ode_opts);
+th1_model = xs_fit(:,1);
+th2_model = xs_fit(:,3);
 
-ode_fun_gravity = @(t_ode, x_ode) rotpen_ode_idnlgrey(t_ode, x_ode, 0, ...
-    p.km, p.kbc1, p.c2, p.J1, p.J2, p.l1, p.l2, p.lc1, p.m1, p.m2, p.g);
-[t_grav, x_grav] = ode45(ode_fun_gravity, t_trimmed(1:n_test), x0_diag, ode_opts);
+e1_raw = th1_model - th1_meas;
+e2_raw = th2_model - th2_meas;
+e1_hp  = filtfilt(bhp, ahp, e1_raw);
+e2_hp  = filtfilt(bhp, ahp, e2_raw);
 
-u_test = interp1(t_trimmed, u_trimmed, t_test, 'linear', 'extrap');
-
-figure('Name', 'ODE test — check for blow-up (initial params)');
+%% ── Results: time overlay ───────────────────────────────────────────────────
+figure('Name', 'Fit result — model vs measured');
 subplot(3,1,1);
-plot(t_test, rad2deg(x_test(:,1)), 'b',  t_test, rad2deg(x_test(:,3)),  'r'); hold on;
-plot(t_grav, rad2deg(x_grav(:,1)), 'b--', t_grav, rad2deg(x_grav(:,3)), 'r--');
-legend('\theta_1', '\theta_2', '\theta_1 (gravity only)', '\theta_2 (gravity only)');
-ylabel('Angle [deg]'); title('ODE test — initial param guess'); grid on;
+    plot(t_trimmed, rad2deg(th1_meas),  'Color',[0.7 0.7 0.7]); hold on;
+    plot(t_trimmed, rad2deg(th1_model), 'b', 'LineWidth', 1.2);
+    ylabel('\theta_1 [deg]'); legend('Measured','Model'); grid on;
+    title(sprintf('kbc1 = %.4f N·m·s/rad  (hp\\_fc = %.2f Hz)', kbc1_fit, hp_fc));
 subplot(3,1,2);
-plot(t_test, x_test(:,2), 'b', t_test, x_test(:,4), 'r'); hold on;
-plot(t_grav, x_grav(:,2), 'b--', t_grav, x_grav(:,4), 'r--');
-legend('d\theta_1', 'd\theta_2', 'd\theta_1 (grav)', 'd\theta_2 (grav)');
-ylabel('[rad/s]'); grid on;
+    plot(t_trimmed, rad2deg(th2_meas),  'Color',[0.7 0.7 0.7]); hold on;
+    plot(t_trimmed, rad2deg(th2_model), 'r', 'LineWidth', 1.2);
+    ylabel('\theta_2 [deg]'); legend('Measured','Model'); grid on;
 subplot(3,1,3);
-plot(t_test, u_test, 'k');
-ylabel('u [-]'); xlabel('Time [s]'); grid on;
+    plot(t_trimmed, u_trimmed, 'k');
+    ylabel('u [-]'); xlabel('Time [s]'); grid on;
 
-%% ── Build idnlgrey model — validation only (all params fixed) ────────────────
-% Parameter order: km, kbc1, c2, J1, J2, l1, l2, lc1, m1, m2, g
-% (must match rotpen_ode_idnlgrey.m argument list — 11 params)
-param_cell = {p.km; p.kbc1; p.c2; p.J1; p.J2; p.l1; p.l2; p.lc1; p.m1; p.m2; p.g};
-x0_est     = y_trimmed(1, :)';
+%% ── Results: residual — raw vs high-passed ───────────────────────────────────
+figure('Name', 'Residuals — raw vs high-passed (drift visible)');
+subplot(2,1,1);
+    plot(t_trimmed, rad2deg(e1_raw), 'Color',[0.7 0.7 0.7]); hold on;
+    plot(t_trimmed, rad2deg(e1_hp),  'b', 'LineWidth', 1.2);
+    yline(0, 'k:');
+    ylabel('e(\theta_1) [deg]'); legend('Raw residual','High-passed (cost)'); grid on;
+    title(sprintf('Residuals — drift below %.2f Hz removed from cost', hp_fc));
+subplot(2,1,2);
+    plot(t_trimmed, rad2deg(e2_raw), 'Color',[0.7 0.7 0.7]); hold on;
+    plot(t_trimmed, rad2deg(e2_hp),  'r', 'LineWidth', 1.2);
+    yline(0, 'k:');
+    ylabel('e(\theta_2) [deg]'); legend('Raw residual','High-passed (cost)'); grid on;
+    xlabel('Time [s]');
 
-sys_val = idnlgrey('rotpen_ode_idnlgrey', [2 1 4], param_cell, x0_est, 0);
+%% ════════════════════════════════════════════════════════════════════════════
+%  Local functions  (must appear after all script code)
+% ════════════════════════════════════════════════════════════════════════════
 
-param_names = {'km','kbc1','c2','J1','J2','l1','l2','lc1','m1','m2','g'};
+function J = resid_sse(kbc1_try, p, tt, ut, x0, y1, y2, bhp, ahp, oo)
+% RESID_SSE  Cost for fminbnd: simulate ODE, high-pass residual, sum squares.
+%
+%   kbc1_try — trial damping value [N·m·s/rad]
+%   p        — parameter struct (all other params fixed)
+%   tt       — time vector matching y1, y2 [s]
+%   ut       — input vector at tt [-]
+%   x0       — initial state [th1; dth1; th2; dth2]
+%   y1, y2   — measured th1, th2 [rad]
+%   bhp,ahp  — high-pass filter coefficients (Butterworth)
+%   oo       — odeset options
 
-for i = 1:numel(param_names)
-    sys_val.Parameters(i).Name  = param_names{i};
-    sys_val.Parameters(i).Fixed = true;   % validation
+    odef = @(tq, xq) rotpen_ode_idnlgrey(tq, xq, ...
+        interp1(tt, ut, tq, 'linear', 'extrap'), ...
+        p.km, kbc1_try, p.c2, p.J1, p.J2, p.l1, p.l2, p.lc1, p.m1, p.m2, p.g);
+    [~, xs] = ode45(odef, tt, x0, oo);
+
+    e1 = filtfilt(bhp, ahp, xs(:,1) - y1);   % th1 residual, drift removed
+    e2 = filtfilt(bhp, ahp, xs(:,3) - y2);   % th2 residual, drift removed
+    J  = sum(e1.^2 + e2.^2);
 end
-
-for i = 1:4
-    sys_val.InitialStates(i).Fixed = true;   % fixed to measured x0_est
-end
-
-%% ── Build idnlgrey model — fit (J1, kbc1 floating) ──────────────────────────
-free_params = {'kbc1'};
-
-sys_fit = idnlgrey('rotpen_ode_idnlgrey', [2 1 4], param_cell, x0_est, 0);
-
-for i = 1:numel(param_names)
-    sys_fit.Parameters(i).Name  = param_names{i};
-    sys_fit.Parameters(i).Fixed = ~ismember(param_names{i}, free_params);
-end
-
-for i = [1, 3]
-    sys_fit.InitialStates(i).Fixed = true;    % angles: measured, trusted
-end
-for i = [2, 4]
-    sys_fit.InitialStates(i).Fixed = false;   % velocities: not trusted at trim start
-end
-
-opt = nlgreyestOptions('Display', 'on');
-sys_fit = nlgreyest(data, sys_fit, opt);
-
-%% ── Results ─────────────────────────────────────────────────────────────────
-fprintf('\n--- Parameters used for validation (all from pendulum_params) ---\n');
-for i = 1:numel(param_names)
-    fprintf('  %-5s = %.6f\n', param_names{i}, sys_val.Parameters(i).Value);
-end
-
-figure('Name', 'Compare: measured vs model');
-compare(data, sys_val);
-
-figure('Name', 'Residual analysis');
-resid(data, sys_val);
-
-fprintf('\n--- Fitted parameters ---\n');
-for i = 1:numel(param_names)
-    fprintf('  %-5s = %.6f  (fixed: %d)\n', ...
-        param_names{i}, sys_fit.Parameters(i).Value, sys_fit.Parameters(i).Fixed);
-end
-
-figure('Name', 'Compare: measured vs fitted model');
-compare(data, sys_fit);
-
-figure('Name', 'Residual analysis — fitted model');
-resid(data, sys_fit);
