@@ -65,6 +65,13 @@ true_states(2,:) = deg2rad(y_raw(iS:iE, 2))';
 true_states(3,:) = deg2rad(y_raw(iS:iE, 3))'; 
 true_states(4,:) = deg2rad(y_raw(iS:iE, 4))'; 
 
+fs = 1/h;
+fc = 5;                     % Cutoff frequency (Hz)
+[b, a] = butter(2, fc/(fs/2));
+
+dth1_f = filtfilt(b, a, true_states(2,:));
+
+dth2_f = filtfilt(b, a, true_states(4,:));
 %% 5.Observer Loop
 fprintf('\n--- Running Linear Observer ---\n');
 x_hat = zeros(4, N);
@@ -107,14 +114,23 @@ end
 figure('Name', 'Linear Observer Verification', 'Position', [100, 100, 800, 800]);
 labels = {'th1 [deg]', 'dth1 [deg/s]', 'th2 [deg]', 'dth2 [deg/s]'};
 
+% Group the correct reference signals to match the 4 states
+reference_signals = { rad2deg(true_states(1,:)), ...  % State 1: th1
+                      rad2deg(dth1_f), ...            % State 2: filtered dth1
+                      rad2deg(true_states(3,:)), ...  % State 3: th2
+                      rad2deg(dth2_f) };              % State 4: filtered dth2
+
 for i = 1:4
     subplot(4,1,i);
-    plot(t_trim, rad2deg(true_states(i,:)), 'b', 'LineWidth', 1.2); hold on;
+    % Plot ONE blue reference line and ONE red observer line per subplot
+    plot(t_trim, reference_signals{i}, 'b', 'LineWidth', 1.2); hold on;
     plot(t_trim, rad2deg(x_hat(i,:)), 'r--', 'LineWidth', 1.5);
+    
     ylabel(labels{i}, 'Interpreter', 'none'); 
     grid on;
+    
     if i == 1
-        legend('Hardware Data', 'Linear Observer', 'Location', 'best');
+        legend('Hardware Data (Filtered)', 'Linear Observer', 'Location', 'best');
         title('Linear Luenberger Observer Tracking (Matrix Math Only)');
     end
 end
