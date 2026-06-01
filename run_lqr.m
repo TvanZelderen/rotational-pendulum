@@ -50,7 +50,7 @@ sgtitle('LQR');
 
 e_th2 = y(:,13);
 figure(2); clf;
-yyaxis left; plot(t_out, input); label('u [-]');
-yyaxis right; plot(t_out, e_th2); label('e_{\theta2} [deg]');
-xlabel('Time [s'); grid on; legend('u', 'e_{\theta2}');
+yyaxis left;  plot(t_out, input);  ylabel('u [-]');
+yyaxis right; plot(t_out, e_th2);  ylabel('e_{\theta2} [rad]');
+xlabel('Time [s]'); grid on; legend('u','e_{\theta2}');
 
