@@ -22,7 +22,7 @@ K = lqr(A, B, Q, R);
 %observer
 Q_obs = diag([1000, 0, 1000, 0]); 
 R_obs = diag([1, 1]); 
-L = lqr(A', C', Q_obs, R_obs);
+L = lqr(A', C', Q_obs, R_obs)';
 
 end
 
