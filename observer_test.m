@@ -47,7 +47,7 @@ Q_obs = diag([1000, 0, 1000, 0]);
 R_obs = diag([1, 1]); 
 
 % Calculate L using the Linear Quadratic Estimator (Dual LQR) method.
-L = lqr(A', C', Q_obs, R_obs)'
+L = lqr(A', C', Q_obs, R_obs);
 
 fprintf('Max |L| gain = %.2f\n', max(abs(L(:))));
 
