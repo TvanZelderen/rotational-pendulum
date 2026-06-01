@@ -81,6 +81,9 @@ end
 
 n_steps = size(step_segs, 1);
 fprintf('Found %d non-zero step segments.\n', n_steps);
+if n_steps < length(unique(u_sim(u_sim > edge_thresh))) - 1
+    fprintf('  (some levels missing — likely arm not at rest at step start; proceeding with available levels)\n');
+end
 
 %% ── Per-step exponential fit ─────────────────────────────────────────────────
 J1_est   = NaN(n_steps, 1);
@@ -104,32 +107,20 @@ for k = 1:n_steps
     i_ss  = round((1-settle_frac)*length(t_seg)) : length(t_seg);
     w_ss0 = mean(w_seg(i_ss));   % initial guess for w_ss
 
-    % ── TODO ─────────────────────────────────────────────────────────────────
-    % Define a first-order exponential model:
-    %   w_model(t; w_ss, tau) = w_ss * (1 - exp(-t / tau))
-    % Note: w_ss is negative (motor drives arm in the -theta1 direction, see A3).
-    %
-    % Fit it to (t_seg, w_seg) using lsqcurvefit:
-    %   fun   = @(params, t) params(1) * (1 - exp(-t / params(2)));
-    %   p0    = [w_ss0, 0.25];          % initial guess [w_ss, tau]
-    %   lb    = [-Inf,  0.01];          % lower bounds
-    %   ub    = [0,     Inf ];          % upper bounds (w_ss < 0 for CW rotation)
-    %   pfit  = lsqcurvefit(fun, p0, t_seg, w_seg, lb, ub);
-    %   tau   = pfit(2);
-    %   w_ss  = pfit(1);
-    %
-    % Store:  tau_est(k) = tau;  wss_est(k) = w_ss;
-    % ─────────────────────────────────────────────────────────────────────────
+    fun  = @(params, t_in) params(1) * (1 - exp(-t_in / params(2)));
+    p0   = [w_ss0, 0.25];      % [w_ss, tau] — tau guess ~0.25s from J1≈0.65/kbc1
+    lb   = [-Inf,  0.005];     % tau lower bound: 2× sample period
+    ub   = [0,     Inf];       % w_ss must be negative (CW rotation)
+    opts = optimoptions('lsqcurvefit', 'Display', 'off');
+    pfit = lsqcurvefit(fun, p0, t_seg, w_seg, lb, ub, opts);
 
-    
+    tau_est(k) = pfit(2);
+    wss_est(k) = pfit(1);
 
-    % ── TODO ─────────────────────────────────────────────────────────────────
-    % Once you have tau and w_ss, compute:
-    %
-    %   J1_est(k)   = ???   <-- what is tau * kbc1 physically? derive from EOM.
-    %   kbc1_est(k) = ???   <-- at steady state, what does the arm-1 EOM give?
-    %                            (Hint: gravity is ~1% of motor torque — ignore it.)
-    % ─────────────────────────────────────────────────────────────────────────
+    % From the arm-1 EOM solution: tau = J1/kbc1  →  J1 = tau * kbc1
+    % At steady state (w' = 0, gravity neglected): km*u = kbc1*w_ss  →  kbc1 = -km*u/w_ss
+    J1_est(k)   = tau_est(k) * p.kbc1;
+    kbc1_est(k) = -p.km * u_lev / wss_est(k);
 
     % Overlay plot (will update once TODOs are filled)
     subplot(n_rows, n_cols, k); hold on;
