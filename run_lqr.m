@@ -11,6 +11,9 @@ controller_sat = 0.5;
 ref = [0; 0; 0; 0];
 [K, L, A, B, C] = compute_lqr(ref, R, p);
 
+disp('Controller poles:'); disp(sort(eig(A - B*K), 'descend'))
+disp('Observer poles:');   disp(sort(eig(A - L*C), 'descend'))
+
 run_time = 20;
 
 %% -- Run -------------------------------------------------
