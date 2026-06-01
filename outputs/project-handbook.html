@@ -240,8 +240,8 @@ details[open] summary::before { transform: rotate(90deg); }
 <div class="section">
   <div class="callout">
     <div class="callout-label">Current status — 2026-06-01</div>
-    <p>Linearisation complete at both equilibria: <code>linearise_upright.m</code> done (symbolic Jacobian, subs at operating point [π; 0; 0; 0], ctrb/obsv checks). Observer in progress (teammate) — initial design at down-down; re-linearisation at correct up-up operating point pending. LQR basis laid: <code>sim_balance.m</code> closed-loop balance simulation working at up-up; arm 2 stabilises with perturbation, animation correct. <strong>k<sub>m</sub> = 18.271 N·m/u</strong>, <strong>k<sub>bc1</sub> = 3.5128 N·m·s/rad</strong> (A=0.4 multisine, custom fminbnd + residual high-pass, 2026-06-01).</p>
-    <p style="margin-top:8px;"><strong>Next steps:</strong> (1) Discretise at h=0.001 s (ZOH/Tustin). (2) Observer: re-linearise at up-up operating point, validate state estimates. (3) Wire LQR gain K into <code>rotpentemplate.slx</code> for hardware test. (4) Design Controller 1 (arm 1 down, arm 2 up). (5) MPC design. (6) Collect held-out validation dataset (course requirement).</p>
+    <p>Hardware LQR running (2026-06-01). Unit bugs fixed: observer innovation <code>Sum2</code> now receives deg→rad converted measurements; redundant gain block removed; sign confirmed correct. Q uses psi-weighting (<code>c_psi=[1 0 1 0]</code>, <code>w_psi=20</code>) penalising arm-2 inertial deviation — down-down stable and damped, up-up significantly improved with observer bypassed. Observer wiring mismatch in <code>rotpentemplate.slx</code>: stable poles placed but estimate ignores measurement; structural fix pending. <strong>k<sub>m</sub> = 18.271 N·m/u</strong>, <strong>k<sub>bc1</sub> = 3.5128 N·m·s/rad</strong> (A=0.4 multisine, 2026-06-01).</p>
+    <p style="margin-top:8px;"><strong>Next steps:</strong> (1) Input smoothing (filter u or velocity before K). (2) Q tuning — sweep w_psi and velocity weights. (3) Swing-up excitation (|u| ≤ 0.1 → impulse). (4) Fix observer wiring, validate estimate tracks measurement. (5) Design Controller 1 (arm 1 down, arm 2 up). (6) MPC design. (7) Collect held-out validation dataset (course requirement).</p>
   </div>
 </div>
 
@@ -615,14 +615,17 @@ details[open] summary::before { transform: rotate(90deg); }
     <!-- Control design -->
     <div class="card">
       <div class="card-head"><h3>Control design</h3><span class="pill prog">In Progress</span></div>
-      <div class="card-note">LQR balance controller working in simulation at up-up (x₀=[π;0;0;0], 2026-05-28): <code>linearise_upright.m</code> + <code>sim_balance.m</code>. Arm 2 stabilises with perturbation; animation correct. Two methods required: LQR + MPC. No pole placement.</div>
+      <div class="card-note">Hardware LQR running (2026-06-01). Unit bugs found and fixed: observer innovation <code>Sum2</code> now receives deg→rad converted measurements (was rad vs deg, 57.3× error). Redundant gain block removed; sign confirmed correct (<code>Sum = ref−x</code>, <code>K(ref−x)</code>, <code>−km</code> in B). Saturation ±0.5. Q uses psi-weighting: <code>Q = Q_base + w_psi*(c_psi'*c_psi)</code> where <code>c_psi=[1 0 1 0]</code>, <code>w_psi=20</code> — penalises arm-2 inertial deviation. Down-down stable and damped with observer bypassed; up-up "much better." Observer structurally broken (stable poles placed but estimate ignores measurement — wiring mismatch suspected in <code>rotpentemplate.slx</code>).</div>
       <ul class="checklist">
         <li class="isdone"><label><input type="checkbox" checked><span class="task">Choose 2 methods: LQR + MPC</span></label></li>
         <li><label><input type="checkbox"><span class="task">(Optional) nonlinear — INDI</span><span class="bsm dsc">discussing</span></label></li>
         <li><label><input type="checkbox"><span class="task">Controller 1 — arm 2 up, arm 1 down (x₀=[0;0;π;0])</span></label></li>
-        <li><label><input type="checkbox"><span class="task">Controller 2 — arm 2 up, arm 1 up (x₀=[π;0;0;0]) — LQR sim done</span><span class="bsm prg">in progress</span></label></li>
+        <li class="isdone"><label><input type="checkbox" checked><span class="task">Controller 2 — arm 2 up, arm 1 up (x₀=[π;0;0;0]) — LQR sim done; hardware running (2026-06-01)</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Input smoothing — filter u or velocity before K to suppress derivative chatter on arm 1</span><span class="bsm prg">todo</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Q tuning — review w_psi and velocity weights (dth1, dth2) after smoothing; sweep w_psi vs pole damping</span><span class="bsm prg">todo</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Swing-up excitation — if |u| ≤ 0.1 inject impulse to escape near-zero deadband</span><span class="bsm prg">todo</span></label></li>
+        <li><label><input type="checkbox"><span class="task">Fix observer wiring in <code>rotpentemplate.slx</code> — validate Observed th2 tracks measured th2 when arm moved</span><span class="bsm prg">todo</span></label></li>
         <li><label><input type="checkbox"><span class="task">Add disturbance rejection test to <code>sim_balance.m</code> (impulse torque mid-run)</span></label></li>
-        <li><label><input type="checkbox"><span class="task">Wire K into <code>rotpentemplate.slx</code> Gain block for hardware path</span></label></li>
         <li><label><input type="checkbox"><span class="task">Test controllers in simulation (full suite — both operating points)</span></label></li>
         <li><label><input type="checkbox"><span class="task">Test controllers on hardware</span></label></li>
         <li><label><input type="checkbox"><span class="task">Compare performance — robustness, disturbance rejection, SSE</span></label></li>
