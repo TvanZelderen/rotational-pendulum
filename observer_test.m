@@ -6,7 +6,7 @@ pendulum_params;
 
 %% 1. Load Data
 data_folder = 'data';
-file_name   = '20260527_125403_multisine_amp400.mat';
+file_name   = '20260518_162352_arm1_pre_id_f300mHz_a30.mat';
 run_data    = load(fullfile(data_folder, file_name));
 
 t_raw = run_data.simin(:,1);
@@ -34,22 +34,67 @@ u_minus = -eps_jac;
 B = (rotpen_ode(0, x_eq, u_plus, p) - rotpen_ode(0, x_eq, u_minus, p)) / (2*eps_jac);
 
 C = [1 0 0 0; 
-     0 0 1 0]; 
-
+     0 0 1 0];
+D = zeros(2,1);
+eig(A)
 %% 3. Observer Design (Optimal Kalman / LQR Approach)
 fprintf('\n--- Calculating Optimal L Matrix ---\n');
 
-% Q relates to how much we want the observer to aggressively track the states.
-% (Higher numbers = track states faster)
-Q_obs = diag([1000, 0, 1000, 0]); 
+max_th1_err  = deg2rad(1);    % 5 deg angle error acceptable
+max_dth1_err = deg2rad(10);   % 50 deg/s velocity error acceptable
+max_th2_err  = deg2rad(1);    % 5 deg
+max_dth2_err = deg2rad(10);   % 50 deg/s
 
-% R relates to the encoders (we thrust them fully)
-R_obs = diag([1, 1]); 
+max_th1_meas_err  = deg2rad(1);   % encoder noise ~ 1 deg
+max_th2_meas_err  = deg2rad(1);   % encoder noise ~ 1 deg
 
-% Calculate L using the Linear Quadratic Estimator (Dual LQR) method.
-L = lqr(A', C', Q_obs, R_obs);
+% Build Q and R
+Q = diag([1/max_th1_err^2, ...
+          1/max_dth1_err^2, ...
+          1/max_th2_err^2, ...
+          1/max_dth2_err^2]);
+
+R = diag([1/max_th1_meas_err^2, ...
+          1/max_th2_meas_err^2]);
+
+% N — cross-covariance between process and measurement noise
+% Usually zero
+N = zeros(4,2);
+
+%% Build state space model
+sys = ss(A, [B, eye(4)], C, [D, zeros(2,4)]);
+%          ↑              ↑
+%     control input   process noise input (identity = noise on all states)
+
+%% Compute Kalman gain
+[kalmf, L, P] = kalman(sys, Q, R, N);
+%               ↑      ↑   ↑   ↑
+%          filter sys  Q   R   cross-cov
+%
+% L is the steady-state Kalman gain [4x2]
+% P is the steady-state error covariance [4x4]
+% kalmf is the full Kalman filter state-space system
+
+% Calculate L using the place command. 
+% Remember to transpose A, C, and the final L matrix!
+fprintf('Kalman gain L:\n'); disp(L)
+fprintf('Max |L| = %.4f\n', max(abs(L(:))));
+
+%% Check observer stability
+ev_obs = eig(A - L*C);
+fprintf('Observer eigenvalues:\n');
+for i = 1:4
+    fprintf('  %+.4f %+.4fj\n', real(ev_obs(i)), imag(ev_obs(i)));
+end
+if all(real(ev_obs) < 0)
+    fprintf('Observer STABLE\n');
+end
 
 fprintf('Max |L| gain = %.2f\n', max(abs(L(:))));
+
+
+fprintf('Max |L| gain = %.2f\n', max(abs(L(:))));
+
 
 %% 4. Data Processing & Trimming
 iS = round(3/h) + 1;

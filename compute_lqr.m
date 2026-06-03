@@ -26,9 +26,34 @@ Q = Q_base + w_psi * (c_psi' * c_psi);
 K = lqr(A, B, Q, R);
 
 %observer
-Q_obs = diag([1000, 0, 1000, 0]);
-R_obs = diag([1, 1]);
-L = lqr(A', C', Q_obs, R_obs)';
+max_th1_err  = deg2rad(1);    % 1 deg angle error acceptable
+max_dth1_err = deg2rad(10);   % 10 deg/s velocity error acceptable
+max_th2_err  = deg2rad(1);    % 1 deg
+max_dth2_err = deg2rad(10);   % 10 deg/s
+
+max_th1_meas_err  = deg2rad(1);   % encoder noise ~ 1 deg
+max_th2_meas_err  = deg2rad(1);   % encoder noise ~ 1 deg
+
+% Build Q and R
+Q = diag([1/max_th1_err^2, ...
+          1/max_dth1_err^2, ...
+          1/max_th2_err^2, ...
+          1/max_dth2_err^2]);
+
+R = diag([1/max_th1_meas_err^2, ...
+          1/max_th2_meas_err^2]);
+
+% N — cross-covariance between process and measurement noise
+% Usually zero
+N = zeros(4,2);
+
+%% Build state space model
+sys = ss(A, [B, eye(4)], C, [D, zeros(2,4)]);
+%          ↑              ↑
+%     control input   process noise input (identity = noise on all states)
+
+%% Compute Kalman gain
+[kalmf, L, P] = kalman(sys, Q, R, N);
 
 end
 
