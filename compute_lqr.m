@@ -14,7 +14,7 @@ A = double(subs(subs(A_sym, x, x0), u, 0));
 B = double(subs(subs(B_sym, x, x0), u, 0));
 C = [1 0 0 0; 
      0 0 1 0]; 
-
+D = zeros(2,1);
 % Bryson baseline
 Q_base = diag([1/pi^2, 1/8^2, 1/pi^2, 1/26.18^2]);
 
@@ -26,22 +26,12 @@ Q = Q_base + w_psi * (c_psi' * c_psi);
 K = lqr(A, B, Q, R);
 
 %observer
-max_th1_err  = deg2rad(1);    % 1 deg angle error acceptable
-max_dth1_err = deg2rad(10);   % 10 deg/s velocity error acceptable
-max_th2_err  = deg2rad(1);    % 1 deg
-max_dth2_err = deg2rad(10);   % 10 deg/s
-
-max_th1_meas_err  = deg2rad(1);   % encoder noise ~ 1 deg
-max_th2_meas_err  = deg2rad(1);   % encoder noise ~ 1 deg
 
 % Build Q and R
-Q = diag([1/max_th1_err^2, ...
-          1/max_dth1_err^2, ...
-          1/max_th2_err^2, ...
-          1/max_dth2_err^2]);
+Q_obs = diag([800, 1500000,800,1500000]);
+%Q_obs = diag([1000,5000,1000,5000]);
 
-R = diag([1/max_th1_meas_err^2, ...
-          1/max_th2_meas_err^2]);
+R_obs = diag([1,1]);
 
 % N — cross-covariance between process and measurement noise
 % Usually zero
@@ -53,7 +43,7 @@ sys = ss(A, [B, eye(4)], C, [D, zeros(2,4)]);
 %     control input   process noise input (identity = noise on all states)
 
 %% Compute Kalman gain
-[kalmf, L, P] = kalman(sys, Q, R, N);
+[~, L, ~] = kalman(sys, Q_obs, R_obs);
 
 end
 

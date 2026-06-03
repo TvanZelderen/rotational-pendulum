@@ -14,11 +14,11 @@
 %
 %   'multisine'   — combination of sine waves, tuned with offset phases to stay within u-saturation.
 
-%clear; clc;
+clear; clc;
 
 pendulum_params;
 
-run_type = 'pre_id';   % 'exploratory' | 'pre_id' | 'multisine'
+run_type = 'multisine';   % 'exploratory' | 'pre_id' | 'multisine'
 
 h = 0.001;   % sample period [s] 
 run_time = 120; % to be used in simulink [s]
@@ -55,7 +55,7 @@ elseif strcmp(run_type, 'pre_id')
 
     freq_hz   = 0.3;
     cycles    = run_time / freq_hz;
-
+    controller_sat = 1;
     t  = (0 : h : run_time)';
     u  = amplitude * sin(2*pi*freq_hz*(t));
     simin = [t, u];
@@ -81,7 +81,8 @@ elseif strcmp(run_type, 'multisine')
     t    = (0 : h : run_time)';
     N    = length(t);
     df   = 1/run_time;
-
+    
+    controller_sat = 1;
     % Frequency range around known natural frequency (1.691 Hz)
     f_min = 0.2;    % [Hz]
     f_max = 5.0;    % [Hz]

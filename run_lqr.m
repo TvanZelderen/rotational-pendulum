@@ -8,7 +8,7 @@ pendulum_params;
 h = 0.001;
 R = 5;
 controller_sat = 0.5;
-ref = [0; 0; 0; 0];
+ref = [0; 0; pi; 0];
 [K, L, A, B, C] = compute_lqr(ref, R, p);
 
 disp('Controller poles:'); disp(sort(eig(A - B*K), 'descend'))
