@@ -2,7 +2,9 @@ clear; clc;
 pendulum_params;   % populates struct p — source of truth for guesses + fixed values
 
 %% ── Configuration ──────────────────────────────────────────────────────────
-file_name   = '20260601_134415_multisine_amp600.mat';
+% FIT mode    : set file_name to amp400 run; keep kbc1_fit line below commented.
+% VALIDATE mode: set file_name to amp300 run; uncomment kbc1_fit lock line below.
+file_name   = '20260601_134316_multisine_amp400.mat';
 data_folder = 'data';
 
 trim_start = 1;     % [s] skip initial transient
@@ -149,10 +151,19 @@ ode_opts   = odeset('RelTol',1e-6,'AbsTol',1e-8);
 costfun = @(k) resid_sse(k, p, t_trimmed, u_trimmed, x0_fit, ...
                          th1_meas, th2_meas, bhp, ahp, ode_opts);
 
-fprintf('\nFitting kbc1 via fminbnd (residual high-passed at %.2f Hz)...\n', hp_fc);
-opt_fb = optimset('Display','iter','TolX',1e-4);
-[kbc1_fit, J_fit] = fminbnd(costfun, 0.5, 5.0, opt_fb);
-fprintf('\nFitted kbc1 = %.4f N·m·s/rad  (cost J = %.4g)\n', kbc1_fit, J_fit);
+% VALIDATE mode: uncomment the next line and set value from a prior fit.
+% kbc1_fit = 3.5128;   % <-- lock value here; comment out to re-run fminbnd (FIT mode)
+
+if ~exist('kbc1_fit', 'var')
+    fprintf('\nFitting kbc1 via fminbnd (residual high-passed at %.2f Hz)...\n', hp_fc);
+    opt_fb = optimset('Display','iter','TolX',1e-4);
+    [kbc1_fit, J_fit] = fminbnd(costfun, 0.5, 5.0, opt_fb);
+    fprintf('\nFitted  kbc1 = %.4f N·m·s/rad  (cost J = %.4g)\n', kbc1_fit, J_fit);
+else
+    fprintf('\nValidate mode — kbc1 locked to %.4f N·m·s/rad\n', kbc1_fit);
+    J_fit = costfun(kbc1_fit);
+    fprintf('Cost at locked value: J = %.4g\n', J_fit);
+end
 fprintf('Reference values:  step-ID ~ 2.44,  terminal-vel ~ 2.37\n');
 
 %% ── Re-simulate at fitted kbc1 ──────────────────────────────────────────────

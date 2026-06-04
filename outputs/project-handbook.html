@@ -764,6 +764,18 @@ details[open] summary::before { transform: rotate(90deg); }
         <li>Interpretation: motor + arm = low-pass filter. Inertia limits response; possibly back-EMF (A3) at higher speeds.</li>
       </ul>
 
+      <h3 style="margin-top:16px;">Arm-2 frequency response (A=0.4 multisine FFT, 2026-06-01)</h3>
+      <ul style="padding-left:18px;font-size:14px;color:var(--g700);line-height:1.7;">
+        <li><strong>Resonance at ωₙ ≈ 1.69 Hz (10.6 rad/s).</strong> Confirmed from multisine FFT: large θ₂ amplitude cluster at 1.5–1.7 Hz. Matches √(g/l<sub>eff</sub>) = √(9.81/0.0868). At resonance, arm-2 amplifies a small u tone to ±0.5 rad — the most information-rich region for fitting arm-2 parameters.</li>
+        <li><strong>Non-responsive above ~2 Hz.</strong> θ₂ amplitude drops to noise floor above 2 Hz. Pendulum inertia prevents arm-2 from following fast forcing. All arm-2 dynamics information sits in 0.2–2 Hz, concentrated at the resonance peak. Tones above 2 Hz contribute nothing to the θ₂ fit.</li>
+        <li><strong>θ₁ SNR drops above ~1.5 Hz.</strong> Arm-1 + motor act as a low-pass filter — angular displacement shrinks as frequency increases, approaching encoder quantisation noise around 1.5–1.7 Hz. θ₁ tones above this are present but low-SNR.</li>
+        <li><strong>Velocity channels are noisy across the full band.</strong> dθ₁, dθ₂ computed by finite-difference of encoder counts — differentiation amplifies quantisation noise at high frequency. Only angle channels (θ₁, θ₂) are used in the cost function; velocities are set to zero at the trim start.</li>
+      </ul>
+      <div class="callout info" style="margin:10px 0 6px;">
+        <div class="callout-label">Swing-up note</div>
+        Arm-2 is resonantly responsive only near ωₙ ≈ 1.69 Hz. Energy-pumping swing-up (if pursued) should inject excitation at or near this frequency — inputs above ~2 Hz are invisible to arm-2. The non-responsive zone above 2 Hz also means the LQR bandwidth budget for stabilisation is not competing with swing-up excitation frequencies.
+      </div>
+
       <h3 style="margin-top:16px;">Friction model (arm 1)</h3>
       <p style="font-size:14px;">Viscous-only on both arms (2026-05-18). k<sub>bc1</sub> is the composite: back-EMF k<sub>b</sub>, joint damping c₁, and folded kinetic Coulomb. These are not separately identifiable from driven data — all multiply θ̇₁. Arm 2 is also viscous-only.</p>
       <pre style="font-size:13px;">rhs₁ friction: -kbc1·dθ₁     (viscous-only — effective composite)
