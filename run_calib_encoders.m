@@ -27,12 +27,13 @@ assert(exist('fugihandle', 'var'), ...
 
 h     = 0.01;   % sample period [s]
 trim  = 1.0;    % seconds to cut from each end of capture
+controller_sat = 0.5;
 
 %% ── Cell A: both arms hanging down ──────────────────────────────────────────
 % Let both arms hang naturally. Do not touch the rig.
 
-Tsim_A = 10;    % [s] — long enough to average out vibration
-t = (0 : h : Tsim_A)';
+run_time = 10;    % [s] — long enough to average out vibration
+t = (0 : h : run_time)';
 u = zeros(size(t));
 simin = [t, u];
 
@@ -41,7 +42,7 @@ sim rotpentemplate;
 t_out = simout.Time;
 y_raw = simout.Data;
 
-mask = t_out > trim & t_out < Tsim_A - trim;
+mask = t_out > trim & t_out < run_time - trim;
 th1_A = y_raw(mask, 1);   % raw encoder units
 th2_A = y_raw(mask, 3);
 
@@ -68,8 +69,8 @@ sgtitle('Cell A — down-down (raw encoder)');
 % Hold arm 1 upright (pointing up, ~180° from down).
 % Arm 2 can hang freely — only th1 is read here.
 
-Tsim_B = 5;     % [s] — just need a steady capture
-t = (0 : h : Tsim_B)';
+run_time = 5;     % [s] — just need a steady capture
+t = (0 : h : run_time)';
 u = zeros(size(t));
 simin = [t, u];
 
@@ -78,7 +79,7 @@ sim rotpentemplate;
 t_out = simout.Time;
 y_raw = simout.Data;
 
-mask = t_out > trim & t_out < Tsim_B - trim;
+mask = t_out > trim & t_out < run_time - trim;
 th1_B1 = y_raw(mask, 1);
 
 th1up = mean(th1_B1);
@@ -98,8 +99,8 @@ title('Cell B1 — arm 1 up (raw encoder)');
 % Arm 1 hangs down. Hold arm 2 upright relative to arm 1 (pendulum inverted).
 % Only th2 is read here.
 
-Tsim_B = 5;
-t = (0 : h : Tsim_B)';
+run_time = 5;
+t = (0 : h : run_time)';
 u = zeros(size(t));
 simin = [t, u];
 
@@ -108,7 +109,7 @@ sim rotpentemplate;
 t_out = simout.Time;
 y_raw = simout.Data;
 
-mask = t_out > trim & t_out < Tsim_B - trim;
+mask = t_out > trim & t_out < run_time - trim;
 th2_B2 = y_raw(mask, 3);
 
 th2up = mean(th2_B2);
@@ -125,11 +126,10 @@ ylabel('\theta_2 raw'); xlabel('Time [s]'); grid on;
 title('Cell B2 — arm 2 up (raw encoder)');
 
 %% ── Cell C: compute calibration + comparison table ──────────────────────
-% Teammate's 4 reference values — paste theirs here:
-tm_th1down = NaN;   % <-- fill in
-tm_th1up   = NaN;   % <-- fill in
-tm_th2down = NaN;   % <-- fill in
-tm_th2up   = NaN;   % <-- fill in
+tm_th1down = 2.37;
+tm_th1up   = 1.046;
+tm_th2down = 1.195;
+tm_th2up   = 3.692;
 
 offset_th1 = th1down;
 offset_th2 = th2down;
@@ -144,7 +144,7 @@ tm_gain_th2   = 180 / (tm_th2up - tm_th2down);
 fprintf('\n══════════════════════════════════════════════════════════\n');
 fprintf('  Encoder calibration result\n');
 fprintf('══════════════════════════════════════════════════════════\n');
-fprintf('               ours         teammate     diff\n');
+fprintf('               ours     other group    diff\n');
 fprintf('  th1down  %9.4f    %9.4f    %+.4f\n', th1down,   tm_th1down, th1down   - tm_th1down);
 fprintf('  th1up    %9.4f    %9.4f    %+.4f\n', th1up,     tm_th1up,   th1up     - tm_th1up);
 fprintf('  th2down  %9.4f    %9.4f    %+.4f\n', th2down,   tm_th2down, th2down   - tm_th2down);
@@ -170,10 +170,10 @@ fprintf('\nExpected ~73 deg/raw-unit per encoder (old: th1=%.1f, th2=%.1f)\n', .
 %
 % NOTE: skip if arm-1 collisions or wiring risk; Cell C is sufficient.
 
-Tsim_D   = 30;   % [s]
+run_time   = 30;   % [s]
 u_amp    = 0.15; % [normalised] — slow enough to stay near terminal velocity
 
-t = (0 : h : Tsim_D)';
+t = (0 : h : run_time)';
 u = u_amp * ones(size(t));
 simin = [t, u];
 

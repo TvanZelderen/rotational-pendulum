@@ -4,11 +4,11 @@ pendulum_params;   % populates struct p — source of truth for guesses + fixed 
 %% ── Configuration ──────────────────────────────────────────────────────────
 % FIT mode    : set file_name to amp400 run; keep kbc1_fit line below commented.
 % VALIDATE mode: set file_name to amp300 run; uncomment kbc1_fit lock line below.
-file_name   = '20260601_134316_multisine_amp400.mat';
+file_name   = '20260605_124914_multisine_amp400.mat';
 data_folder = 'data';
 
 trim_start = 1;     % [s] skip initial transient
-trim_end   = 28;    % [s]
+trim_end   = 119;    % [s]
 
 %% ── Load data ───────────────────────────────────────────────────────────────
 run_data = load(fullfile(data_folder, file_name));
