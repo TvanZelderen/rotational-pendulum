@@ -24,7 +24,7 @@ run_type = 'multisine';   % 'exploratory' | 'pre_id' | 'multisine'
 
 h = 0.001;   % sample period [s] 
 run_time = 120; % to be used in simulink [s]
-amplitude = 0.4;
+amplitude = 0.3;
 
 %% -----------------------------------------------------------------------
 %  Run

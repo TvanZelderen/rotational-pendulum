@@ -53,7 +53,7 @@ p.c2     = p.alpha2 * p.m2 * p.l2^2;  % derived from alpha2 and current m2 estim
 % Inductance still neglected (A3 applies to inductance only now).
 p.km   = 18.271125;                    % peak motor torque [N·m per normalised unit] - sysid_ramp 18-5
 %p.km = 0.25;
-p.kbc1 = 3.5128;                     % composite: kb + c1 + folded kinetic Coulomb [N·m·s/rad] - multisine A0.4 1-7
+p.kbc1 = 2.9538;                     % composite: kb + c1 + folded kinetic Coulomb [N·m·s/rad] - multisine A0.4 5-6
 
 %% Environment
 p.g    = 9.81;                         % gravitational acceleration [m/s²]

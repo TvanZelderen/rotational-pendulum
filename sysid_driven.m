@@ -4,7 +4,7 @@ pendulum_params;   % populates struct p — source of truth for guesses + fixed 
 %% ── Configuration ──────────────────────────────────────────────────────────
 % FIT mode    : set file_name to amp400 run; keep kbc1_fit line below commented.
 % VALIDATE mode: set file_name to amp300 run; uncomment kbc1_fit lock line below.
-file_name   = '20260605_124914_multisine_amp400.mat';
+file_name   = '20260605_132001_multisine_amp300.mat';
 data_folder = 'data';
 
 trim_start = 1;     % [s] skip initial transient (search starts here)
@@ -159,7 +159,7 @@ costfun = @(k) resid_sse(k, p, t_trimmed, u_trimmed, x0_fit, ...
                          th1_meas, th2_meas, bhp, ahp, ode_opts);
 
 % VALIDATE mode: uncomment the next line and set value from a prior fit.
-% kbc1_fit = 3.5128;   % <-- lock value here; comment out to re-run fminbnd (FIT mode)
+kbc1_fit = 2.9538;   % <-- lock value here; comment out to re-run fminbnd (FIT mode)
 
 if ~exist('kbc1_fit', 'var')
     fprintf('\nFitting kbc1 via fminbnd (residual high-passed at %.2f Hz)...\n', hp_fc);
