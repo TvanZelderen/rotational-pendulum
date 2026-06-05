@@ -7,8 +7,8 @@ pendulum_params;   % populates struct p — source of truth for guesses + fixed 
 file_name   = '20260605_124914_multisine_amp400.mat';
 data_folder = 'data';
 
-trim_start = 1;     % [s] skip initial transient
-trim_end   = 119;    % [s]
+trim_start = 1;     % [s] skip initial transient (search starts here)
+win_len    = 20;    % [s] sliding window length
 
 %% ── Load data ───────────────────────────────────────────────────────────────
 run_data = load(fullfile(data_folder, file_name));
@@ -33,13 +33,20 @@ u_sim  = interp1(t_raw, u_raw, t_sim, 'linear', 'extrap');
 
 fs = 1/h;
 
-%% ── Trim: find calmest start in window ──────────────────────────────────────
-i_start = round(trim_start / h_out) + 1;
-i_end   = min(round(trim_end  / h_out) + 1, length(t_sim));
+%% ── Trim: sliding window — find calmest win_len-second stretch ──────────────
+win_samples = round(win_len / h_out);
+i_lo        = round(trim_start / h_out) + 1;
+i_hi        = length(t_sim) - win_samples;
 
-v_combined = abs(dth1_rad(i_start:i_end)) + abs(dth2_rad(i_start:i_end));
-[~, i_min] = min(v_combined);
-i_start    = i_start + i_min - 1;
+v_combined  = abs(dth1_rad) + abs(dth2_rad);
+n_search    = i_hi - i_lo + 1;
+win_cost    = zeros(n_search, 1);
+for k = 1:n_search
+    win_cost(k) = mean(v_combined(i_lo+k-1 : i_lo+k-1+win_samples-1));
+end
+[~, i_best] = min(win_cost);
+i_start     = i_lo + i_best - 1;
+i_end       = i_start + win_samples - 1;
 
 y_trimmed = [th1_rad(i_start:i_end),  dth1_rad(i_start:i_end), ...
              th2_rad(i_start:i_end),  dth2_rad(i_start:i_end)];
