@@ -6,9 +6,12 @@ hwinit;
 pendulum_params;
 
 h = 0.001;
-R = 5;
+R = 1;
 controller_sat = 0.5;
-ref = [0; 0; pi; 0];
+% ref = [0; 0; 0; 0]; % down-down
+% ref = [0; 0; pi; 0]; % down-up
+ref = [pi; 0; 0; 0]; % up-up
+
 [K, L, A, B, C] = compute_lqr(ref, R, p);
 
 disp('Controller poles:'); disp(sort(eig(A - B*K), 'descend'))

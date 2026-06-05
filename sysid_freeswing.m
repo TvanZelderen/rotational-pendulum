@@ -28,17 +28,23 @@ plot(t, phi)
 xlabel('Time [s]'); ylabel('\phi [deg]')
 
 %% Trim end — cut noise-dominated tail
-trim_end  = 18;    % [s] — stop before SNR collapses (~18 s from D4)
+trim_end  = 7.3;    % [s] — stop before SNR collapses (~18 s from D4)
 i_end     = numel(t) - (Tsim - trim_end) * 100;
 
 %% Trim start — align to first natural peak so x0(2) = 0 is exact
-% Search 100:500 (1–5 s) to skip the manual-release transient.
-phi_search = phi(120:500);
+trim_start = 1.9; % s
+% Search 100:500 (start–5 s) to skip the manual-release transient.
+phi_search = phi(trim_start*100:500);
 [~, i_rel]  = max(abs(phi_search));
-i_start     = 99 + i_rel;             % offset back to full-vector index
+i_start     = trim_start * 100 + i_rel;             % offset back to full-vector index
 
 phi_trimmed = phi(i_start:i_end);
 t_trimmed   = t(i_start:i_end);
+
+%% Overview plot — diagnose release
+figure;
+plot(t_trimmed, phi_trimmed)
+xlabel('Time [s]'); ylabel('\phi [deg]')
 
 %% Convert to radians (nonlinear ODE uses sin)
 phi_rad = deg2rad(phi_trimmed);
@@ -62,6 +68,7 @@ fprintf('beta  (g/l2)       = %.6f\n', sys_est.Parameters(2).Value);
 fprintf('l2                 = %.6f m\n', 9.81 / sys_est.Parameters(2).Value);
 
 %% Compare measured vs model output
+figure;
 compare(data, sys_est);
 
 %% ── DIAGNOSTICS ─────────────────────────────────────────────────────────────

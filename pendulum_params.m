@@ -32,7 +32,7 @@ p.lc1  = p.l1 * 0.5;                     % CoM distance from pivot [m]  (uniform
 p.J1   = 0.048348;                     % moment of inertia about pivot [kg·m²]  (uniform rod)
 
 %% Arm 2 / pendulum  (c2 — joint to ball)  — see assumption A1
-p.l2   = 0.086841;                     % length of arm 2, joint to ball [m]  — identified via beta=g/l2
+p.l2   = 0.086702;                     % length of arm 2, joint to ball [m]  — identified via beta=g/l2
 p.m2   = 0.024;                        % tip mass [kg]  — placeholder; m2 NOT independently
                                         % identifiable from free-swing data alone.
                                         % TODO: confirm with additional free-swing runs.
@@ -43,7 +43,7 @@ p.J2   = p.m2 * p.l2^2;               % point mass inertia about joint [kg·m²]
 %   beta   = g / l2            = 112.964563  ->  l2 = 0.086841 m
 % NOTE: alpha2 is the true identified quantity.  c2 is derived and will
 %       change if m2 is revised — do not treat c2 as independently identified.
-p.alpha2 = 0.164111;                   % c2 / (m2 * l2^2)  [1/s] — identified via nlgreyest
+p.alpha2 = 0.263746;                   % c2 / (m2 * l2^2)  [1/s] — identified via nlgreyest
 p.c2     = p.alpha2 * p.m2 * p.l2^2;  % derived from alpha2 and current m2 estimate
 
 %% Motor / drive  — see assumption A3 (partially relaxed)
@@ -53,7 +53,7 @@ p.c2     = p.alpha2 * p.m2 * p.l2^2;  % derived from alpha2 and current m2 estim
 % Inductance still neglected (A3 applies to inductance only now).
 p.km   = 18.271125;                    % peak motor torque [N·m per normalised unit] - sysid_ramp 18-5
 %p.km = 0.25;
-p.kbc1 = 2.9538;                     % composite: kb + c1 + folded kinetic Coulomb [N·m·s/rad] - multisine A0.4 5-6
+p.kbc1 = 2.9645;                     % composite: kb + c1 + folded kinetic Coulomb [N·m·s/rad] - multisine A0.4 5-6
 
 %% Environment
 p.g    = 9.81;                         % gravitational acceleration [m/s²]

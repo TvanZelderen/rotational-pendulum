@@ -5,14 +5,17 @@
 %   hwinit.m — sets sensor gain/offset calibration values
 
 clear; clc;
+calib;
+hwinit;
 
 assert(exist('fugihandle', 'var'), ...
     'Run calib.m and hwinit.m before using hardware mode.');
 
 h    = 0.01;   % sample period [s]
-Tsim = 30;     % experiment duration [s]
+run_time = 30;     % experiment duration [s]
+controller_sat = 0;
 
-t     = (0:h:Tsim)';
+t     = (0:h:run_time)';
 u     = zeros(size(t));
 simin = [t, u];
 
