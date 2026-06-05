@@ -6,11 +6,11 @@ hwinit;
 pendulum_params;
 
 h = 0.001;
-R = 1;
+R = 500; % 10 for down up
 controller_sat = 1;
 % ref = [0; 0; 0; 0]; % down-down
-% ref = [0; 0; pi; 0]; % down-up
-ref = [pi; 0; 0; 0]; % up-up
+ref = [0; 0; pi; 0]; % down-up
+% ref = [pi; 0; 0; 0]; % up-up
 
 [K, L, A, B, C] = compute_lqr(ref, R, p);
 
