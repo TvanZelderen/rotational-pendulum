@@ -4,15 +4,21 @@
 clear; clc;
 
 pendulum_params;
-load('lqr_gains.mat');   % K_up_up, K_down_up
 
 %% -----------------------------------------------------------------------
-%  Select operating point  (swap K and ref to switch controller)
+%  Select operating point
 % -----------------------------------------------------------------------
-K   = K_up_up;
-ref = [pi; 0; 0; 0];    % up-up
-% K   = K_down_up;
-% ref = [0; 0; pi; 0];  % down-up
+% ref = [pi; 0; 0; 0];   % up-up
+ref = [0; 0; pi; 0];     % down-up
+
+R = 1;
+[K, L, A, B, C] = compute_lqr(ref, R, p);
+
+disp('Open-loop poles:');     disp(sort(eig(A),          'descend'))
+disp('Controller poles:');    disp(sort(eig(A - B*K),    'descend'))
+disp('Observer poles:');      disp(sort(eig(A - L*C),    'descend'))
+
+disp('B:'); disp(B); disp('R:'); disp(R);
 
 use_lqr  = true;
 h        = 0.001;    % [s]
