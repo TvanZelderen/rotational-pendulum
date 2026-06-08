@@ -6,30 +6,30 @@ hwinit;
 pendulum_params;
 
 h = 0.001;
-R = 500; % 10 for down up
 controller_sat = 1;
-% ref = [0; 0; 0; 0]; % down-down
-ref = [0; 0; pi; 0]; % down-up
-% ref = [pi; 0; 0; 0]; % up-up
 
+reference_indicator = 1; % 1 for down-down, 2 for down-up, 3 for up-up
+if reference_indicator == 1
+    ref = [0; 0; 0; 0]; % down-down
+    offset = [0; 0];
+    R = 50; % Tweak away
+elseif reference_indicator == 2
+    ref = [0; 0; pi; 0];
+    offset = [0; -pi];
+    R = 10;
+elseif reference_indicator == 3
+    ref = [pi; 0; 0; 0];
+    offset = [pi; 0]; % Double check that this should not be -pi; 0
+    R = 500; % Still tweaking
+end
+
+% Compute matrices
 [K, L, A, B, C] = compute_lqr(ref, R, p);
 
 disp('Controller poles:'); disp(sort(eig(A - B*K), 'descend'))
 disp('Observer poles:');   disp(sort(eig(A - L*C), 'descend'))
 
 run_time = 20;
-
-% Controller poles:
-%  -76.8432 + 0.0000i
-%   -0.6431 +10.5164i
-%   -0.6431 -10.5164i
-%   -1.0083 + 0.0000i
-% 
-% Observer poles:
-%    -5.9341
-%   -26.3648
-%   -32.3341
-%   -72.5983
 
 %% -- Run -------------------------------------------------
 sim rotpentemplate;
