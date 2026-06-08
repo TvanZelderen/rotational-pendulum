@@ -8,6 +8,24 @@ pendulum_params;
 h = 0.001;
 controller_sat = 1;
 
+%% -- Stiction-breaking jiggle ----------------------------
+% Mode 0 = off | 1 = continuous dither | 2 = conditional knocker
+% Simulink reads these from the workspace via Constant / Gain blocks.
+jiggle_mode = 0;       % 0 | 1 | 2
+
+% Mode 1 — continuous dither (always-on, zero-mean)
+A_d   = 0.03;          % amplitude [-]   start small
+f_d   = 30;            % frequency [Hz]  above CL BW, below 500 Hz
+
+% Mode 2 — conditional knocker (fires when arm 1 is stuck)
+A_k   = 0.08;          % pulse amplitude [-]
+f_k   = 30;            % buzz frequency [Hz]
+eps_v = 0.08;          % |dth1_filt| < eps_v  → arm is stuck  [rad/s]
+u_min = 0.05;          % |u_cmd| > u_min       → controller wants to move [-]
+
+% Low-pass time constant for dth1 (noise filter for stuck gate)
+tau_lp = 0.01;         % [s]  ~ 1/(2*pi*16 Hz) cutoff
+
 reference_indicator = 1; % 1 for down-down, 2 for down-up, 3 for up-up
 if reference_indicator == 1
     ref = [0; 0; 0; 0]; % down-down
@@ -71,4 +89,29 @@ figure(2); clf;
 yyaxis left;  plot(t_out, input);  ylabel('u [-]');
 yyaxis right; plot(t_out, e_th2);  ylabel('e_{\theta2} [rad]');
 xlabel('Time [s]'); grid on; legend('u','e_{\theta2}');
+
+%% -- Jiggle diagnostics (cols 15-16; present only after Simulink wiring) --
+% simout col 15 = jiggle [-]   col 16 = stuck [bool]
+if size(y, 2) >= 16
+    jiggle_log = y(:,15);
+    stuck_log  = y(:,16);
+
+    figure(3); clf;
+    subplot(3,1,1);
+    plot(t_out, input, 'k'); hold on;
+    plot(t_out, jiggle_log, 'b--');
+    yline(0.5,'r:'); yline(-0.5,'r:');
+    ylabel('u, jiggle [-]'); legend('u_{total}','jiggle'); grid on;
+    title(sprintf('Jiggle mode %d  (A_d=%.3f  A_k=%.3f  f=%.0f/%.0f Hz)', ...
+          jiggle_mode, A_d, A_k, f_d, f_k));
+
+    subplot(3,1,2);
+    yyaxis left;  stairs(t_out, stuck_log); ylabel('stuck [-]'); ylim([-0.1 1.5]);
+    yyaxis right; plot(t_out, rad2deg(y(:,2))); ylabel('d\theta_1 [deg/s]');
+    grid on; legend('stuck','d\theta_1');
+
+    subplot(3,1,3);
+    plot(t_out, e_th2);
+    ylabel('e_{\theta_2} [rad]'); xlabel('Time [s]'); grid on;
+end
 
