@@ -25,13 +25,13 @@ Nc = 3; % Nc time-steps controller sets its input
 
 %MPC object
 mpc_obj = mpc(sys_discrete, Ts, Np, Nc);
-mpc_obj.MV.Min = -1; % Max (just like the saturation block but it needs this to predict)
-mpc_obj.MV.Max = 1;  % Max 
+mpc_obj.MV.Min = -10; % Max (just like the saturation block but it needs this to predict)
+mpc_obj.MV.Max = 10;  % Max 
 
 mpc_obj.Weights.ManipulatedVariables = R;         % 'R' penalty (motor effort)
 mpc_obj.Weights.ManipulatedVariablesRate = 0.1;   % Penalty on violently changing voltage
-mpc_obj.Weights.OutputVariables = [10, 0, 10, 0]; % 'Q' penalty (positions)
+mpc_obj.Weights.OutputVariables = [10, 10]; % 'Q' penalty (positions)
 
-mpc_obj.Model.Nominal.X = [0; 0; pi; 0]; % The 4 internal states
-mpc_obj.Model.Nominal.Y = [0; pi];       % The 2 physical outputs (sensors)
+mpc_obj.Model.Nominal.X = x0; % The 4 internal states
+mpc_obj.Model.Nominal.Y = C*x0;       % The 2 physical outputs (sensors)
 mpc_obj.Model.Nominal.U = 0;
