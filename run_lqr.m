@@ -8,7 +8,7 @@ pendulum_params;
 h = 0.001;
 controller_sat = 1;
 
-reference_indicator = 1; % 1 for down-down, 2 for down-up, 3 for up-up
+reference_indicator = 2; % 1 for down-down, 2 for down-up, 3 for up-up
 if reference_indicator == 1
     ref = [0; 0; 0; 0]; % down-down
     offset = [0; 0];
@@ -42,13 +42,8 @@ th1 = y(:,1);
 dth1 = y(:,2);
 th2 = y(:,3);
 dth2 = y(:,4);
-phi = y(:,5);
-oth1 = y(:,6);
-odth1 = y(:,7);
-oth2 = y(:,8);
-odth2 = y(:,9);
-input  = y(:,10);
-e_vec = y(:,11:14);   % controller error ref - x, all 4 states (rad)
+phi = y(:,1) + y(:,3);
+input  = y(:,6);
 
 figure(1); clf;
 subplot(3,2,1); plot(t_out, th1, t_out, oth1); yline(180,'k--');
