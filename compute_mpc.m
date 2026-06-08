@@ -35,3 +35,4 @@ mpc_obj.Weights.OutputVariables = [10, 10]; % 'Q' penalty (positions)
 mpc_obj.Model.Nominal.X = x0; % The 4 internal states
 mpc_obj.Model.Nominal.Y = C*x0;       % The 2 physical outputs (sensors)
 mpc_obj.Model.Nominal.U = 0;
+end
