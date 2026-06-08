@@ -8,7 +8,7 @@ pendulum_params;
 h = 0.001;
 controller_sat = 1;
 
-%% -- Stiction-breaking jiggle ----------------------------
+% -- Stiction-breaking jiggle ----------------------------
 % Mode 1 = off | 2 = continuous dither | 3 = conditional knocker
 % Simulink reads these from the workspace via Constant / Gain blocks.
 jiggle_mode = 1;
@@ -25,6 +25,11 @@ u_min = 0.05;          % |u_cmd| > u_min       → controller wants to move [-]
 
 % Low-pass time constant for dth1 (noise filter for stuck gate)
 tau_lp = 0.01;         % [s]  ~ 1/(2*pi*16 Hz) cutoff
+
+% -- Controller type ----------------------------
+% Mode 1 = Simin | 2 = LQR | 3 = MPC
+
+controller_type = 3;
 
 reference_indicator = 2; % 1 for down-down, 2 for down-up, 3 for up-up
 if reference_indicator == 1
