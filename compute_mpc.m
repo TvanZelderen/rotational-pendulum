@@ -30,4 +30,4 @@ mpc_obj.MV.Max = 1;  % Max
 
 mpc_obj.Weights.ManipulatedVariables = R;         % 'R' penalty (motor effort)
 mpc_obj.Weights.ManipulatedVariablesRate = 0.1;   % Penalty on violently changing voltage
-mpc_obj.Weights.OutputVariables = [10, 0, 10, 0]; % 'Q' penalty (positions)
+mpc_obj.Weights.OutputVariables = [10 10]; % 'Q' penalty (positions)
