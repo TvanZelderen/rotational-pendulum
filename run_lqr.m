@@ -39,7 +39,7 @@ if reference_indicator == 1
 elseif reference_indicator == 2
     ref = [0; 0; pi; 0];
     offset = [0; -pi];
-    R = 25;
+    R = 0.1; %25
 elseif reference_indicator == 3
     ref = [-pi; 0; 0; 0];
     offset = [pi; 0];
