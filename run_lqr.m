@@ -9,9 +9,9 @@ h = 0.001;
 controller_sat = 1;
 
 %% -- Stiction-breaking jiggle ----------------------------
-% Mode 0 = off | 1 = continuous dither | 2 = conditional knocker
+% Mode 1 = off | 2 = continuous dither | 3 = conditional knocker
 % Simulink reads these from the workspace via Constant / Gain blocks.
-jiggle_mode = 0;       % 0 | 1 | 2
+jiggle_mode = 1;
 
 % Mode 1 — continuous dither (always-on, zero-mean)
 A_d   = 0.03;          % amplitude [-]   start small
@@ -26,7 +26,7 @@ u_min = 0.05;          % |u_cmd| > u_min       → controller wants to move [-]
 % Low-pass time constant for dth1 (noise filter for stuck gate)
 tau_lp = 0.01;         % [s]  ~ 1/(2*pi*16 Hz) cutoff
 
-reference_indicator = 1; % 1 for down-down, 2 for down-up, 3 for up-up
+reference_indicator = 2; % 1 for down-down, 2 for down-up, 3 for up-up
 if reference_indicator == 1
     ref = [0; 0; 0; 0]; % down-down
     offset = [0; 0];
@@ -34,11 +34,11 @@ if reference_indicator == 1
 elseif reference_indicator == 2
     ref = [0; 0; pi; 0];
     offset = [0; -pi];
-    R = 10;
+    R = 25;
 elseif reference_indicator == 3
-    ref = [pi; 0; 0; 0];
-    offset = [pi; 0]; % Double check that this should not be -pi; 0
-    R = 500; % Still tweaking
+    ref = [-pi; 0; 0; 0];
+    offset = [pi; 0];
+    R = 100;
 end
 
 % Compute matrices
