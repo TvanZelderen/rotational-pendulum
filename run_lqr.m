@@ -46,11 +46,14 @@ elseif reference_indicator == 3
     R = 100;
 end
 
-% Compute matrices
+% Compute matrices LQR
 [K, L, A, B, C] = compute_lqr(ref, R, p);
 
 disp('Controller poles:'); disp(sort(eig(A - B*K), 'descend'))
 disp('Observer poles:');   disp(sort(eig(A - L*C), 'descend'))
+
+%Compute MPC object
+[mpc_obj,Ad,Bd,Cd] = compute_mpc(ref, R, p);
 
 run_time = 20;
 
