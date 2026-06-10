@@ -18,7 +18,7 @@ for i = 1:4
     xm = x0; xm(i) = xm(i)-eps_j;
     A(:,i) = (rotpen_ode(0,xp,0,p) - rotpen_ode(0,xm,0,p))/(2*eps_j);
 end
-B = (rotpen_ode(0,x0,eps_j,p) - rotpen_ode(0,x0,-eps_j,p))/(2*eps_j);
+B = (rotpen_ode(0,x0,eps_j,p) - rotpen_ode(0,x0,-eps_j,p))/(2*eps_j)
 
 %% Only 2 outputs — angles only
 C_mpc = [1 0 0 0;
