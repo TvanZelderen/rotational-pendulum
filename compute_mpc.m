@@ -45,9 +45,9 @@ function [mpc_obj, Ad, Bd, Cd] = compute_mpc(x0, R, p)
     % Higher = track reference more aggressively
     % th2 (pendulum angle) needs much higher weight than th1 (arm angle)
     if norm(x0(3) - pi) < 0.1   % upright position
-        mpc_obj.Weights.OutputVariables = [10, 1000];  % th2 critical
+        mpc_obj.Weights.OutputVariables = [100000000, 10000000000];  % th2 critical
     else
-        mpc_obj.Weights.OutputVariables = [100, 100];  % both equal
+        mpc_obj.Weights.OutputVariables = [1000000000, 1000000000];  % both equal
     end
 
     %% Nominal operating point
@@ -59,6 +59,22 @@ function [mpc_obj, Ad, Bd, Cd] = compute_mpc(x0, R, p)
     % Set to expected range of each variable
     mpc_obj.OV(1).ScaleFactor = pi;      % th1 range ~ pi rad
     mpc_obj.OV(2).ScaleFactor = pi;      % th2 range ~ pi rad
-    mpc_obj.MV.ScaleFactor    = 1;       % u range ~ 1
+    mpc_obj.MV.ScaleFactor    = 1;       % u range ~ 
+
+    % Verify MPC weights were set correctly
+fprintf('\n--- MPC configuration ---\n');
+fprintf('Prediction horizon Np: %d steps = %.3f s\n', Np, Np*Ts);
+fprintf('Control horizon Nc:    %d steps\n', Nc);
+fprintf('Output weights:        [%.1f, %.1f]\n', mpc_obj.Weights.OutputVariables);
+fprintf('MV weight:             %.4f\n',   mpc_obj.Weights.ManipulatedVariables);
+fprintf('MV rate weight:        %.4f\n',   mpc_obj.Weights.ManipulatedVariablesRate);
+fprintf('MV limits:             [%.2f, %.2f]\n', mpc_obj.MV.Min, mpc_obj.MV.Max);
+
+% Simulate MPC open-loop response to check it responds
+x_test  = x0 + [0; 0; deg2rad(10); 0];   % small perturbation
+u_test  = mpcmove(mpc_obj, mpcstate(mpc_obj), C*x_test - C*x0, zeros(2,1));
+fprintf('\nMPC response to 10deg th2 perturbation: u = %.4f\n', u_test);
+% If u_test ≈ 0 → MPC is not responding → increase output weights
+% If |u_test| > 0.1 → MPC is active → good
 
 end
