@@ -1,39 +1,64 @@
-function[mpc_obj,Ad,Bd,Cd] = compute_mpc(x0,R,p)
+function [mpc_obj, Ad, Bd, Cd] = compute_mpc(x0, R, p)
+
+    %% Linearise
     syms x [4 1] real
     syms u real
-    
     dxdt_sym = rotpen_ode(0, x, u, p);
-    
-    A_sym = jacobian(dxdt_sym, x);
-    B_sym = jacobian(dxdt_sym, u);
-    
+    A_sym    = jacobian(dxdt_sym, x);
+    B_sym    = jacobian(dxdt_sym, u);
     A = double(subs(subs(A_sym, x, x0), u, 0));
     B = double(subs(subs(B_sym, x, x0), u, 0));
-    C = eye(4); 
-    D = zeros(4,1);
-   
-    sys_continuous = ss(A, B, C, 0);
-    sys_continuous = setmpcsignals(sys_continuous,'MO',[1,3],'UO',[2,4]);
-    %Discretize the state space system
-    Ts = 0.001;
-    
-    sys_discrete = c2d(sys_continuous, Ts, 'zoh');
-    [Ad, Bd, Cd, Dd] = ssdata(sys_discrete);
-    
-    %Prediction and Control horizon
-    Np = 15; % predicts Np time-steps ahead 
-    Nc = 10; % Nc time-steps controller sets its input
-    
-    %MPC object
-    mpc_obj = mpc(sys_discrete, Ts, Np, Nc);
-    mpc_obj.MV.Min = -1; % Max (just like the saturation block but it needs this to predict)
-    mpc_obj.MV.Max = 1;  % Max 
-    
-    mpc_obj.Weights.ManipulatedVariables = 0.01;         % 'R' penalty (motor effort)
-    mpc_obj.Weights.ManipulatedVariablesRate = 0.1;   % Penalty on violently changing voltage
-    mpc_obj.Weights.OutputVariables = [15000,10,50000,10]; % 'Q' penalty (positions)
-    
-    mpc_obj.Model.Nominal.X = x0; % The 4 internal states
-    mpc_obj.Model.Nominal.Y = x0;       % The 2 physical outputs (sensors)
+
+    %% Use only MEASURED outputs (angles only — matches your hardware)
+    % MPC should only track what you can actually measure
+    C = [1 0 0 0;   % th1
+         0 0 1 0];  % th2
+    D = zeros(2,1);
+
+    %% Discretise
+    Ts         = 0.001;
+    sys_c      = ss(A, B, C, D);
+    sys_d      = c2d(sys_c, Ts, 'zoh');
+    [Ad,Bd,Cd,Dd] = ssdata(sys_d);
+
+    %% Horizons
+    Np = 50;    % prediction horizon — longer = better but slower
+    Nc = 10;    % control horizon
+
+    %% Create MPC object
+    mpc_obj = mpc(sys_d, Ts, Np, Nc);
+
+    %% Input constraints
+    mpc_obj.MV.Min = -1;
+    mpc_obj.MV.Max =  1;
+
+    %% Weights — this is the key tuning
+    % ManipulatedVariables: penalty on u magnitude
+    % Higher = more conservative motor use
+    mpc_obj.Weights.ManipulatedVariables     = 5;
+
+    % ManipulatedVariablesRate: penalty on Δu (change in u)
+    % Higher = smoother motor commands
+    mpc_obj.Weights.ManipulatedVariablesRate = 0.01;
+
+    % OutputVariables: penalty on [th1 error, th2 error]
+    % Higher = track reference more aggressively
+    % th2 (pendulum angle) needs much higher weight than th1 (arm angle)
+    if norm(x0(3) - pi) < 0.1   % upright position
+        mpc_obj.Weights.OutputVariables = [10, 1000];  % th2 critical
+    else
+        mpc_obj.Weights.OutputVariables = [100, 100];  % both equal
+    end
+
+    %% Nominal operating point
+    mpc_obj.Model.Nominal.X = x0;
+    mpc_obj.Model.Nominal.Y = C * x0;
     mpc_obj.Model.Nominal.U = 0;
+
+    %% Scale factors — help MPC numerics
+    % Set to expected range of each variable
+    mpc_obj.OV(1).ScaleFactor = pi;      % th1 range ~ pi rad
+    mpc_obj.OV(2).ScaleFactor = pi;      % th2 range ~ pi rad
+    mpc_obj.MV.ScaleFactor    = 1;       % u range ~ 1
+
 end

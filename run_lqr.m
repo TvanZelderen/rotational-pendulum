@@ -55,6 +55,22 @@ disp('Observer poles:');   disp(sort(eig(A - L*C), 'descend'))
 %Compute MPC object
 [mpc_obj,Ad,Bd,Cd] = compute_mpc(ref, R, p);
 
+% Verify MPC weights were set correctly
+fprintf('\n--- MPC configuration ---\n');
+fprintf('Prediction horizon Np: %d steps = %.3f s\n', Np, Np*Ts);
+fprintf('Control horizon Nc:    %d steps\n', Nc);
+fprintf('Output weights:        [%.1f, %.1f]\n', mpc_obj.Weights.OutputVariables);
+fprintf('MV weight:             %.4f\n',   mpc_obj.Weights.ManipulatedVariables);
+fprintf('MV rate weight:        %.4f\n',   mpc_obj.Weights.ManipulatedVariablesRate);
+fprintf('MV limits:             [%.2f, %.2f]\n', mpc_obj.MV.Min, mpc_obj.MV.Max);
+
+% Simulate MPC open-loop response to check it responds
+x_test  = x0 + [0; 0; deg2rad(10); 0];   % small perturbation
+u_test  = mpcmove(mpc_obj, mpcstate(mpc_obj), C*x_test - C*x0, zeros(2,1));
+fprintf('\nMPC response to 10deg th2 perturbation: u = %.4f\n', u_test);
+% If u_test ≈ 0 → MPC is not responding → increase output weights
+% If |u_test| > 0.1 → MPC is active → good
+
 run_time = 20;
 
 %% -- Run -------------------------------------------------
