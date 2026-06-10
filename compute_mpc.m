@@ -22,8 +22,8 @@ function [mpc_obj, Ad, Bd, Cd] = compute_mpc(x0, R, p)
     [Ad,Bd,Cd,Dd] = ssdata(sys_d);
 
     %% Horizons
-    Np = 50;    % prediction horizon — longer = better but slower
-    Nc = 10;    % control horizon
+    Np = 300;    % prediction horizon — longer = better but slower
+    Nc = 30;    % control horizon
 
     %% Create MPC object
     mpc_obj = mpc(sys_d, Ts, Np, Nc);
@@ -35,19 +35,19 @@ function [mpc_obj, Ad, Bd, Cd] = compute_mpc(x0, R, p)
     %% Weights — this is the key tuning
     % ManipulatedVariables: penalty on u magnitude
     % Higher = more conservative motor use
-    mpc_obj.Weights.ManipulatedVariables     = 5;
+    mpc_obj.Weights.ManipulatedVariables     = 1;
 
     % ManipulatedVariablesRate: penalty on Δu (change in u)
     % Higher = smoother motor commands
-    mpc_obj.Weights.ManipulatedVariablesRate = 0.01;
+    mpc_obj.Weights.ManipulatedVariablesRate = 0.0001;
 
     % OutputVariables: penalty on [th1 error, th2 error]
     % Higher = track reference more aggressively
     % th2 (pendulum angle) needs much higher weight than th1 (arm angle)
     if norm(x0(3) - pi) < 0.1   % upright position
-        mpc_obj.Weights.OutputVariables = [100000000, 10000000000];  % th2 critical
+        mpc_obj.Weights.OutputVariables = [100, 1000];  % th2 critical
     else
-        mpc_obj.Weights.OutputVariables = [1000000000, 1000000000];  % both equal
+        mpc_obj.Weights.OutputVariables = [1000, 1000];  % both equal
     end
 
     %% Nominal operating point
