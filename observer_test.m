@@ -6,7 +6,7 @@ pendulum_params;
 
 %% 1. Load Data
 data_folder = 'data';
-file_name   = '20260518_162352_arm1_pre_id_f300mHz_a30.mat';
+file_name   = '20260605_132001_multisine_amp300.mat';
 run_data    = load(fullfile(data_folder, file_name));
 
 t_raw = run_data.simin(:,1);
@@ -57,71 +57,67 @@ Q = diag([1/max_th1_err^2, ...
 R = diag([1/max_th1_meas_err^2, ...
           1/max_th2_meas_err^2]);
 
+Q_obs = diag([800, 1500000,800,1500000]);
+% Q_obs = diag([1000,5000,1000,5000]);
+
+R_obs = 0.01*diag([1,1]);
+
 % N — cross-covariance between process and measurement noise
 % Usually zero
 N = zeros(4,2);
 
 %% Build state space model
-sys = ss(A, [B, eye(4)], C, [D, zeros(2,4)]);
-%          ↑              ↑
-%     control input   process noise input (identity = noise on all states)
+%% Build state space model
+% We build the continuous augmented system just like Simulink
+sys_aug = ss(A, [B, eye(4)], C, [D, zeros(2,4)]);
 
-%% Compute Kalman gain
-[kalmf, L, P] = kalman(sys, Q, R, N);
-%               ↑      ↑   ↑   ↑
-%          filter sys  Q   R   cross-cov
-%
-% L is the steady-state Kalman gain [4x2]
-% P is the steady-state error covariance [4x4]
-% kalmf is the full Kalman filter state-space system
+%% Compute CONTINUOUS Kalman gain 
+% We use the continuous system so the 1.5 million Q_obs behaves normally!
+[~, L_cont, ~] = kalman(sys_aug, Q_obs, R_obs, N);
 
-% Calculate L using the place command. 
-% Remember to transpose A, C, and the final L matrix!
-fprintf('Kalman gain L:\n'); disp(L)
-fprintf('Max |L| = %.4f\n', max(abs(L(:))));
+fprintf('Continuous Kalman gain L:\n'); disp(L_cont)
 
-%% Check observer stability
-ev_obs = eig(A - L*C);
-fprintf('Observer eigenvalues:\n');
-for i = 1:4
-    fprintf('  %+.4f %+.4fj\n', real(ev_obs(i)), imag(ev_obs(i)));
+%% Build the Complete Observer Physics Block
+% Instead of doing the A*x + L*y math manually in the loop, 
+% we pack the entire (A - L*C) equation into a single State-Space system.
+A_obs = A - L_cont * C;
+B_obs = [B, L_cont]; % The observer takes 3 inputs: [Motor Command; Sensor 1; Sensor 2]
+C_obs = eye(4);      % The observer outputs all 4 estimated states
+D_obs = zeros(4, 3);
+
+% Discretize the ENTIRE observer for the offline loop
+sys_obs_discrete = c2d(ss(A_obs, B_obs, C_obs, D_obs), h, 'zoh');
+[Ad_obs, Bd_obs, ~, ~] = ssdata(sys_obs_discrete);
+
+%% Check observer stability (Discrete poles must be < 1)
+ev_obs = eig(Ad_obs);
+if all(abs(ev_obs) < 1)
+    fprintf('Observer STABLE (All poles inside Unit Circle)\n');
+else
+    fprintf('WARNING: Observer UNSTABLE\n');
 end
-if all(real(ev_obs) < 0)
-    fprintf('Observer STABLE\n');
-end
-
-fprintf('Max |L| gain = %.2f\n', max(abs(L(:))));
-
-
-fprintf('Max |L| gain = %.2f\n', max(abs(L(:))));
-
 
 %% 4. Data Processing & Trimming
 iS = round(3/h) + 1;
 iE = min(round(28/h) + 1, length(t_raw));
-
 t_trim = t_raw(iS:iE);
 u_trim = u_raw(iS:iE);
 N      = length(t_trim);
-
 true_states = zeros(4, N);
 true_states(1,:) = deg2rad(y_raw(iS:iE, 1))'; 
 true_states(2,:) = deg2rad(y_raw(iS:iE, 2))'; 
 true_states(3,:) = deg2rad(y_raw(iS:iE, 3))'; 
 true_states(4,:) = deg2rad(y_raw(iS:iE, 4))'; 
-
 fs = 1/h;
-fc = 5;                     % Cutoff frequency (Hz)
+fc = 5;                     
 [b, a] = butter(2, fc/(fs/2));
-
 dth1_f = filtfilt(b, a, true_states(2,:));
-
 dth2_f = filtfilt(b, a, true_states(4,:));
-%% 5.Observer Loop
-fprintf('\n--- Running Linear Observer ---\n');
+
+%% 5. Observer Loop
+fprintf('\n--- Running DISCRETE Linear Observer ---\n');
 x_hat = zeros(4, N);
 x_hat(:,1) = true_states(:,1); % Initialize 
-
 
 for k = 1:N-1
     if any(isnan(x_hat(:,k))) || any(abs(x_hat(:,k)) > 100)
@@ -130,34 +126,28 @@ for k = 1:N-1
         break;
     end
     
-    % Get the current real-world sensor data
+    xk = x_hat(:,k);    
+    uk = u_trim(k);     
     y_meas = [true_states(1,k); true_states(3,k)]; 
   
-    xk = x_hat(:,k);    % Grab current observer state
-    uk = u_trim(k);     % Grab current motor comman
+    % The loop is now a perfectly stable, single matrix multiplication!
+    inputs = [uk; y_meas];
+    x_hat(:,k+1) = Ad_obs * xk + Bd_obs * inputs;
     
-    % Calculate how many tiny math steps fit inside one hardware step
-    math_step_size = 0.0001;
-    sub_steps = max(1, round(h / math_step_size)); 
-    h_math = h / sub_steps; % Guarantee perfect time alignment
-    
-    % Run the physics engine 'sub_steps' times before looking at the next sensor data
-    for s = 1:sub_steps
-        error_y = y_meas - C * xk;
-        dx_hat  = A * xk + B * uk + L * error_y;
-        xk      = xk + (h_math * dx_hat);
-    end
-    
-    % Save the state at the exact moment it catches up to the hardware time
-    x_hat(:,k+1) = xk;
 end
 
 
 
-
+%% 6. Plotting Results
 %% 6. Plotting Results
 figure('Name', 'Linear Observer Verification', 'Position', [100, 100, 800, 800]);
-labels = {'th1 [deg]', 'dth1 [deg/s]', 'th2 [deg]', 'dth2 [deg/s]'};
+
+% Use tiledlayout to squish the plots together and share the x-axis
+t = tiledlayout(4, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+
+% Use LaTeX interpreter for beautiful Greek letters and dots (derivatives)
+labels = {'$\theta_1$ [deg]', '$\dot{\theta}_1$ [deg/s]', ...
+          '$\theta_2$ [deg]', '$\dot{\theta}_2$ [deg/s]'};
 
 % Group the correct reference signals to match the 4 states
 reference_signals = { rad2deg(true_states(1,:)), ...  % State 1: th1
@@ -165,18 +155,54 @@ reference_signals = { rad2deg(true_states(1,:)), ...  % State 1: th1
                       rad2deg(true_states(3,:)), ...  % State 3: th2
                       rad2deg(dth2_f) };              % State 4: filtered dth2
 
-for i = 1:4
-    subplot(4,1,i);
+
+nexttile; % Replaces subplot(4,1,i)
+    
     % Plot ONE blue reference line and ONE red observer line per subplot
-    plot(t_trim, reference_signals{i}, 'b', 'LineWidth', 1.2); hold on;
-    plot(t_trim, rad2deg(x_hat(i,:)), 'r--', 'LineWidth', 1.5);
+    plot(t_trim, reference_signals{1}, 'b', 'LineWidth', 1.2); hold on;
+    plot(t_trim, rad2deg(x_hat(1,:)), 'r--', 'LineWidth', 1.5);
     
-    ylabel(labels{i}, 'Interpreter', 'none'); 
+    % Apply the LaTeX labels with a slightly larger font for reports
+    ylabel(labels{1}, 'Interpreter', 'latex', 'FontSize', 12); 
     grid on;
+    xlim([3, 22]);
+    lgd = legend('Hardware Data', 'Linear Observer', 'Location', 'best');
+    xticklabels({});
+nexttile; % Replaces subplot(4,1,i)
     
-    if i == 1
-        legend('Hardware Data (Filtered)', 'Linear Observer', 'Location', 'best');
-        title('Linear Luenberger Observer Tracking (Matrix Math Only)');
-    end
-end
-xlabel('Time [s]');
+    % Plot ONE blue reference line and ONE red observer line per subplot
+    plot(t_trim, reference_signals{2}, 'b', 'LineWidth', 1.2); hold on;
+    plot(t_trim, rad2deg(x_hat(2,:)), 'r--', 'LineWidth', 1.5);
+    
+    % Apply the LaTeX labels with a slightly larger font for reports
+    ylabel(labels{2}, 'Interpreter', 'latex', 'FontSize', 12); 
+    grid on;
+    xlim([3, 22]);
+    ylim([-200,200])
+    xticklabels({});
+nexttile; % Replaces subplot(4,1,i)
+    
+    % Plot ONE blue reference line and ONE red observer line per subplot
+    plot(t_trim, reference_signals{3}, 'b', 'LineWidth', 1.2); hold on;
+    plot(t_trim, rad2deg(x_hat(3,:)), 'r--', 'LineWidth', 1.5);
+    
+    % Apply the LaTeX labels with a slightly larger font for reports
+    ylabel(labels{3}, 'Interpreter', 'latex', 'FontSize', 12); 
+    grid on;
+    xlim([3, 22]);
+    ylim([-100,100])
+    xticklabels({});
+
+
+nexttile;
+plot(t_trim, reference_signals{4}, 'b', 'LineWidth', 1.2); hold on;
+plot(t_trim, rad2deg(x_hat(4,:)), 'r--', 'LineWidth', 1.5);
+    
+    % Apply the LaTeX labels with a slightly larger font for reports
+    ylabel(labels{4}, 'Interpreter', 'latex', 'FontSize', 12); 
+    grid on;
+    xlim([3, 22]);
+    ylim([-1000,1000])
+
+% Put ONE master X-label at the very bottom of the layout
+xlabel(t, 'Time [s]', 'FontSize', 12);
