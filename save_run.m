@@ -1,4 +1,4 @@
-function save_run(simin, simout, label)
+function filepath = save_run(simin, simout, label)
 % Saves simin and simout to data/<timestamp>_<label>.mat
 %   label — short string identifying the run, e.g. 'link2_free_swing'
 
@@ -11,4 +11,5 @@ function save_run(simin, simout, label)
     filename  = fullfile(folder, sprintf('%s_%s.mat', timestamp, label));
     save(filename, 'simin', 'simout');
     fprintf('Saved: %s\n', filename);
+    filepath = filename;
 end

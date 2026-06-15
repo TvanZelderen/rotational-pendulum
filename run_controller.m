@@ -138,7 +138,10 @@ elseif controller_type == 3
     sim rotpen_mpc;
 end
 
-save_run(0, simout, run_name);
+filepath = save_run(0, simout, run_name);
+if controller_type == 2
+    save(filepath, '-append', 'ref_x', 'ref', 'ttl');
+end
 fprintf('Saved: %s\n', run_name);
 
 %% -- Plot ------------------------------------------------
