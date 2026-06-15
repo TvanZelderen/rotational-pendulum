@@ -31,7 +31,7 @@ tau_lp = 0.01;         % [s]  ~ 1/(2*pi*16 Hz) cutoff
 
 controller_type = 2;
 
-reference_indicator = 3; % 1 for down-down, 2 for down-up, 3 for up-up
+reference_indicator = 2; % 1 for down-down, 2 for down-up, 3 for up-up
 if reference_indicator == 1
     ref = [0; 0; 0; 0]; % down-down
     offset = [0; 0];
@@ -48,7 +48,7 @@ end
 
 if controller_type == 2
 % Compute matrices LQR / LQI
-    use_lqi = (reference_indicator == 3);
+    use_lqi = 1;
     [K_full, L, A, B, C] = compute_lqr(ref, R, p, use_lqi);
 
     if use_lqi
