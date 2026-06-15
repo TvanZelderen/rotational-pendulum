@@ -32,8 +32,8 @@ th1   = y(:,1);
 dth1  = y(:,2);
 th2   = y(:,3);
 dth2  = y(:,4);
-u     = y(:,5);
-e_in  = y(:,6);
+phi     = y(:,5);
+u  = y(:,6);
 
 has_lqi = ncols >= 7;
 if has_lqi
@@ -62,12 +62,12 @@ plot(t, dth2);
 ylabel('d\theta_2 [deg/s]'); grid on; title('d\theta_2');
 
 subplot(nrows,2,5);
-plot(t, u); yline(1,'r--'); yline(-1,'r--');
-ylabel('u [-]'); grid on; title('Input (post-sat)');
+plot(t, phi); yline(1,'r--'); yline(-1,'r--');
+ylabel('\phi [deg]'); grid on; title('\phi');
 
 subplot(nrows,2,6);
-plot(t, e_in);
-ylabel('e_{input} [rad]'); grid on; title('Input error');
+plot(t, u); yline(1,'r--'); yline(-1,'r--');
+ylabel('u [-]'); grid on; title('Input (post-sat)');
 
 if has_lqi
     subplot(nrows,2,7);
@@ -81,15 +81,15 @@ sgtitle(strrep(fname_only, '_', '\_'), 'Interpreter','tex');
 xlabel('Time [s]');
 
 %% Figure 2 — overlay plots
-psi = th1 + th2;   % inertial arm-2 angle [deg]
+phi = th1 + th2;   % inertial arm-2 angle [deg]
 
 figure('Name', [fname_only ' — overlay']); clf;
 
 subplot(3,1,1);
-plot(t, th1, t, th2, t, psi);
+plot(t, th1, t, th2, t, phi);
 yline(0,'k:');
 ylabel('[deg]'); grid on;
-legend('\theta_1', '\theta_2', '\psi = \theta_1+\theta_2');
+legend('\theta_1', '\theta_2', '\phi = \theta_1+\theta_2');
 title('Angles');
 
 subplot(3,1,2);
@@ -99,11 +99,11 @@ legend('d\theta_1', 'd\theta_2');
 title('Velocities');
 
 subplot(3,1,3);
-yyaxis left;  plot(t, e_in);  ylabel('e_{input} [rad]');
+yyaxis left;  plot(t, phi);  ylabel('\phi [deg]');
 yyaxis right; plot(t, u);     ylabel('u [-]'); ylim([-1.5 1.5]);
 yline(1,'r:'); yline(-1,'r:');
-grid on; legend('e_{input}', 'u');
-title('Error and input');
+grid on; legend('\phi', 'u');
+title('Phi and input');
 xlabel('Time [s]');
 
 sgtitle(strrep(fname_only, '_', '\_'), 'Interpreter','tex');
