@@ -69,17 +69,17 @@ disp('Observer poles:'); disp(sort(eig(A - L*C), 'descend'))
 
 %% -- Reference timeseries (From Workspace payload) -------
 %
-%  ref_x(t) = [θ₁_ref; 0; π − θ₁_ref; 0]
+%  Model works in deviation coordinates: x̂ = x − x_eq, so equilibrium = [0;0;0;0].
+%  ref_x must also be in deviation coordinates: [δ; 0; −δ; 0].
 %
-%  Psi-coupling baked in: when arm 1 moves +δ, θ₂_ref moves −δ so that
-%  psi = θ₁+θ₂ stays at π (pendulum inertially upright) throughout tracking.
-%  Units: radians — matches compute_lqr linearisation frame.
+%  Psi-coupling: θ₁_dev = +δ requires θ₂_dev = −δ so inertial arm-2 angle
+%  (θ₁+θ₂) stays at π (pendulum upright) in absolute frame.
 
-t_vec   = (0 : h : Tsim)';
-th1_ref = ref_eq(1) + arrayfun(ref_fn, t_vec);
-th2_ref = ref_eq(3) - (th1_ref - ref_eq(1));   % π − δ(t)
+t_vec       = (0 : h : Tsim)';
+th1_ref_dev = arrayfun(ref_fn, t_vec);   % δ(t) — deviation from equilibrium
+th2_ref_dev = -th1_ref_dev;              % −δ(t) — psi coupling
 
-ref_x = timeseries([th1_ref, zeros(size(t_vec)), th2_ref, zeros(size(t_vec))], t_vec);
+ref_x = timeseries([th1_ref_dev, zeros(size(t_vec)), th2_ref_dev, zeros(size(t_vec))], t_vec);
 ref_x.Name = 'ref_x';
 
 %% -- Run -------------------------------------------------
@@ -98,8 +98,9 @@ th1   = y(:,1);    % [deg]
 th2   = y(:,3);    % [deg]
 u     = y(:,6);    % [-]
 
-th1_ref_deg = rad2deg(th1_ref);
-th2_ref_deg = rad2deg(th2_ref);
+% Convert deviation refs to absolute degrees for overlay on hardware output
+th1_ref_deg = rad2deg(ref_eq(1)) + rad2deg(th1_ref_dev);   % 0 + δ_deg
+th2_ref_deg = rad2deg(ref_eq(3)) + rad2deg(th2_ref_dev);   % 180 − δ_deg
 
 figure(1); clf;
 
