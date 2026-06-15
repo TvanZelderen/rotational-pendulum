@@ -17,7 +17,7 @@ controller_type = 3;
 
 % -- Reference point ----------------------------
 % 1 = down-down | 2 = down-up | 3 = up-up
-reference_indicator = 2;
+reference_indicator = 3;
 
 % -- LQR options (controller_type == 2 only) ----
 use_lqi = 1;           % 0 = pure LQR | 1 = LQR + integral action on θ₁
