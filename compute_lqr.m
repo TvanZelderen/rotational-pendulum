@@ -10,8 +10,8 @@ dxdt_sym = rotpen_ode(0, x, u, p);
 A_sym = jacobian(dxdt_sym, x);
 B_sym = jacobian(dxdt_sym, u);
 
-A = double(subs(subs(A_sym, x, x0), u, 0))
-B = double(subs(subs(B_sym, x, x0), u, 0))
+A = double(subs(subs(A_sym, x, x0), u, 0));
+B = double(subs(subs(B_sym, x, x0), u, 0));
 C = [1 0 0 0; 
      0 0 1 0]; 
 D = zeros(2,1);
@@ -30,7 +30,7 @@ K = lqr(A, B, Q, R);
 %observer
 
 % Build Q and R
-Q_obs = diag([800, 500,800,500]);
+Q_obs = diag([800, 5000 ,800 ,5000]);
 % Q_obs = diag([1000,5000,1000,5000]);
 
 R_obs = 0.01*diag([1,1]);
