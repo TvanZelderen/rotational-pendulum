@@ -80,4 +80,32 @@ end
 sgtitle(strrep(fname_only, '_', '\_'), 'Interpreter','tex');
 xlabel('Time [s]');
 
+%% Figure 2 — overlay plots
+psi = th1 + th2;   % inertial arm-2 angle [deg]
+
+figure('Name', [fname_only ' — overlay']); clf;
+
+subplot(3,1,1);
+plot(t, th1, t, th2, t, psi);
+yline(0,'k:');
+ylabel('[deg]'); grid on;
+legend('\theta_1', '\theta_2', '\psi = \theta_1+\theta_2');
+title('Angles');
+
+subplot(3,1,2);
+plot(t, dth1, t, dth2);
+ylabel('[deg/s]'); grid on;
+legend('d\theta_1', 'd\theta_2');
+title('Velocities');
+
+subplot(3,1,3);
+yyaxis left;  plot(t, e_in);  ylabel('e_{input} [rad]');
+yyaxis right; plot(t, u);     ylabel('u [-]'); ylim([-1.5 1.5]);
+yline(1,'r:'); yline(-1,'r:');
+grid on; legend('e_{input}', 'u');
+title('Error and input');
+xlabel('Time [s]');
+
+sgtitle(strrep(fname_only, '_', '\_'), 'Interpreter','tex');
+
 end
