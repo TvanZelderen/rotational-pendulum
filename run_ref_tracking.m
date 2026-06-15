@@ -23,11 +23,12 @@ pendulum_params;
 
 %% -- Config ----------------------------------------------
 
-DEMO = 0;             % 0 = hold | 1 = step | 2 = sine | 3 = waypoints
+DEMO = 3;             % 0 = hold | 1 = step | 2 = sine | 3 = waypoints
 
 ref_eq = [0; 0; pi; 0];  % down-up equilibrium: arm 1 at 0, pendulum up
 R      = 25;
 h      = 0.001;           % sample period [s]
+run_time = 30;
 
 % These keep any non-tracking blocks in the model happy:
 ref    = ref_eq;
@@ -38,20 +39,20 @@ controller_sat = 1;
 
 switch DEMO
     case 0
-        Tsim   = 8;
+        run_time   = 8;
         ref_fn = @(t) 0;
         ttl    = 'Hold: θ₁ = 0°';
     case 1
-        Tsim   = 12;
-        ref_fn = @(t) deg2rad(10) * (t >= 3);
-        ttl    = 'Step: arm 1 +10° at t = 3 s';
+        run_time   = 12;
+        ref_fn = @(t) deg2rad(30) * (t >= 3);
+        ttl    = 'Step: arm 1 +30° at t = 3 s';
     case 2
-        Tsim   = 12;
-        ref_fn = @(t) deg2rad(15) * sin(2*pi * 0.25 * t);
+        run_time   = 12;
+        ref_fn = @(t) deg2rad(45) * sin(2*pi * 0.25 * t);
         ttl    = 'Sine sweep: ±15°, 0.25 Hz';
     case 3
-        Tsim   = 13;
-        ref_fn = @(t) deg2rad(20)*(t >= 2 & t < 5) + deg2rad(-20)*(t >= 5 & t < 8);
+        run_time   = 13;
+        ref_fn = @(t) deg2rad(35)*(t >= 2 & t < 5) + deg2rad(-35)*(t >= 5 & t < 8);
         ttl    = 'Waypoints: 0° → +20° → −20° → 0°';
 end
 
@@ -75,7 +76,7 @@ disp('Observer poles:'); disp(sort(eig(A - L*C), 'descend'))
 %  Psi-coupling: θ₁_dev = +δ requires θ₂_dev = −δ so inertial arm-2 angle
 %  (θ₁+θ₂) stays at π (pendulum upright) in absolute frame.
 
-t_vec       = (0 : h : Tsim)';
+t_vec       = (0 : h : run_time)';
 th1_ref_dev = arrayfun(ref_fn, t_vec);   % δ(t) — deviation from equilibrium
 th2_ref_dev = -th1_ref_dev;              % −δ(t) — psi coupling
 
