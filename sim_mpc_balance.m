@@ -186,7 +186,7 @@ end
 %{
   1. run_mpc.m:15 passes a 2-element ref into compute_mpc, which subs into
      a 4-state symbolic vector — dimension mismatch / wrong operating point.
-     run_lqr.m (controller_type 3) passes the correct 4-vector.
+     run_controller.m (controller_type 3) passes the correct 4-vector.
 
   2. The R argument to compute_mpc is accepted but never used inside the
      function — per-reference R tuning has no effect.
