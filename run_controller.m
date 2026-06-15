@@ -1,11 +1,12 @@
-%% -- Preamble --------------------------------------------
+%% - Setup and Linearize ---------------------------------
+% -- Preamble --------------------------------------------
 
 clear; clc;
 calib;
 hwinit;
 pendulum_params;
 
-%% -- Config ----------------------------------------------
+% -- Config ----------------------------------------------
 
 h = 0.001;
 controller_sat = 1;
@@ -30,7 +31,7 @@ tau_lp = 0.01;         % [s]  ~ 1/(2*pi*16 Hz) cutoff
 
 % -- Controller type ----------------------------
 % 1 = Simin | 2 = LQR | 3 = MPC
-controller_type = 3;
+controller_type = 2;
 
 % -- Reference point ----------------------------
 % 1 = down-down | 2 = down-up | 3 = up-up
@@ -42,7 +43,7 @@ use_lqi = 1;           % 0 = pure LQR | 1 = LQR + integral action on θ₁
 % -- Run duration --------------------------------
 run_time = 20;
 
-%% -- Reference setup -------------------------------------
+% -- Reference setup -------------------------------------
 
 if reference_indicator == 1
     ref = [0; 0; 0; 0]; % down-down
@@ -55,10 +56,10 @@ elseif reference_indicator == 2
 elseif reference_indicator == 3
     ref = [-pi; 0; 0; 0];
     offset = [pi; 0];
-    R = 150;
+    R = 200;
 end
 
-%% -- Controller build ------------------------------------
+% -- Controller build ------------------------------------
 
 if controller_type == 2
     [K_full, L, A, B, C] = compute_lqr(ref, R, p, use_lqi);
@@ -78,6 +79,7 @@ if controller_type == 2
     disp('Observer poles:'); disp(sort(eig(A - L*C), 'descend'))
 
 elseif controller_type == 3
+    use_lqi = 0;
     [K_full, L, A, B, C] = compute_lqr(ref, R, p, 0);
     K_int = 0;
     K = K_full;
@@ -93,7 +95,13 @@ ctrl_names = {'simin', 'lqr', 'mpc'};
 ref_names  = {'down-down', 'down-up', 'up-up'};
 run_name   = sprintf('%s_%s', ctrl_names{controller_type}, ref_names{reference_indicator});
 
-sim rotpentemplate;
+if controller_type == 2
+    % LQR     
+    sim rotpen_lqr;
+elseif controller_type == 3
+    % MPC
+    sim rotpen_mpc;
+end
 save_run(0, simout, run_name);
 
 fprintf('Saved: %s\n', run_name);

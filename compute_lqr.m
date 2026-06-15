@@ -42,7 +42,7 @@ else
 end
 
 % Observer (4-state, unchanged regardless of LQI)
-Q_obs = diag([800, 5000, 800, 5000]);
+Q_obs = diag([800, 2000, 800, 2000]);
 R_obs = 0.01*diag([1,1]);
 
 sys = ss(A, [B, eye(4)], C, [D, zeros(2,4)]);
