@@ -13,11 +13,11 @@ controller_sat = 1;
 
 % -- Controller type ----------------------------
 % 1 = Simin | 2 = LQR | 3 = MPC
-controller_type = 2;
+controller_type = 3;
 
 % -- Reference point ----------------------------
 % 1 = down-down | 2 = down-up | 3 = up-up
-reference_indicator = 3;
+reference_indicator = 2;
 
 % -- LQR options (controller_type == 2 only) ----
 use_lqi = 1;           % 0 = pure LQR | 1 = LQR + integral action on θ₁
@@ -65,7 +65,7 @@ elseif controller_type == 3
     [K_full, L, A, B, C] = compute_lqr(ref, R, p, 0);
     K_int = 0;
     K = K_full;
-    [mpc_obj, Ad, Bd, Cd] = compute_mpc(ref, R, p);
+    [mpc_obj, Ad, Bd, Cd] = compute_mpc(ref, R, p, reference_indicator);
 
 else
     error('controller_type %d not implemented', controller_type)

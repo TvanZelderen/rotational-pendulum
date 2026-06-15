@@ -1,4 +1,4 @@
-function [mpc_obj, Ad, Bd, Cd] = compute_mpc(x0, R, p)
+function [mpc_obj, Ad, Bd, Cd] = compute_mpc(x0, R, p, reference_indicator)
 
     %% Linearise
     syms x [4 1] real
@@ -14,51 +14,80 @@ function [mpc_obj, Ad, Bd, Cd] = compute_mpc(x0, R, p)
     C = [1 0 0 0;  % th1
          1 0 1 0];  % th2
     D = zeros(2,1);
-
-    %% Discretise
-    Ts         = 0.001;
-    sys_c      = ss(A, B, C, D);
-    sys_d      = c2d(sys_c, Ts, 'zoh');
-    [Ad,Bd,Cd,Dd] = ssdata(sys_d);
     
 
-    %% Horizons
-    Np = 500;    % prediction horizon — longer = better but slower
-    Nc = 30;    % control horizon
+    if reference_indicator ==3
+        Ts         = 0.01;  
+        sys_c      = ss(A, B, C, D);
+        sys_d      = c2d(sys_c, Ts, 'zoh');
+        [Ad,Bd,Cd,Dd] = ssdata(sys_d);
+    
 
-    %% Create MPC object
-    mpc_obj = mpc(sys_d, Ts, Np, Nc);
+        % Horizons
+        Np = 30;    % prediction horizon — longer = better but slower
+        Nc = 3;   % control horizon
 
-    %% Input constraints
-    mpc_obj.MV.Min = -1;
-    mpc_obj.MV.Max =  1;
+        % Create MPC object
+        mpc_obj = mpc(sys_d, Ts, Np, Nc);
+    
+        % Input constraints
+        mpc_obj.MV.Min = -1;
+        mpc_obj.MV.Max =  1;
 
-    %% Weights — this is the key tuning
-    % ManipulatedVariables: penalty on u magnitude
-    % Higher = more conservative motor use
-    mpc_obj.Weights.ManipulatedVariables     = 10;
+        % Weights 
+        % ManipulatedVariables: penalty on u magnitude
+        % Higher = more conservative motor use
+        mpc_obj.Weights.ManipulatedVariables     = 3;
 
-    % ManipulatedVariablesRate: penalty on Δu (change in u)
-    % Higher = smoother motor commands
-    mpc_obj.Weights.ManipulatedVariablesRate = 1;
+        % ManipulatedVariablesRate: penalty on Δu (change in u)
+        % Higher = smoother motor commands
+        mpc_obj.Weights.ManipulatedVariablesRate = 0.01; 
 
-    % OutputVariables: penalty on [th1 error, th2 error]
-    % Higher = track reference more aggressively
-    % th2 (pendulum angle) needs much higher weight than th1 (arm angle)
+        % OutputVariables: penalty on [th1 error, phi error]
+        % Higher = track reference more aggressively
+        % phi (pendulum angle) needs much higher weight than th1 (arm angle)
 
-    mpc_obj.Weights.OutputVariables = [100, 1000];    
-   
+        mpc_obj.Weights.OutputVariables = [30, 150];    
+   else   
+
+        % Discretise
+        Ts         = 0.001; 
+        sys_c      = ss(A, B, C, D);
+        sys_d      = c2d(sys_c, Ts, 'zoh');
+        [Ad,Bd,Cd,Dd] = ssdata(sys_d);
+    
+
+        % Horizons
+        Np = 500;    % prediction horizon — longer = better but slower
+        Nc = 30;    % control horizon
+
+        % Create MPC object
+        mpc_obj = mpc(sys_d, Ts, Np, Nc);
+
+        % Input constraints
+        mpc_obj.MV.Min = -1;
+        mpc_obj.MV.Max =  1;
+
+        % Weights 
+        % ManipulatedVariables: penalty on u magnitude
+        % Higher = more conservative motor use
+        mpc_obj.Weights.ManipulatedVariables     = 10; 
+
+        % ManipulatedVariablesRate: penalty on Δu (change in u)
+        % Higher = smoother motor commands
+        mpc_obj.Weights.ManipulatedVariablesRate = 1; 
+
+        % OutputVariables: penalty on [th1 error, phi error]
+        % Higher = track reference more aggressively
+        % phi (pendulum angle) needs much higher weight than th1 (arm angle)
+
+        mpc_obj.Weights.OutputVariables = [100, 1000];    
+    end   
 
     %% Nominal operating point
     mpc_obj.Model.Nominal.X = zeros(4,1);
     mpc_obj.Model.Nominal.Y = zeros(2,1);
     mpc_obj.Model.Nominal.U = 0;
-
-    %% Scale factors — help MPC numerics
-    % Set to expected range of each variable
-%     mpc_obj.OV(1).ScaleFactor = deg2rad(30);      % th1 range ~ pi rad
-%     mpc_obj.OV(2).ScaleFactor = deg2rad(30);      % th2 range ~ pi rad
-%     mpc_obj.MV.ScaleFactor    = 1;       % u range ~ 
 
 
 end
