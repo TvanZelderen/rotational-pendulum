@@ -37,12 +37,12 @@ if reference_indicator == 1
     offset = [0; 0];
     R = 50;
 elseif reference_indicator == 2
-    ref = [0; 0; psi; 0];
-    offset = [0; -psi];
+    ref = [0; 0; pi; 0];
+    offset = [0; -pi];
     R = 25;
 elseif reference_indicator == 3
-    ref = [-psi; 0; 0; 0];
-    offset = [psi; 0];
+    ref = [-pi; 0; 0; 0];
+    offset = [pi; 0];
     R = 100;
 end
 
