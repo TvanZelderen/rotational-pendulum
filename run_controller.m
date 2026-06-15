@@ -17,14 +17,14 @@ controller_type = 2;
 
 % -- Reference point ----------------------------
 % 1 = down-down | 2 = down-up | 3 = up-up
-reference_indicator = 2;
+reference_indicator = 3;
 
 % -- LQR options (controller_type == 2 only) ----
 use_lqi = 1;           % 0 = pure LQR | 1 = LQR + integral action on θ₁
 
 % -- DEMO (controller_type == 2 only) -----------
 % 0 = hold | 1 = step | 2 = sine | 3 = waypoints
-DEMO = 0;
+DEMO = 5;
 
 % -- Run duration (MPC default; LQR overrides per DEMO) --
 run_time = 20;
@@ -88,6 +88,14 @@ if controller_type == 2
         case 3
             run_time = 13;
             ref_fn   = @(t) deg2rad(35)*(t >= 2 & t < 5) + deg2rad(-35)*(t >= 5 & t < 8);
+            ttl      = 'Waypoints: 0° → +35° → −35° → 0°';
+        case 4
+            run_time = 12;
+            ref_fn   = @(t) deg2rad(30) * sin(2*pi * 0.15 * t);
+            ttl      = 'Sine sweep: ±45°, 0.25 Hz';
+        case 5
+            run_time = 20;
+            ref_fn   = @(t) deg2rad(30)*(t >= 5 & t < 10) + deg2rad(-30)*(t >= 10 & t < 15);
             ttl      = 'Waypoints: 0° → +35° → −35° → 0°';
     end
 
