@@ -16,15 +16,15 @@ function [mpc_obj, Ad, Bd, Cd] = compute_mpc(x0, R, p)
     D = zeros(2,1);
 
     %% Discretise
-    Ts         = 0.001;
+    Ts         = 0.001; %  Down-up =0.001 up-up=0.01
     sys_c      = ss(A, B, C, D);
     sys_d      = c2d(sys_c, Ts, 'zoh');
     [Ad,Bd,Cd,Dd] = ssdata(sys_d);
     
 
     %% Horizons
-    Np = 500;    % prediction horizon — longer = better but slower
-    Nc = 30;    % control horizon
+    Np = 500;   % down-up 500 up-up=30 % prediction horizon — longer = better but slower
+    Nc = 30;  % down-up 30 up-up=3 % control horizon
 
     %% Create MPC object
     mpc_obj = mpc(sys_d, Ts, Np, Nc);
@@ -36,17 +36,17 @@ function [mpc_obj, Ad, Bd, Cd] = compute_mpc(x0, R, p)
     %% Weights — this is the key tuning
     % ManipulatedVariables: penalty on u magnitude
     % Higher = more conservative motor use
-    mpc_obj.Weights.ManipulatedVariables     = 10;
+    mpc_obj.Weights.ManipulatedVariables     = 10; %down-up 10 up-up=3
 
     % ManipulatedVariablesRate: penalty on Δu (change in u)
     % Higher = smoother motor commands
-    mpc_obj.Weights.ManipulatedVariablesRate = 1;
+    mpc_obj.Weights.ManipulatedVariablesRate = 1; %down-up 1 up-up=0.01
 
-    % OutputVariables: penalty on [th1 error, th2 error]
+    % OutputVariables: penalty on [th1 error, phi error]
     % Higher = track reference more aggressively
-    % th2 (pendulum angle) needs much higher weight than th1 (arm angle)
+    % phi (pendulum angle) needs much higher weight than th1 (arm angle)
 
-    mpc_obj.Weights.OutputVariables = [100, 1000];    
+    mpc_obj.Weights.OutputVariables = [100, 1000];    %down-up=100,1000 up-up=30,150
    
 
     %% Nominal operating point
