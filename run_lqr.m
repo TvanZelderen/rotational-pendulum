@@ -29,9 +29,9 @@ tau_lp = 0.01;         % [s]  ~ 1/(2*pi*16 Hz) cutoff
 % -- Controller type ----------------------------
 % Mode 1 = Simin | 2 = LQR | 3 = MPC
 
-controller_type = 2;
+controller_type = 3;
 
-reference_indicator = 3; % 1 for down-down, 2 for down-up, 3 for up-up
+reference_indicator = 2; % 1 for down-down, 2 for down-up, 3 for up-up
 if reference_indicator == 1
     ref = [0; 0; 0; 0]; % down-down
     offset = [0; 0];
@@ -65,6 +65,10 @@ if controller_type == 2
     end
     disp('Observer poles:'); disp(sort(eig(A - L*C), 'descend'))
 elseif controller_type == 3
+    use_lqi = 0;
+    [K_full, L, A, B, C] = compute_lqr(ref, R, p, use_lqi);
+    K_int = 0;
+    K = K_full;
     %Compute MPC object
     [mpc_obj,Ad,Bd,Cd] = compute_mpc(ref, R, p);
 else

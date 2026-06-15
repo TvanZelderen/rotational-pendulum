@@ -50,8 +50,8 @@ function [mpc_obj, Ad, Bd, Cd] = compute_mpc(x0, R, p)
    
 
     %% Nominal operating point
-    mpc_obj.Model.Nominal.X = x0;
-    mpc_obj.Model.Nominal.Y = C * x0;
+    mpc_obj.Model.Nominal.X = zeros(4,1);
+    mpc_obj.Model.Nominal.Y = zeros(2,1);
     mpc_obj.Model.Nominal.U = 0;
 
     %% Scale factors — help MPC numerics
