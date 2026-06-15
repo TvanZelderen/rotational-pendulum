@@ -47,23 +47,23 @@ elseif reference_indicator == 3
 end
 
 if controller_type == 2
-% Compute matrices LQR
-    [K, L, A, B, C] = compute_lqr(ref, R, p);
-    
-    disp('Controller poles:'); disp(sort(eig(A - B*K), 'descend'))
-    disp('Observer poles:');   disp(sort(eig(A - L*C), 'descend'))
+% Compute matrices LQR / LQI
+    use_lqi = (reference_indicator == 3);
+    [K_full, L, A, B, C] = compute_lqr(ref, R, p, use_lqi);
 
-% Controller poles:
-%    -1.9818
-%    -6.5898
-%   -17.1361
-%   -60.4378
-% 
-% Observer poles:
-%   -10.3934
-%   -60.7150
-%  -282.7429
-%  -283.2946
+    if use_lqi
+        K_int = K_full(5);          % integral gain on θ₁ — read by Simulink
+        K     = K_full(1:4);        % state feedback gain
+        A_aug = [A, zeros(4,1); [1,0,0,0], 0];
+        B_aug = [B; 0];
+        disp('Controller poles (LQI, 5-state):');
+        disp(sort(real(eig(A_aug - B_aug*K_full)), 'descend'))
+    else
+        K_int = 0;
+        K     = K_full;
+        disp('Controller poles:'); disp(sort(eig(A - B*K), 'descend'))
+    end
+    disp('Observer poles:'); disp(sort(eig(A - L*C), 'descend'))
 elseif controller_type == 3
     %Compute MPC object
     [mpc_obj,Ad,Bd,Cd] = compute_mpc(ref, R, p);
