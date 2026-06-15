@@ -11,24 +11,6 @@ pendulum_params;
 h = 0.001;
 controller_sat = 1;
 
-% -- Stiction-breaking jiggle ----------------------------
-% Mode 1 = off | Mode 2 = continuous dither | Mode 3 = conditional knocker
-% Simulink reads these from the workspace via Constant / Gain blocks.
-jiggle_mode = 1;
-
-% Mode 2 — continuous dither (always-on, zero-mean)
-A_d   = 0.03;          % amplitude [-]   start small
-f_d   = 30;            % frequency [Hz]  above CL BW, below 500 Hz
-
-% Mode 3 — conditional knocker (fires when arm 1 is stuck)
-A_k   = 0.08;          % pulse amplitude [-]
-f_k   = 30;            % buzz frequency [Hz]
-eps_v = 0.08;          % |dth1_filt| < eps_v  → arm is stuck  [rad/s]
-u_min = 0.05;          % |u_cmd| > u_min       → controller wants to move [-]
-
-% Low-pass time constant for dth1 (noise filter for stuck gate)
-tau_lp = 0.01;         % [s]  ~ 1/(2*pi*16 Hz) cutoff
-
 % -- Controller type ----------------------------
 % 1 = Simin | 2 = LQR | 3 = MPC
 controller_type = 2;
