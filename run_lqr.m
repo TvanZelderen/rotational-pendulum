@@ -31,7 +31,7 @@ tau_lp = 0.01;         % [s]  ~ 1/(2*pi*16 Hz) cutoff
 
 controller_type = 2;
 
-reference_indicator = 2; % 1 for down-down, 2 for down-up, 3 for up-up
+reference_indicator = 3; % 1 for down-down, 2 for down-up, 3 for up-up
 if reference_indicator == 1
     ref = [0; 0; 0; 0]; % down-down
     offset = [0; 0];
@@ -43,7 +43,7 @@ elseif reference_indicator == 2
 elseif reference_indicator == 3
     ref = [-pi; 0; 0; 0];
     offset = [pi; 0];
-    R = 100;
+    R = 150;
 end
 
 if controller_type == 2
