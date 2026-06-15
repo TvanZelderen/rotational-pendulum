@@ -65,7 +65,7 @@ elseif controller_type == 3
     [K_full, L, A, B, C] = compute_lqr(ref, R, p, 0);
     K_int = 0;
     K = K_full;
-    [mpc_obj, Ad, Bd, Cd] = compute_mpc(ref, R, p);
+    [mpc_obj, Ad, Bd, Cd] = compute_mpc(ref, R, p, reference_indicator);
 
 else
     error('controller_type %d not implemented', controller_type)
