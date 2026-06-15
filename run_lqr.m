@@ -29,32 +29,47 @@ tau_lp = 0.01;         % [s]  ~ 1/(2*pi*16 Hz) cutoff
 % -- Controller type ----------------------------
 % Mode 1 = Simin | 2 = LQR | 3 = MPC
 
-controller_type = 3;
+controller_type = 2;
 
-reference_indicator = 1; % 1 for down-down, 2 for down-up, 3 for up-up
+reference_indicator = 3; % 1 for down-down, 2 for down-up, 3 for up-up
 if reference_indicator == 1
     ref = [0; 0; 0; 0]; % down-down
     offset = [0; 0];
-    R = 50; % Tweak away
+    R = 50;
 elseif reference_indicator == 2
     ref = [0; 0; pi; 0];
     offset = [0; -pi];
-    R = 0.1; %25
+    R = 25;
 elseif reference_indicator == 3
     ref = [-pi; 0; 0; 0];
     offset = [pi; 0];
     R = 100;
 end
 
+if controller_type == 2
 % Compute matrices LQR
-[K, L, A, B, C] = compute_lqr(ref, R, p);
+    [K, L, A, B, C] = compute_lqr(ref, R, p);
+    
+    disp('Controller poles:'); disp(sort(eig(A - B*K), 'descend'))
+    disp('Observer poles:');   disp(sort(eig(A - L*C), 'descend'))
 
-disp('Controller poles:'); disp(sort(eig(A - B*K), 'descend'))
-disp('Observer poles:');   disp(sort(eig(A - L*C), 'descend'))
-
-%Compute MPC object
-[mpc_obj,Ad,Bd,Cd] = compute_mpc(ref, R, p);
-
+% Controller poles:
+%    -1.9818
+%    -6.5898
+%   -17.1361
+%   -60.4378
+% 
+% Observer poles:
+%   -10.3934
+%   -60.7150
+%  -282.7429
+%  -283.2946
+elseif controller_type == 3
+    %Compute MPC object
+    [mpc_obj,Ad,Bd,Cd] = compute_mpc(ref, R, p);
+else
+    display("Controller type not implemented")
+end
 
 run_time = 20;
 

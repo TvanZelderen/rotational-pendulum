@@ -16,7 +16,7 @@ C = [1 0 0 0;
      0 0 1 0]; 
 D = zeros(2,1);
 % Bryson baseline
-Q_base = diag([5, 0, 0, 0]);
+Q_base = diag([10, 0, 0, 0]);
 % Q_base = diag([1/pi^2, 1/8^2, 1/pi^2, 1/26^2]);
 
 % Penalise psi = th1 + th2 (arm-2 inertial angle deviation)
@@ -30,7 +30,7 @@ K = lqr(A, B, Q, R);
 %observer
 
 % Build Q and R
-Q_obs = diag([800, 1500000,800,1500000]);
+Q_obs = diag([800, 15000,800,15000]);
 % Q_obs = diag([1000,5000,1000,5000]);
 
 R_obs = 0.01*diag([1,1]);
