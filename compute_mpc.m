@@ -36,11 +36,11 @@ function [mpc_obj, Ad, Bd, Cd] = compute_mpc(x0, R, p)
     %% Weights — this is the key tuning
     % ManipulatedVariables: penalty on u magnitude
     % Higher = more conservative motor use
-    mpc_obj.Weights.ManipulatedVariables     = 1;
+    mpc_obj.Weights.ManipulatedVariables     = 10;
 
     % ManipulatedVariablesRate: penalty on Δu (change in u)
     % Higher = smoother motor commands
-    mpc_obj.Weights.ManipulatedVariablesRate = 0.01;
+    mpc_obj.Weights.ManipulatedVariablesRate = 1;
 
     % OutputVariables: penalty on [th1 error, th2 error]
     % Higher = track reference more aggressively
